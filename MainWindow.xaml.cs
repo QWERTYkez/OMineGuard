@@ -14,11 +14,15 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using SM = OMineManager.SettingsManager;
 using PM = OMineManager.ProfileManager;
+using System.Diagnostics;
+using System.Threading;
 
 namespace OMineManager
 {
     public partial class MainWindow : Window
     {
+        public static SynchronizationContext context = SynchronizationContext.Current;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -28,9 +32,8 @@ namespace OMineManager
         #region InitializeProfile
         private void IniProfile()
         {
-            SM.Initialize();
             PM.Initialize();
-            Algotitm.ItemsSource = SM.Miners.Keys;
+            Algotitm.ItemsSource = SM.MinersD.Keys;
             GPUsCB.ItemsSource = new string[] { "Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" };
             if (PM.Profile.GPUsSwitch != null)
             { GPUsCB.SelectedIndex = PM.Profile.GPUsSwitch.Length; }
@@ -40,12 +43,14 @@ namespace OMineManager
             if (PM.Profile.ConfigsList == null)
             { PM.Profile.ConfigsList = new List<Profile.Config>(); }
             ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+            ConfigsList.SelectedItem = PM.Profile.StartedConfig;
         }
         #endregion
         #region RigName
         private void RigName_TextChanged(object sender, TextChangedEventArgs e)
         {
             PM.Profile.RigName = RigName.Text;
+            PM.SaveProfile();
         }
         #endregion
         #region GPUs
@@ -112,9 +117,14 @@ namespace OMineManager
             int n = ConfigsList.SelectedIndex;
             if (n != -1)
             {
+                if ((string)ConfigsList.SelectedItem == PM.Profile.StartedConfig)
+                {
+                    PM.Profile.StartedConfig = null;
+                }
                 PM.Profile.ConfigsList.RemoveAt(n);
                 ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
                 ConfigsList.SelectedIndex = -1;
+                PM.SaveProfile();
             }
         }
         private void PlusConfig_Click(object sender, RoutedEventArgs e)
@@ -125,20 +135,42 @@ namespace OMineManager
         }
         private void ApplyConfig_Click(object sender, RoutedEventArgs e)
         {
-
+            int n = ConfigsList.SelectedIndex;
+            if (PM.Profile.StartedConfig == PM.Profile.ConfigsList[n].Name)
+            {
+                PM.Profile.StartedConfig = Name.Text;
+            }
+            PM.Profile.ConfigsList[n].Name = Name.Text;
+            PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
+            PM.Profile.ConfigsList[n].Miner = (SM.Miners)Miner.SelectedItem;
+            PM.Profile.ConfigsList[n].Pool = Pool.Text;
+            PM.Profile.ConfigsList[n].Port = Port.Text;
+            PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
+            PM.Profile.ConfigsList[n].Params = Params.Text;
+            PM.SaveProfile();
+            ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+            ConfigsList.SelectedIndex = n;
         }
         private void StartConfig_Click(object sender, RoutedEventArgs e)
         {
-
+            ApplyConfig_Click(null, null);
+            if (ConfigsList.SelectedIndex != -1)
+            {
+                MinersManager.StartMiner(PM.Profile.ConfigsList[ConfigsList.SelectedIndex]);
+                PM.Profile.StartedConfig = (string)ConfigsList.SelectedItem;
+                PM.SaveProfile();
+            }
         }
         private void ConfigsList_Selected(object sender, RoutedEventArgs e)
         {
             int n = ConfigsList.SelectedIndex;
             if (n == -1)
             {
+                Name.Text = "";
                 Algotitm.SelectedIndex = -1;
                 Miner.SelectedIndex = -1;
                 Pool.Text = "";
+                Port.Text = "";
                 Wallet.Text = "";
                 Params.Text = "";
             }
@@ -152,7 +184,7 @@ namespace OMineManager
                 {
                     Algotitm.SelectedIndex = -1;
                 }
-                if (PM.Profile.ConfigsList[n].Miner != "")
+                if (PM.Profile.ConfigsList[n].Miner != null)
                 {
                     Miner.SelectedItem = PM.Profile.ConfigsList[n].Miner;
                 }
@@ -160,7 +192,9 @@ namespace OMineManager
                 {
                     Miner.SelectedIndex = -1;
                 }
+                Name.Text = PM.Profile.ConfigsList[n].Name;
                 Pool.Text = PM.Profile.ConfigsList[n].Pool;
+                Port.Text = PM.Profile.ConfigsList[n].Port;
                 Wallet.Text = PM.Profile.ConfigsList[n].Wallet;
                 Params.Text = PM.Profile.ConfigsList[n].Params;
             }
@@ -175,11 +209,11 @@ namespace OMineManager
             else
             {
                 Miner.IsEnabled = true;
-                Miner.ItemsSource = SM.Miners[(string)Algotitm.SelectedItem].Keys;
+                Miner.ItemsSource = SM.MinersD[(string)Algotitm.SelectedItem];
             }
         }
         #endregion
 
-
+        
     }
 }

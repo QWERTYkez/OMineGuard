@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OMineManager"
         mc:Ignorable="d"
-        Title="OMineManager" Height="550" Width="705" Background="#FF686868" ResizeMode="NoResize">
+        Title="OMineManager" Height="590" Width="705"  Background="#FF686868" ResizeMode="NoResize">
     <Grid Background="#FF686868">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -41,6 +41,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <GroupBox Grid.Column="0" Grid.RowSpan="10" Header="Список конфигураций:" Foreground="White" FontSize="12" Margin="0,0,5,0">
                         <Grid>
@@ -64,16 +65,22 @@
                             </Grid>
                         </Grid>
                     </GroupBox>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="12">Алгоритм:</TextBlock>
-                    <ComboBox Grid.Row="0" Grid.Column="2" x:Name="Algotitm" Height="25" Margin="3" FontSize="14" FontWeight="Bold" SelectionChanged="Algotitm_SelectionChanged"></ComboBox>
-                    <TextBlock Grid.Row="0" Grid.Column="3" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="12">Майнер:</TextBlock>
-                    <ComboBox Grid.Row="0" Grid.Column="4" x:Name="Miner" Height="25" Margin="3" FontSize="14" FontWeight="Bold" IsEnabled="False"></ComboBox>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="12">Пул:</TextBlock>
-                    <TextBox Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="5" x:Name="Pool" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="12">Кошелек:</TextBlock>
-                    <TextBox Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="5" x:Name="Wallet" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="6" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="5" FontSize="18">Дополнительные парамаетры:</TextBlock>
-                    <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="6" x:Name="Params" Height="75" Margin="3" FontSize="14" FontWeight="Bold" TextWrapping="Wrap"></TextBox>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="12">Название:</TextBlock>
+                    <TextBox Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="5" x:Name="Name" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="12" HorizontalAlignment="Right">Алгоритм:</TextBlock>
+                    <ComboBox Grid.Row="1" Grid.Column="2" x:Name="Algotitm" Height="25" Margin="3" FontSize="14" FontWeight="Bold" SelectionChanged="Algotitm_SelectionChanged"></ComboBox>
+                    <TextBlock Grid.Row="1" Grid.Column="3" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="12">Майнер:</TextBlock>
+                    <ComboBox Grid.Row="1" Grid.Column="4" x:Name="Miner" Height="25" Margin="3" FontSize="14" FontWeight="Bold" IsEnabled="False"></ComboBox>
+                    <WrapPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="10">
+                        <TextBlock Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="47,5,5,5" FontSize="12">Пул:</TextBlock>
+                        <TextBox x:Name="Pool" Height="25" Width="228" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
+                        <TextBlock Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="12">Порт:</TextBlock>
+                        <TextBox x:Name="Port" Height="25" Width="70" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
+                    </WrapPanel>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="12" HorizontalAlignment="Right">Кошелек:</TextBlock>
+                    <TextBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="5" x:Name="Wallet" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
+                    <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="6" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="5" FontSize="18">Дополнительные парамаетры:</TextBlock>
+                    <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="6" x:Name="Params" Height="75" Margin="3" FontSize="14" FontWeight="Bold" TextWrapping="Wrap"></TextBox>
                 </Grid>
             </GroupBox>
             <GroupBox Margin="5" Header="Разгон (MSI Afterburner)" Foreground="White" FontSize="18">
@@ -110,15 +117,15 @@
                             </Grid>
                         </Grid>
                     </GroupBox>
-                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White">Название:</TextBlock>
+                    <TextBlock Grid.Row="0" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">Название:</TextBlock>
                     <TextBox Grid.Row="0" Grid.Column="2" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
-                    <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White">CoreVoltage:</TextBlock>
+                    <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">CoreVoltage:</TextBlock>
                     <TextBox Grid.Row="1" Grid.Column="2" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
-                    <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White">PowerLimit:</TextBlock>
+                    <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">PowerLimit:</TextBlock>
                     <TextBox Grid.Row="2" Grid.Column="2" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
-                    <TextBlock Grid.Row="3" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White">CoreClock:</TextBlock>
+                    <TextBlock Grid.Row="3" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">CoreClock:</TextBlock>
                     <TextBox Grid.Row="3" Grid.Column="2" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
-                    <TextBlock Grid.Row="4" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White">MemoryClock:</TextBlock>
+                    <TextBlock Grid.Row="4" Grid.Column="1" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">MemoryClock:</TextBlock>
                     <TextBox Grid.Row="4" Grid.Column="2" Height="25" Margin="3" FontSize="14" FontWeight="Bold"></TextBox>
                 </Grid>
             </GroupBox>

@@ -10,40 +10,17 @@ namespace OMineManager
 {
     public static class SettingsManager
     {
-        
-        public static Dictionary<string, Dictionary<string, string>> Miners;
+        public static Dictionary<string, Miners[]>
+         MinersD = new Dictionary<string, Miners[]>
+         {
+             { "Ethash", new Miners[] { Miners.Claymore } }
+         }; 
 
-        public static void Initialize()
+        public enum Miners
         {
-            string[,] jss;
-            try
-            {
-                using (FileStream fstream = File.OpenRead("Settings.json"))
-                {
-                    byte[] array = new byte[fstream.Length];
-                    fstream.Read(array, 0, array.Length);
-                    string json = System.Text.Encoding.Default.GetString(array);
-                    jss = JsonConvert.DeserializeObject<string[,]>(json);
-                }
-            }
-            catch
-            {
-                jss = new string[,] { };
-            }
-
-            Miners = new Dictionary<string, Dictionary<string, string>>();
-            int n = (jss.Length / 3);
-            for (int i = 0; i < n; i++)
-            {
-                if (Miners.ContainsKey(jss[i, 0]))
-                {
-                    Miners[jss[i, 0]].Add(jss[i,1], jss[i,2]);
-                }
-                else
-                {
-                    Miners.Add(jss[i, 0], new Dictionary<string, string> { { jss[i, 1], jss[i, 2] } });
-                }
-            }
+            Claymore,
+            Gminer,
+            Bminer
         }
     }
 
@@ -97,6 +74,7 @@ namespace OMineManager
 
     public class Profile
     {
+        public string StartedConfig;
         public string RigName;
         public bool[] GPUsSwitch;
         public List<Config> ConfigsList;
@@ -107,7 +85,7 @@ namespace OMineManager
             {
                 Name = "Новый конфиг";
                 Algoritm = "";
-                Miner = "";
+                Miner = null;
                 Pool = "";
                 Wallet = "";
                 Params = "";
@@ -115,8 +93,9 @@ namespace OMineManager
 
             public string Name;
             public string Algoritm;
-            public string Miner;
+            public SettingsManager.Miners? Miner;
             public string Pool;
+            public string Port;
             public string Wallet;
             public string Params;
         }
