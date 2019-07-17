@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SM = OMineManager.SettingsManager;
 using PM = OMineManager.ProfileManager;
 
 namespace OMineManager
@@ -21,16 +22,32 @@ namespace OMineManager
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = PM.Profile;
+            IniProfile();
+        }
 
+        #region InitializeProfile
+        private void IniProfile()
+        {
+            SM.Initialize();
             PM.Initialize();
-
+            Algotitm.ItemsSource = SM.Miners.Keys;
             GPUsCB.ItemsSource = new string[] { "Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" };
             if (PM.Profile.GPUsSwitch != null)
             { GPUsCB.SelectedIndex = PM.Profile.GPUsSwitch.Length; }
             else { GPUsCB.SelectedIndex = 0; }
+            if (PM.Profile.RigName != null)
+            { RigName.Text = PM.Profile.RigName; }
+            if (PM.Profile.ConfigsList == null)
+            { PM.Profile.ConfigsList = new List<Profile.Config>(); }
+            ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
         }
-
+        #endregion
+        #region RigName
+        private void RigName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            PM.Profile.RigName = RigName.Text;
+        }
+        #endregion
         #region GPUs
         private void GPUsCB_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -88,5 +105,81 @@ namespace OMineManager
             PM.SaveProfile();
         }
         #endregion
+
+        #region Miner
+        private void MinusConfig_Click(object sender, RoutedEventArgs e)
+        {
+            int n = ConfigsList.SelectedIndex;
+            if (n != -1)
+            {
+                PM.Profile.ConfigsList.RemoveAt(n);
+                ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+                ConfigsList.SelectedIndex = -1;
+            }
+        }
+        private void PlusConfig_Click(object sender, RoutedEventArgs e)
+        {
+            PM.Profile.ConfigsList.Add(new Profile.Config());
+            ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+            ConfigsList.SelectedIndex = PM.Profile.ConfigsList.Count - 1;
+        }
+        private void ApplyConfig_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void StartConfig_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void ConfigsList_Selected(object sender, RoutedEventArgs e)
+        {
+            int n = ConfigsList.SelectedIndex;
+            if (n == -1)
+            {
+                Algotitm.SelectedIndex = -1;
+                Miner.SelectedIndex = -1;
+                Pool.Text = "";
+                Wallet.Text = "";
+                Params.Text = "";
+            }
+            else
+            {
+                if(PM.Profile.ConfigsList[n].Algoritm != "")
+                {
+                    Algotitm.SelectedItem = PM.Profile.ConfigsList[n].Algoritm;
+                }
+                else
+                {
+                    Algotitm.SelectedIndex = -1;
+                }
+                if (PM.Profile.ConfigsList[n].Miner != "")
+                {
+                    Miner.SelectedItem = PM.Profile.ConfigsList[n].Miner;
+                }
+                else
+                {
+                    Miner.SelectedIndex = -1;
+                }
+                Pool.Text = PM.Profile.ConfigsList[n].Pool;
+                Wallet.Text = PM.Profile.ConfigsList[n].Wallet;
+                Params.Text = PM.Profile.ConfigsList[n].Params;
+            }
+        }
+        private void Algotitm_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (Algotitm.SelectedIndex == -1)
+            {
+                Miner.SelectedIndex = -1;
+                Miner.IsEnabled = false;
+            }
+            else
+            {
+                Miner.IsEnabled = true;
+                Miner.ItemsSource = SM.Miners[(string)Algotitm.SelectedItem].Keys;
+            }
+        }
+        #endregion
+
+
     }
 }
