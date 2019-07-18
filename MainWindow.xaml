@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OMineManager"
         mc:Ignorable="d"
-        Title="OMineManager" MinHeight="590" MinWidth="1000" Background="#FF686868"> <!--705-->
+        Title="OMineManager" Height="620" MinHeight="620" MinWidth="1000" Width="1000" Background="#FF686868"> <!--705-->
     <Grid Background="#FF686868">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -80,6 +80,7 @@
                         <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="6" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="5" FontSize="18">Дополнительные парамаетры:</TextBlock>
                         <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="6" x:Name="Params" Height="200" Margin="3" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"></TextBox>
                     </Grid>
+                    <TextBlock x:Name="MSGtextBox" HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Foreground="Black" Visibility="Hidden">Конфиг с таким именем уже существует</TextBlock>
                 </StackPanel>
             </TabItem>
             <TabItem Header="Разгон (MSI Afterburner)">
@@ -140,12 +141,12 @@
                     <WrapPanel Grid.Row="1" HorizontalAlignment="Right" Margin="3,3,3,2">
                         <TextBlock Foreground="White" Text="Размер шрифта:" Margin="10,0,5,0"></TextBlock>
                         <Slider x:Name="TextSizeSlider" Margin="10,0,5,0" Width="100" VerticalAlignment="Center" Minimum="8" Maximum="24" 
-                                IsSnapToTickEnabled="True" TickFrequency="1"  ValueChanged="TextSizeSlider_ValueChanged"></Slider>
+                                IsSnapToTickEnabled="True" TickFrequency="1"></Slider>
                         <TextBlock x:Name="TextSizeTB" Width="40" Foreground="White">20</TextBlock>
                         <TextBlock Foreground="White" Text="Автопрокрутка:" Margin="40,0,5,0"></TextBlock>
                         <CheckBox x:Name="Autoscroll" VerticalAlignment="Center" Margin="0,0,5,0" IsChecked="True" Checked="Autoscroll_Checked" Unchecked="Autoscroll_Checked"></CheckBox>
-                        <Button>Завершить процесс</Button>
-                        <Ellipse x:Name="Indicator" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
+                        <Button x:Name="KillProcess" Click="KillProcess_Click">Запустить процесс</Button>
+                        <Ellipse x:Name="IndicatorEl" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
                     </WrapPanel>
                 </Grid>
             </TabItem>

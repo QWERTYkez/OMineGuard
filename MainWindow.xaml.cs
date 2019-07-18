@@ -7,11 +7,16 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using PM = OMineManager.ProfileManager;
 using SM = OMineManager.SettingsManager;
+using MM = OMineManager.MinersManager;
+using System.Windows.Shapes;
+using System.Threading.Tasks;
 
 namespace OMineManager
 {
     public partial class MainWindow : Window
     {
+        public static Button KillProcessButton;
+        public static Ellipse Indicator;
         public static RichTextBox MinerLogBox;
         public static ScrollViewer LogScroller;
         public static bool AutoScroll = true;
@@ -23,6 +28,8 @@ namespace OMineManager
             IniProfile();
             MinerLogBox = MinerLog;
             LogScroller = LogSc;
+            Indicator = IndicatorEl;
+            KillProcessButton = KillProcess;
         }
 
         #region InitializeProfile
@@ -45,6 +52,8 @@ namespace OMineManager
                 MinerLog.FontSize = PM.Profile.LogTextSize;
                 TextSizeTB.Text = PM.Profile.LogTextSize.ToString();
             }
+            TextSizeSlider.Value = PM.Profile.LogTextSize;
+            TextSizeSlider.ValueChanged += TextSizeSlider_ValueChanged;
         }
         #endregion
         #region RigName
@@ -133,26 +142,74 @@ namespace OMineManager
         }
         private void ApplyConfig_Click(object sender, RoutedEventArgs e)
         {
-            int n = ConfigsList.SelectedIndex;
-            if (PM.Profile.StartedConfig == PM.Profile.ConfigsList[n].Name)
-            {
-                PM.Profile.StartedConfig = Name.Text;
-            }
-            PM.Profile.ConfigsList[n].Name = Name.Text;
-            PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
-            PM.Profile.ConfigsList[n].Miner = (SM.Miners)Miner.SelectedItem;
-            PM.Profile.ConfigsList[n].Pool = Pool.Text;
-            PM.Profile.ConfigsList[n].Port = Port.Text;
-            PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
-            PM.Profile.ConfigsList[n].Params = Params.Text;
-            PM.SaveProfile();
-            ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
-            ConfigsList.SelectedIndex = n;
+            ApplyConfigM();
         }
+        private bool ApplyConfigM()
+        {
+            int n = ConfigsList.SelectedIndex;
+
+            if (PM.Profile.ConfigsList[n].Name == Name.Text)
+            {
+                if (PM.Profile.StartedConfig == PM.Profile.ConfigsList[n].Name)
+                {
+                    PM.Profile.StartedConfig = Name.Text;
+                }
+                PM.Profile.ConfigsList[n].Name = Name.Text;
+                PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
+                PM.Profile.ConfigsList[n].Miner = (SM.Miners)Miner.SelectedItem;
+                PM.Profile.ConfigsList[n].Pool = Pool.Text;
+                PM.Profile.ConfigsList[n].Port = Port.Text;
+                PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
+                PM.Profile.ConfigsList[n].Params = Params.Text;
+                PM.SaveProfile();
+                ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+                ConfigsList.SelectedIndex = n;
+                return true;
+            }
+            else if (!PM.Profile.ConfigsList.Select(W => W.Name).Contains(Name.Text))
+            {
+                if (PM.Profile.StartedConfig == PM.Profile.ConfigsList[n].Name)
+                {
+                    PM.Profile.StartedConfig = Name.Text;
+                }
+                PM.Profile.ConfigsList[n].Name = Name.Text;
+                PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
+                PM.Profile.ConfigsList[n].Miner = (SM.Miners)Miner.SelectedItem;
+                PM.Profile.ConfigsList[n].Pool = Pool.Text;
+                PM.Profile.ConfigsList[n].Port = Port.Text;
+                PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
+                PM.Profile.ConfigsList[n].Params = Params.Text;
+                PM.SaveProfile();
+                ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+                ConfigsList.SelectedIndex = n;
+                return true;
+            }
+            else
+            {
+                try
+                {
+                    MSGThread.Abort();
+                }
+                catch { }
+                MSGtextBox.Visibility = Visibility.Visible;
+                Task.Run(() =>
+                {
+                    MSGThread = Thread.CurrentThread;
+                    Thread.Sleep(2000);
+                    context.Send(msgmethod, null);
+                });
+                return false;
+            }
+        }
+        Thread MSGThread;
+        private void msgmethod(object o)
+        {
+            MSGtextBox.Visibility = Visibility.Hidden;
+        }
+
         private void StartConfig_Click(object sender, RoutedEventArgs e)
         {
-            ApplyConfig_Click(null, null);
-            if (ConfigsList.SelectedIndex != -1)
+            if (ApplyConfigM())
             {
                 MinersManager.StartMiner(PM.Profile.ConfigsList[ConfigsList.SelectedIndex]);
                 PM.Profile.StartedConfig = (string)ConfigsList.SelectedItem;
@@ -226,6 +283,19 @@ namespace OMineManager
         }
         private void Autoscroll_Checked(object sender, RoutedEventArgs e)
         { AutoScroll = ((bool)Autoscroll.IsChecked); }
+        private void KillProcess_Click(object sender, RoutedEventArgs e)
+        {
+            string str = (string)KillProcessButton.Content;
+            if(str == "Завершить процесс")
+            {
+                MM.KillProcess();
+            }
+            if(str == "Запустить процесс")
+            {
+                MinersManager.StartMiner(PM.Profile.ConfigsList.Single(p => p.Name == PM.profile.StartedConfig));
+                MinerLogBox.Document.Blocks.Clear();
+            }
+        }
         #endregion
 
 

@@ -117,19 +117,57 @@ namespace OMineManager
                     Miner.BeginOutputReadLine();
 
                     Miner.WaitForExit();
-
                 });
                 
             }
             //Бмайнер
 
-            
+            MainWindow.KillProcessButton.Content = "Завершить процесс";
+            RunIndication();
         }
+        public static void KillProcess()
+        {
+            foreach (Process proc in Process.GetProcessesByName(Miner.ProcessName))
+            {
+                try
+                {
+                    proc.Kill();
+                }
+                catch { }
+            }
+            IndicationThread.Abort();
+            SetIndicationColor(Brushes.Red);
+            MainWindow.KillProcessButton.Content = "Запустить процесс";
+        }
+        #region Indicator
+        private static Thread IndicationThread;
+        private static void RunIndication()
+        {
+            Task.Run(()=> 
+            {
+                IndicationThread = Thread.CurrentThread;
+                while (true)
+                {
+                    MainWindow.context.Send(SetIndicationColor, Brushes.Lime);
+                    Thread.Sleep(500);
+                    MainWindow.context.Send(SetIndicationColor, null);
+                    Thread.Sleep(200);
+                }
+            });
+        }
+        private static void SetIndicationColor(object o)
+        {
+            MainWindow.Indicator.Fill = (Brush)o;
+        }
+        #endregion
 
         #region Logfile
         private static void proc_DataReceived(object sender, DataReceivedEventArgs e)
         {
-            MainWindow.context.Send(WriteToRichTextBox, e.Data);
+            if(e.Data != "")
+            {
+                MainWindow.context.Send(WriteToRichTextBox, e.Data + Environment.NewLine);
+            }
         }
         private static void ReadLog(string logfile)
         {
@@ -159,10 +197,10 @@ namespace OMineManager
         {
             string str = (string)t;
             WriteLog(str);
-            //if (MainWindow.AutoScroll)
-            //{
-            //    MainWindow.LogScroller.ScrollToEnd();
-            //}
+            if (MainWindow.AutoScroll)
+            {
+                MainWindow.LogScroller.ScrollToEnd();
+            }
         }
         public static void WriteLog(string str, Brush brush)
         {
@@ -173,9 +211,6 @@ namespace OMineManager
         }
         public static void WriteLog(string str)
         {
-            MainWindow.MinerLogBox.AppendText(str);
-            MainWindow.MinerLogBox.AppendText(str);
-            MainWindow.MinerLogBox.AppendText(str);
             MainWindow.MinerLogBox.AppendText(str);
         }
         #endregion
