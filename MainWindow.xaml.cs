@@ -1,32 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using SM = OMineManager.SettingsManager;
 using PM = OMineManager.ProfileManager;
-using System.Diagnostics;
-using System.Threading;
+using SM = OMineManager.SettingsManager;
 
 namespace OMineManager
 {
     public partial class MainWindow : Window
     {
+        public static RichTextBox MinerLogBox;
+        public static ScrollViewer LogScroller;
+        public static bool AutoScroll = true;
         public static SynchronizationContext context = SynchronizationContext.Current;
 
         public MainWindow()
         {
             InitializeComponent();
             IniProfile();
+            MinerLogBox = MinerLog;
+            LogScroller = LogSc;
         }
 
         #region InitializeProfile
@@ -44,6 +40,11 @@ namespace OMineManager
             { PM.Profile.ConfigsList = new List<Profile.Config>(); }
             ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
             ConfigsList.SelectedItem = PM.Profile.StartedConfig;
+            if(PM.Profile.LogTextSize != 0)
+            {
+                MinerLog.FontSize = PM.Profile.LogTextSize;
+                TextSizeTB.Text = PM.Profile.LogTextSize.ToString();
+            }
         }
         #endregion
         #region RigName
@@ -62,11 +63,13 @@ namespace OMineManager
             if (Selected == "Auto")
             {
                 GPUsSwitchHeader.Visibility = Visibility.Hidden;
+                GPUswitchB.Visibility = Visibility.Hidden;
                 PM.Profile.GPUsSwitch = null;
             }
             else
             {
                 GPUsSwitchHeader.Visibility = Visibility.Visible;
+                GPUswitchB.Visibility = Visibility.Visible;
                 byte k = Convert.ToByte(Selected);
                 if (PM.Profile.GPUsSwitch == null)
                 {
@@ -86,15 +89,11 @@ namespace OMineManager
                 }
                 for (byte n = 0; n < k; n++)
                 {
-                    WrapPanel WP = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
-                    {
-                        WP.Children.Add(new TextBlock { Foreground = Brushes.White, Text = "GPU" + n });
-                        CheckBox CB = new CheckBox { Name = "g" + n.ToString(), IsChecked = PM.Profile.GPUsSwitch[n] };
-                        CB.Checked += GPUCB_Checked;
-                        CB.Unchecked += GPUCB_Unchecked;
-                        WP.Children.Add(CB);
-                    }
-                    GPUswitchSP.Children.Add(WP);
+                    GPUswitchSP.Children.Add(new TextBlock { Foreground = Brushes.White, Text = "GPU" + n, FontSize=12 });
+                    CheckBox CB = new CheckBox { Name = "g" + n.ToString(), IsChecked = PM.Profile.GPUsSwitch[n], Margin = new Thickness(0, 0, 7, 0) };
+                    CB.Checked += GPUCB_Checked;
+                    CB.Unchecked += GPUCB_Unchecked;
+                    GPUswitchSP.Children.Add(CB);
                 }
             }
             PM.SaveProfile();
@@ -110,7 +109,6 @@ namespace OMineManager
             PM.SaveProfile();
         }
         #endregion
-
         #region Miner
         private void MinusConfig_Click(object sender, RoutedEventArgs e)
         {
@@ -159,6 +157,7 @@ namespace OMineManager
                 MinersManager.StartMiner(PM.Profile.ConfigsList[ConfigsList.SelectedIndex]);
                 PM.Profile.StartedConfig = (string)ConfigsList.SelectedItem;
                 PM.SaveProfile();
+                TabConroller.SelectedIndex = 2;
             }
         }
         private void ConfigsList_Selected(object sender, RoutedEventArgs e)
@@ -214,6 +213,21 @@ namespace OMineManager
         }
         #endregion
 
-        
+        #region MinerLog
+        private void TextSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (TextSizeTB != null)
+            {
+                MinerLog.FontSize = TextSizeSlider.Value;
+                TextSizeTB.Text = TextSizeSlider.Value.ToString();
+                PM.Profile.LogTextSize = TextSizeSlider.Value;
+                PM.SaveProfile();
+            }
+        }
+        private void Autoscroll_Checked(object sender, RoutedEventArgs e)
+        { AutoScroll = ((bool)Autoscroll.IsChecked); }
+        #endregion
+
+
     }
 }

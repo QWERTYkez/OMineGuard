@@ -13,7 +13,9 @@ namespace OMineManager
         public static Dictionary<string, Miners[]>
          MinersD = new Dictionary<string, Miners[]>
          {
-             { "Ethash", new Miners[] { Miners.Claymore } }
+             { "Ethash", new Miners[] { Miners.Claymore } },
+             { "Equihash(150,5)", new Miners[] { Miners.Gminer } },
+             { "CuckooCycle", new Miners[] { Miners.Bminer } }
          }; 
 
         public enum Miners
@@ -74,10 +76,16 @@ namespace OMineManager
 
     public class Profile
     {
+        public Profile()
+        {
+            LogTextSize = 0;
+        }
+
         public string StartedConfig;
         public string RigName;
         public bool[] GPUsSwitch;
         public List<Config> ConfigsList;
+        public double LogTextSize;
 
         public class Config
         {
