@@ -8,24 +8,6 @@ using Newtonsoft.Json;
 
 namespace OMineManager
 {
-    public static class SettingsManager
-    {
-        public static Dictionary<string, Miners[]>
-         MinersD = new Dictionary<string, Miners[]>
-         {
-             { "Ethash", new Miners[] { Miners.Claymore } },
-             { "Equihash(150,5)", new Miners[] { Miners.Gminer } },
-             { "CuckooCycle", new Miners[] { Miners.Bminer } }
-         }; 
-
-        public enum Miners
-        {
-            Claymore,
-            Gminer,
-            Bminer
-        }
-    }
-
     public static class ProfileManager
     {
         public static Profile profile;

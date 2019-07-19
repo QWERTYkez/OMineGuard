@@ -14,17 +14,47 @@ using System.Windows.Media;
 
 namespace OMineManager
 {
+    public static class SettingsManager
+    {
+        public static Dictionary<string, Miners[]>
+         MinersD = new Dictionary<string, Miners[]>
+         {
+             { "Ethash", new Miners[] { Miners.Claymore, Miners.Bminer } },
+             { "Equihash(96.5)", new Miners[] { Miners.Gminer } },
+             { "Equihash(144.5)", new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "Equihash(150.5)", new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "Equihash(192.7)", new Miners[] { Miners.Gminer } },
+             { "Equihash(200.9)", new Miners[] { Miners.Bminer } },
+             { "Equihash(210.9)", new Miners[] { Miners.Gminer } },
+             { "cuckARoo29", new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "cuckAToo31", new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "CuckooCycle", new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "Tensority", new Miners[] { Miners.Bminer } },
+             { "Zhash", new Miners[] { Miners.Bminer } }
+         };
+
+        public enum Miners
+        {
+            Claymore,
+            Gminer,
+            Bminer
+        }
+    }
+
     public static class MinersManager
     {
         public static RichTextBox MinetOutput;
         static Process Miner;
         public static DateTime StartMiningTime;
+        public static SM.Miners? StartedMiner;
+        public static string StartedProcessName;
         
         public static void StartMiner(Profile.Config Config)
         {
+            StartedMiner = Config.Miner;
             StartMiningTime = DateTime.Now;
             string DT = StartMiningTime.ToString("HH.mm.ss - dd.MM.yy");
-            string file = "";
+            StartedProcessName = "";
             string param = "";
             string logfile = $"logs/log {DT} {Config.Name}.txt";
             string dir = "";
@@ -32,7 +62,7 @@ namespace OMineManager
             if (Config.Miner == SM.Miners.Claymore)
             {
                 dir = "Claymore's Dual Miner";
-                file = "EthDcrMiner64.exe";
+                StartedProcessName = "EthDcrMiner64";
                 param = $" -epool {Config.Pool}:{Config.Port} " +
                     $"-ewal {Config.Wallet}.{PM.Profile.RigName} " +
                     $"-logfile \"{logfile}\" {Config.Params}";
@@ -56,7 +86,7 @@ namespace OMineManager
                 }
 
                 Miner = new Process();
-                Miner.StartInfo = new ProcessStartInfo($"{dir}/{file}", param);
+                Miner.StartInfo = new ProcessStartInfo($"{dir}/{StartedProcessName}", param);
                 Miner.StartInfo.UseShellExecute = false;
                 Miner.StartInfo.CreateNoWindow = true;
                 Miner.Start();
@@ -66,13 +96,34 @@ namespace OMineManager
             if (Config.Miner == SM.Miners.Gminer)
             {
                 dir = "Gminer";
-                file = "miner.exe";
+                StartedProcessName = "miner";
                 string algo = "";
 
                 switch (Config.Algoritm)
                 {
-                    case "Equihash(150,5)":
-                        algo = "150_5";
+                    case "Equihash(96.5)":
+                        algo = "equihash96_5";
+                        break;
+                    case "Equihash(144.5)":
+                        algo = "equihash144_5";
+                        break;
+                    case "Equihash(150.5)":
+                        algo = "equihash150_5";
+                        break;
+                    case "Equihash(192.7)":
+                        algo = "equihash192_7";
+                        break;
+                    case "Equihash(210.9)":
+                        algo = "equihash210_9";
+                        break;
+                    case "cuckARoo29":
+                        algo = "cuckaroo29";
+                        break;
+                    case "cuckAToo31":
+                        algo = "cuckatoo31";
+                        break;
+                    case "CuckooCycle":
+                        algo = "cuckoo";
                         break;
                 }
                 param = $"--algo {algo} --server {Config.Pool} --port {Config.Port} " +
@@ -98,7 +149,7 @@ namespace OMineManager
                 }
 
                 Miner = new Process();
-                Miner.StartInfo = new ProcessStartInfo($"{dir}/{file}", param);
+                Miner.StartInfo = new ProcessStartInfo($"{dir}/{StartedProcessName}", param);
                 Miner.StartInfo.UseShellExecute = false;
                 // set up output redirection
                 Miner.StartInfo.RedirectStandardOutput = true;
@@ -121,13 +172,98 @@ namespace OMineManager
                 
             }
             //Бмайнер
+            if (Config.Miner == SM.Miners.Bminer)
+            {
+                dir = "Bminer";
+                StartedProcessName = "bminer";
+                string algo = "";
 
+                switch (Config.Algoritm) //beam
+                {
+                    case "Equihash(144.5)":
+                        algo = "equihash1445";
+                        break;
+                    case "Equihash(150.5)":
+                        algo = "beam";
+                        break;
+                    case "Equihash(200.9)":
+                        algo = "stratum";
+                        break;
+                    case "Ethash":
+                        algo = "ethash";
+                        break;
+                    case "Tensority":
+                        algo = "tensority";
+                        break;
+                    case "CuckooCycle":
+                        algo = "aeternity";
+                        break;
+                    case "cuckARoo29":
+                        algo = "cuckaroo29d";
+                        break;
+                    case "cuckAToo31":
+                        algo = "cuckatoo31";
+                        break;
+                    case "Zhash":
+                        algo = "zhash";
+                        break;
+                }
+                param = $"-uri {algo}://{Config.Wallet}.{PM.Profile.RigName}@{Config.Pool}:{Config.Port} {Config.Params}";
+
+                if(algo == "equihash1445")
+                {
+                    param += " -pers Auto";
+                }
+
+                if (PM.Profile.GPUsSwitch != null)
+                {
+                    string di = "";
+                    int n = PM.Profile.GPUsSwitch.Length;
+                    for (int i = 0; i < n; i++)
+                    {
+                        if (PM.Profile.GPUsSwitch[i])
+                        {
+                            di += "," + i;
+                        }
+                        di = di.TrimStart(',');
+                    }
+                    if (di != "")
+                    {
+                        param += $" -devices {di}";
+                    }
+                }
+
+                Miner = new Process();
+                Miner.StartInfo = new ProcessStartInfo($"{dir}/{StartedProcessName}", param);
+                Miner.StartInfo.UseShellExecute = false;
+                // set up output redirection
+                Miner.StartInfo.RedirectStandardOutput = true;
+                Miner.StartInfo.RedirectStandardError = true;
+                Miner.EnableRaisingEvents = true;
+                Miner.StartInfo.CreateNoWindow = true;
+                // see below for output handler
+                Miner.ErrorDataReceived += proc_DataReceived;
+                Miner.OutputDataReceived += proc_DataReceived;
+
+                Task.Run(() =>
+                {
+                    Miner.Start();
+
+                    Miner.BeginErrorReadLine();
+                    Miner.BeginOutputReadLine();
+
+                    Miner.WaitForExit();
+
+                });
+
+            }
+            MainWindow.MinerLogBox.Document.Blocks.Clear();
             MainWindow.KillProcessButton.Content = "Завершить процесс";
             RunIndication();
         }
         public static void KillProcess()
         {
-            foreach (Process proc in Process.GetProcessesByName(Miner.ProcessName))
+            foreach (Process proc in Process.GetProcessesByName(StartedProcessName))
             {
                 try
                 {
@@ -146,13 +282,22 @@ namespace OMineManager
             Task.Run(()=> 
             {
                 IndicationThread = Thread.CurrentThread;
-                while (true)
+                if (Process.GetProcessesByName(StartedProcessName).Length == 0)
+                {
+                    while (Process.GetProcessesByName(StartedProcessName).Length == 0)
+                    {
+                        Thread.Sleep(50);
+                    }
+                }
+                while (Process.GetProcessesByName(StartedProcessName).Length != 0)
                 {
                     MainWindow.context.Send(SetIndicationColor, Brushes.Lime);
-                    Thread.Sleep(500);
+                    Thread.Sleep(700);
                     MainWindow.context.Send(SetIndicationColor, null);
-                    Thread.Sleep(200);
+                    Thread.Sleep(300);
                 }
+                MainWindow.context.Send(SetIndicationColor, Brushes.Red);
+                MainWindow.context.Send((object o) => { MainWindow.KillProcessButton.Content = "Запустить процесс"; }, null);
             });
         }
         private static void SetIndicationColor(object o)
@@ -160,7 +305,6 @@ namespace OMineManager
             MainWindow.Indicator.Fill = (Brush)o;
         }
         #endregion
-
         #region Logfile
         private static void proc_DataReceived(object sender, DataReceivedEventArgs e)
         {
@@ -172,7 +316,15 @@ namespace OMineManager
         private static void ReadLog(string logfile)
         {
             long end = 0;
-            while (!Miner.HasExited)
+
+            if(Process.GetProcessesByName(StartedProcessName).Length == 0)
+            {
+                while (Process.GetProcessesByName(StartedProcessName).Length != 0)
+                {
+                    Thread.Sleep(50);
+                }
+            }
+            while (Process.GetProcessesByName(StartedProcessName).Length != 0)
             {
                 try
                 {
@@ -196,7 +348,40 @@ namespace OMineManager
         public static void WriteToRichTextBox(object t)
         {
             string str = (string)t;
-            WriteLog(str);
+
+            if(StartedMiner == SM.Miners.Claymore)
+            {
+                bool[] red = 
+                {
+                    str.Contains("Cannot connect to"),
+                    str.Contains("Failed to connect")
+                };
+                bool[] green =
+                {
+                    str.Contains(" Connected ")
+                };
+                if (red.Contains(true))
+                {
+                    WriteLog(str, Brushes.Red);
+                }
+                else if (green.Contains(true))
+                {
+                    WriteLog(str, Brushes.Lime);
+                }
+                else
+                {
+                    WriteLog(str);
+                }
+            }
+            if(StartedMiner == SM.Miners.Gminer)
+            {
+                WriteLog(str);
+            }
+            if (StartedMiner == SM.Miners.Bminer)
+            {
+                WriteLog(str);
+            }
+
             if (MainWindow.AutoScroll)
             {
                 MainWindow.LogScroller.ScrollToEnd();
@@ -207,7 +392,7 @@ namespace OMineManager
             TextRange tr = new TextRange(MainWindow.MinerLogBox.Document.ContentEnd,
                 MainWindow.MinerLogBox.Document.ContentEnd);
             tr.Text = str;
-            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Red);
+            tr.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
         }
         public static void WriteLog(string str)
         {

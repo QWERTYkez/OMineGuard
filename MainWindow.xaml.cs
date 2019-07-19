@@ -206,7 +206,6 @@ namespace OMineManager
         {
             MSGtextBox.Visibility = Visibility.Hidden;
         }
-
         private void StartConfig_Click(object sender, RoutedEventArgs e)
         {
             if (ApplyConfigM())
@@ -269,7 +268,6 @@ namespace OMineManager
             }
         }
         #endregion
-
         #region MinerLog
         private void TextSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -293,11 +291,8 @@ namespace OMineManager
             if(str == "Запустить процесс")
             {
                 MinersManager.StartMiner(PM.Profile.ConfigsList.Single(p => p.Name == PM.profile.StartedConfig));
-                MinerLogBox.Document.Blocks.Clear();
             }
         }
         #endregion
-
-
     }
 }
