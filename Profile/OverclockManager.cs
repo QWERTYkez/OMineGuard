@@ -17,6 +17,8 @@ namespace OMineManager
         private static IHardware[] GPUs;
         private static List<ISensor> gpuTempSensors = new List<ISensor>();
         private static List<ISensor> gpuFanSensors = new List<ISensor>();
+        private static List<ISensor> gpuCoreClockSensors = new List<ISensor>();
+        private static List<ISensor> gpuMemoryClockSensors = new List<ISensor>();
 
         public static void Initialize()
         {
@@ -43,6 +45,9 @@ namespace OMineManager
                 }
                 catch { }
             }
+
+            /////////////////////
+
         }
         private static void ConnectToOHM()
         {
@@ -58,9 +63,17 @@ namespace OMineManager
                     {
                         gpuTempSensors.Add(s);
                     }
-                    if(s.Name == "GPU Fan")
+                    if(s.Name == "GPU Fan" && s.SensorType == SensorType.Control)
                     {
                         gpuFanSensors.Add(s);
+                    }
+                    if (s.Name == "GPU Core" && s.SensorType == SensorType.Clock)
+                    {
+                        gpuCoreClockSensors.Add(s);
+                    }
+                    if (s.Name == "GPU Memory" && s.SensorType == SensorType.Clock)
+                    {
+                        gpuMemoryClockSensors.Add(s);
                     }
                 }
             }
@@ -82,6 +95,8 @@ namespace OMineManager
                         }
                         SetGPUsTemps();
                         SetGPUsFans();
+                        SetGPUsCoreClock();
+                        SetGPUsMemoryClock();
                     }
                     catch { }
                     Thread.Sleep(1000);
@@ -93,7 +108,7 @@ namespace OMineManager
             string Temps = "";
             foreach (ISensor s in gpuTempSensors)
             {
-                Temps += $", {s.Value.GetValueOrDefault().ToString()}℃";
+                Temps += $", {s.Value.GetValueOrDefault().ToString()}";
             }
             if (Temps != "")
             {
@@ -106,13 +121,41 @@ namespace OMineManager
             string Temps = "";
             foreach (ISensor s in gpuFanSensors)
             {
-                Temps += $", {s.Value.GetValueOrDefault().ToString()}%";
+                Temps += $", {s.Value.GetValueOrDefault().ToString()}";
             }
             if (Temps != "")
             {
                 Temps = Temps.TrimStart(',', ' ');
             }
             MainWindow.context.Send((object o) => { MainWindow.This.GPUsFans.Text = Temps; }, null);
+        }
+        private static void SetGPUsCoreClock()
+        {
+            string Temps = "";
+            foreach (ISensor s in gpuCoreClockSensors)
+            {
+                double x = Math.Round(Convert.ToDouble(s.Value), MidpointRounding.AwayFromZero);
+                Temps += $", {x.ToString()}";
+            }
+            if (Temps != "")
+            {
+                Temps = Temps.TrimStart(',', ' ');
+            }
+            MainWindow.context.Send((object o) => { MainWindow.This.GPUsCoreClock.Text = Temps; }, null);
+        }
+        private static void SetGPUsMemoryClock()
+        {
+            string Temps = "";
+            foreach (ISensor s in gpuMemoryClockSensors)
+            {
+                double x = Math.Round(Convert.ToDouble(s.Value), MidpointRounding.AwayFromZero);
+                Temps += $", {x.ToString()}";
+            }
+            if (Temps != "")
+            {
+                Temps = Temps.TrimStart(',', ' ');
+            }
+            MainWindow.context.Send((object o) => { MainWindow.This.GPUsMemoryClocks.Text = Temps; }, null);
         }
     }
 }
