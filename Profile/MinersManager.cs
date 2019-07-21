@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using SM = OMineManager.SettingsManager;
 using PM = OMineManager.ProfileManager;
+using OCM = OMineManager.OverclockManager;
 using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -19,18 +19,30 @@ namespace OMineManager
         public static Dictionary<string, Miners[]>
          MinersD = new Dictionary<string, Miners[]>
          {
-             { "Ethash", new Miners[] { Miners.Claymore, Miners.Bminer } },
-             { "Equihash(96.5)", new Miners[] { Miners.Gminer } },
-             { "Equihash(144.5)", new Miners[] { Miners.Gminer, Miners.Bminer } },
-             { "Equihash(150.5)", new Miners[] { Miners.Gminer, Miners.Bminer } },
-             { "Equihash(192.7)", new Miners[] { Miners.Gminer } },
-             { "Equihash(200.9)", new Miners[] { Miners.Bminer } },
-             { "Equihash(210.9)", new Miners[] { Miners.Gminer } },
-             { "cuckARoo29", new Miners[] { Miners.Gminer, Miners.Bminer } },
-             { "cuckAToo31", new Miners[] { Miners.Gminer, Miners.Bminer } },
-             { "CuckooCycle", new Miners[] { Miners.Gminer, Miners.Bminer } },
-             { "Tensority", new Miners[] { Miners.Bminer } },
-             { "Zhash", new Miners[] { Miners.Bminer } }
+             { "Ethash",
+                 new Miners[] { Miners.Claymore, Miners.Bminer } },
+             { "Equihash(96.5)",
+                 new Miners[] { Miners.Gminer } },
+             { "Equihash(144.5)",
+                 new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "Equihash(150.5)",
+                 new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "Equihash(192.7)",
+                 new Miners[] { Miners.Gminer } },
+             { "Equihash(200.9)",
+                 new Miners[] { Miners.Bminer } },
+             { "Equihash(210.9)",
+                 new Miners[] { Miners.Gminer } },
+             { "cuckARoo29",
+                 new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "cuckAToo31",
+                 new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "CuckooCycle",
+                 new Miners[] { Miners.Gminer, Miners.Bminer } },
+             { "Tensority",
+                 new Miners[] { Miners.Bminer } },
+             { "Zhash",
+                 new Miners[] { Miners.Bminer } }
          };
 
         public enum Miners
@@ -54,10 +66,10 @@ namespace OMineManager
             StartedMiner = Config.Miner;
             StartMiningTime = DateTime.Now;
             string DT = StartMiningTime.ToString("HH.mm.ss - dd.MM.yy");
-            StartedProcessName = "";
-            string param = "";
+            StartedProcessName = default;
+            string param = default;
             string logfile = $"logs/log {DT} {Config.Name}.txt";
-            string dir = "";
+            string dir = default;
             //Клеймор
             if (Config.Miner == SM.Miners.Claymore)
             {
@@ -208,7 +220,7 @@ namespace OMineManager
                         algo = "zhash";
                         break;
                 }
-                param = $"-uri {algo}://{Config.Wallet}.{PM.Profile.RigName}@{Config.Pool}:{Config.Port} {Config.Params}";
+                param = $"-uri {algo}://{Config.Wallet}.{PM.Profile.RigName}@{Config.Pool}:{Config.Port} {Config.Params} -logfile \"{logfile}\"";
 
                 if(algo == "equihash1445")
                 {
@@ -257,8 +269,9 @@ namespace OMineManager
                 });
 
             }
-            MainWindow.MinerLogBox.Document.Blocks.Clear();
-            MainWindow.KillProcessButton.Content = "Завершить процесс";
+            MainWindow.This.MinerLog.Document.Blocks.Clear();
+            MainWindow.This.KillProcess.Content = "Завершить процесс";
+            MainWindow.This.KillProcess2.Content = "Завершить процесс";
             RunIndication();
         }
         public static void KillProcess()
@@ -271,9 +284,14 @@ namespace OMineManager
                 }
                 catch { }
             }
-            IndicationThread.Abort();
+            try
+            {
+                IndicationThread.Abort();
+            }
+            catch { }
             SetIndicationColor(Brushes.Red);
-            MainWindow.KillProcessButton.Content = "Запустить процесс";
+            MainWindow.This.KillProcess.Content = "Запустить процесс";
+            MainWindow.This.KillProcess2.Content = "Запустить процесс";
         }
         #region Indicator
         private static Thread IndicationThread;
@@ -297,12 +315,17 @@ namespace OMineManager
                     Thread.Sleep(300);
                 }
                 MainWindow.context.Send(SetIndicationColor, Brushes.Red);
-                MainWindow.context.Send((object o) => { MainWindow.KillProcessButton.Content = "Запустить процесс"; }, null);
+                MainWindow.context.Send((object o) => 
+                {
+                    MainWindow.This.KillProcess.Content = "Запустить процесс";
+                    MainWindow.This.KillProcess2.Content = "Запустить процесс";
+                }, null);
             });
         }
         private static void SetIndicationColor(object o)
         {
-            MainWindow.Indicator.Fill = (Brush)o;
+            MainWindow.This.IndicatorEl.Fill = (Brush)o;
+            MainWindow.This.IndicatorEl2.Fill = (Brush)o;
         }
         #endregion
         #region Logfile
@@ -384,22 +407,20 @@ namespace OMineManager
 
             if (MainWindow.AutoScroll)
             {
-                MainWindow.LogScroller.ScrollToEnd();
+                MainWindow.This.LogScroller.ScrollToEnd();
             }
         }
         public static void WriteLog(string str, Brush brush)
         {
-            TextRange tr = new TextRange(MainWindow.MinerLogBox.Document.ContentEnd,
-                MainWindow.MinerLogBox.Document.ContentEnd);
+            TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
+                MainWindow.This.MinerLog.Document.ContentEnd);
             tr.Text = str;
             tr.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
         }
         public static void WriteLog(string str)
         {
-            MainWindow.MinerLogBox.AppendText(str);
+            MainWindow.This.MinerLog.AppendText(str);
         }
         #endregion
     }
 }
-
-

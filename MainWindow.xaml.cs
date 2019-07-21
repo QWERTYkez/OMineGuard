@@ -8,28 +8,25 @@ using System.Windows.Media;
 using PM = OMineManager.ProfileManager;
 using SM = OMineManager.SettingsManager;
 using MM = OMineManager.MinersManager;
-using System.Windows.Shapes;
+using OCM = OMineManager.OverclockManager;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace OMineManager
 {
     public partial class MainWindow : Window
     {
-        public static Button KillProcessButton;
-        public static Ellipse Indicator;
-        public static RichTextBox MinerLogBox;
-        public static ScrollViewer LogScroller;
+        public static MainWindow This;
         public static bool AutoScroll = true;
         public static SynchronizationContext context = SynchronizationContext.Current;
 
         public MainWindow()
         {
             InitializeComponent();
+            This = this;
             IniProfile();
-            MinerLogBox = MinerLog;
-            LogScroller = LogSc;
-            Indicator = IndicatorEl;
-            KillProcessButton = KillProcess;
+            OCM.Initialize();
+
         }
 
         #region InitializeProfile
@@ -148,13 +145,13 @@ namespace OMineManager
         {
             int n = ConfigsList.SelectedIndex;
 
-            if (PM.Profile.ConfigsList[n].Name == Name.Text)
+            if (PM.Profile.ConfigsList[n].Name == MiningConfigName.Text)
             {
                 if (PM.Profile.StartedConfig == PM.Profile.ConfigsList[n].Name)
                 {
-                    PM.Profile.StartedConfig = Name.Text;
+                    PM.Profile.StartedConfig = MiningConfigName.Text;
                 }
-                PM.Profile.ConfigsList[n].Name = Name.Text;
+                PM.Profile.ConfigsList[n].Name = MiningConfigName.Text;
                 PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
                 PM.Profile.ConfigsList[n].Miner = (SM.Miners)Miner.SelectedItem;
                 PM.Profile.ConfigsList[n].Pool = Pool.Text;
@@ -166,13 +163,13 @@ namespace OMineManager
                 ConfigsList.SelectedIndex = n;
                 return true;
             }
-            else if (!PM.Profile.ConfigsList.Select(W => W.Name).Contains(Name.Text))
+            else if (!PM.Profile.ConfigsList.Select(W => W.Name).Contains(MiningConfigName.Text))
             {
                 if (PM.Profile.StartedConfig == PM.Profile.ConfigsList[n].Name)
                 {
-                    PM.Profile.StartedConfig = Name.Text;
+                    PM.Profile.StartedConfig = MiningConfigName.Text;
                 }
-                PM.Profile.ConfigsList[n].Name = Name.Text;
+                PM.Profile.ConfigsList[n].Name = MiningConfigName.Text;
                 PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
                 PM.Profile.ConfigsList[n].Miner = (SM.Miners)Miner.SelectedItem;
                 PM.Profile.ConfigsList[n].Pool = Pool.Text;
@@ -204,7 +201,7 @@ namespace OMineManager
         Thread MSGThread;
         private void msgmethod(object o)
         {
-            MSGtextBox.Visibility = Visibility.Hidden;
+            MSGtextBox.Visibility = Visibility.Collapsed;
         }
         private void StartConfig_Click(object sender, RoutedEventArgs e)
         {
@@ -221,7 +218,7 @@ namespace OMineManager
             int n = ConfigsList.SelectedIndex;
             if (n == -1)
             {
-                Name.Text = "";
+                MiningConfigName.Text = "";
                 Algotitm.SelectedIndex = -1;
                 Miner.SelectedIndex = -1;
                 Pool.Text = "";
@@ -247,7 +244,7 @@ namespace OMineManager
                 {
                     Miner.SelectedIndex = -1;
                 }
-                Name.Text = PM.Profile.ConfigsList[n].Name;
+                MiningConfigName.Text = PM.Profile.ConfigsList[n].Name;
                 Pool.Text = PM.Profile.ConfigsList[n].Pool;
                 Port.Text = PM.Profile.ConfigsList[n].Port;
                 Wallet.Text = PM.Profile.ConfigsList[n].Wallet;
@@ -283,7 +280,7 @@ namespace OMineManager
         { AutoScroll = ((bool)Autoscroll.IsChecked); }
         private void KillProcess_Click(object sender, RoutedEventArgs e)
         {
-            string str = (string)KillProcessButton.Content;
+            string str = (string)KillProcess.Content;
             if(str == "Завершить процесс")
             {
                 MM.KillProcess();
