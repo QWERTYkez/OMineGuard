@@ -203,9 +203,12 @@ namespace OMineManager
         {
             if (ApplyConfigM())
             {
-                MinersManager.StartMiner(PM.Profile.ConfigsList[ConfigsList.SelectedIndex]);
-                PM.Profile.StartedConfig = (string)ConfigsList.SelectedItem;
+                Profile.Config PC = PM.Profile.ConfigsList[ConfigsList.SelectedIndex];
+                PM.Profile.StartedConfig = PC.Name;
                 PM.SaveProfile();
+                Profile.Overclock OC = PM.Profile.ClocksList.Where(oc => oc.Name == PC.Overclock).ToArray()[0];
+                OCM.ApplyOverclock(OC);
+                MM.StartMiner(PC);
                 TabConroller.SelectedIndex = 2;
             }
         }
@@ -296,7 +299,6 @@ namespace OMineManager
             }
         }
         #endregion
-
         #region Clock
         private void MinuClock_Click(object sender, RoutedEventArgs e)
         {
@@ -409,7 +411,7 @@ namespace OMineManager
                         if (FanSpeed.Text != "" && !(bool)SwitcherFS.IsChecked)
                         {
                             PM.Profile.ClocksList[n].FanSpeed =
-                                JsonConvert.DeserializeObject<int[]>($"[{FanSpeed.Text}]");
+                                JsonConvert.DeserializeObject<uint[]>($"[{FanSpeed.Text}]");
                         }
                         else
                         {
@@ -436,7 +438,11 @@ namespace OMineManager
         {
             if (SaveClock())
             {
-
+                int n = ClocksList.SelectedIndex;
+                if (n != -1)
+                {
+                    OCM.ApplyOverclock(PM.Profile.ClocksList[ClocksList.SelectedIndex]);
+                }
             }
         }
         private void ClocksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -476,6 +482,24 @@ namespace OMineManager
             {
                 CB.IsChecked = false;
                 foreach (int x in prams)
+                {
+                    str += To5Char(x.ToString());
+                }
+                TB.Text = " " + str.TrimStart(',');
+            }
+        }
+        private void SetParam(uint[] prams, CheckBox CB, TextBox TB)
+        {
+            string str = "";
+            if (prams == null)
+            {
+                CB.IsChecked = true;
+                TB.Text = "";
+            }
+            else
+            {
+                CB.IsChecked = false;
+                foreach (uint x in prams)
                 {
                     str += To5Char(x.ToString());
                 }

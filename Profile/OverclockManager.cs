@@ -45,7 +45,7 @@ namespace OMineManager
                 }
                 catch { }
             }
-            if (CM.GpuEntries[CM.GpuEntries.Length-1].PowerLimitCur == 0)
+            if (CM.GpuEntries[CM.GpuEntries.Length - 1].PowerLimitCur == 0)
             { GPUsCount = CM.GpuEntries.Length - 1; }
         }
         private static void ConnectToOHM()
@@ -127,6 +127,121 @@ namespace OMineManager
             for (int i = ch.Length - 1, j = cc.Length - 1; i > -1; i--, j--)
             { cc[j] = ch[i]; }
             return $"{cc[0]}{cc[1]}{cc[2]}{cc[3]}{cc[4]}";
+        }
+
+        public static void ApplyOverclock(Profile.Overclock OC)
+        {
+            Task.Run(() => 
+            {
+                ControlMemory nConf = CM;
+
+                for (int i = 0; i < nConf.GpuEntries.Length; i++)
+                {
+                    try
+                    {
+                        if (OC.PowLim != null)
+                        {
+                            if (OC.PowLim.Length > i)
+                            {
+                                if (OC.PowLim[i] > nConf.GpuEntries[i].PowerLimitMax)
+                                {
+                                    nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitMax;
+                                }
+                                else if (OC.PowLim[i] < nConf.GpuEntries[i].PowerLimitMin)
+                                {
+                                    nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitMin;
+                                }
+                                else
+                                {
+                                    nConf.GpuEntries[i].PowerLimitCur = OC.PowLim[i];
+                                }
+                            }
+                            else { nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitDef; }
+                        }
+                        else { nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitDef; }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        if (OC.CoreClock != null)
+                        {
+                            if (OC.CoreClock.Length > i)
+                            {
+                                if (OC.CoreClock[i] * 1000 > nConf.GpuEntries[i].CoreClockBoostMax)
+                                {
+                                    nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostMax;
+                                }
+                                else if (OC.CoreClock[i] * 1000 < nConf.GpuEntries[i].CoreClockBoostMin)
+                                {
+                                    nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostMin;
+                                }
+                                else
+                                {
+                                    nConf.GpuEntries[i].CoreClockBoostCur = OC.CoreClock[i] * 1000;
+                                }
+                            }
+                            else { nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostDef; }
+                        }
+                        else { nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostDef; }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        if (OC.MemoryClock != null)
+                        {
+                            if (OC.MemoryClock.Length > i)
+                            {
+                                if (OC.MemoryClock[i] * 1000 > nConf.GpuEntries[i].MemoryClockBoostMax)
+                                {
+                                    nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostMax;
+                                }
+                                else if (OC.MemoryClock[i] * 1000 < nConf.GpuEntries[i].MemoryClockBoostMin)
+                                {
+                                    nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostMin;
+                                }
+                                else
+                                {
+                                    nConf.GpuEntries[i].MemoryClockBoostCur = OC.MemoryClock[i] * 1000;
+                                }
+                            }
+                            else { nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostDef; }
+                        }
+                        else { nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostDef; }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        if (OC.FanSpeed != null)
+                        {
+                            if (OC.FanSpeed.Length > i)
+                            {
+                                nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.None;
+                                if (OC.FanSpeed[i] > nConf.GpuEntries[i].FanSpeedMax)
+                                {
+                                    nConf.GpuEntries[i].FanSpeedCur = nConf.GpuEntries[i].FanSpeedMax;
+                                }
+                                else if (OC.FanSpeed[i] < nConf.GpuEntries[i].FanSpeedMin)
+                                {
+                                    nConf.GpuEntries[i].FanSpeedCur = nConf.GpuEntries[i].FanSpeedMin;
+                                }
+                                else
+                                {
+                                    nConf.GpuEntries[i].FanSpeedCur = OC.FanSpeed[i];
+                                }
+                            }
+                            else { nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
+                        }
+                        else { nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
+                    }
+                    catch { }
+                }
+
+                CM = nConf;
+                CM.CommitChanges();
+            });
         }
     }
 }

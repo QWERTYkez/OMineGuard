@@ -106,7 +106,7 @@ namespace OMineManager
             public int[] PowLim;
             public int[] CoreClock;
             public int[] MemoryClock;
-            public int[] FanSpeed;
+            public uint[] FanSpeed;
         }
     }
 }
