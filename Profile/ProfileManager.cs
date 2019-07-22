@@ -65,9 +65,9 @@ namespace OMineManager
             ClocksList = new List<Overclock>();
         }
 
+        public string RigName;
         public string StartedConfig;
         public string StartedClock;
-        public string RigName;
         public bool[] GPUsSwitch;
         public List<Config> ConfigsList;
         public List<Overclock> ClocksList;
@@ -83,6 +83,7 @@ namespace OMineManager
                 Pool = "";
                 Wallet = "";
                 Params = "";
+                Overclock = "";
             }
 
             public string Name;
@@ -92,6 +93,7 @@ namespace OMineManager
             public string Port;
             public string Wallet;
             public string Params;
+            public string Overclock;
         }
         public class Overclock
         {

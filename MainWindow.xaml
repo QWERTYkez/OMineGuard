@@ -85,10 +85,9 @@
                         <TextBox Grid.Row="2" Grid.Column="4" x:Name="Port" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
                         <TextBlock Grid.Row="3" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="16" HorizontalAlignment="Right">Кошелек:</TextBlock>
                         <TextBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="5" x:Name="Wallet" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
-                        <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="6" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="5" FontSize="18">Дополнительные парамаетры:</TextBlock>
+                        <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="6" x:Name="DopParam" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="5" FontSize="18">Дополнительные парамаетры:</TextBlock>
                         <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="6" x:Name="Params" Margin="3" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"></TextBox>
                     </Grid>
-                    <TextBlock Grid.Row="3" x:Name="MSGtextBox" HorizontalAlignment="Center" FontSize="26" FontWeight="Bold" Foreground="Black" Visibility="Collapsed">Конфиг с таким именем уже существует</TextBlock>
                 </Grid>
             </TabItem>
             <TabItem Header="Разгон (MSI Afterburner)">

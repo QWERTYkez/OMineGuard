@@ -35,6 +35,7 @@ namespace OMineManager
         {
             PM.Initialize();
             Algotitm.ItemsSource = SM.MinersD.Keys;
+            Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
             GPUsCB.ItemsSource = new string[] { "Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" };
             if (PM.Profile.GPUsSwitch != null)
             { GPUsCB.SelectedIndex = PM.Profile.GPUsSwitch.Length; }
@@ -164,6 +165,7 @@ namespace OMineManager
                     PM.Profile.ConfigsList[n].Port = Port.Text;
                     PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
                     PM.Profile.ConfigsList[n].Params = Params.Text;
+                    PM.Profile.ConfigsList[n].Overclock = Overclock.Text;
                     PM.SaveProfile();
                     ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
                     ConfigsList.SelectedIndex = n;
@@ -176,7 +178,9 @@ namespace OMineManager
                         MSGThread.Abort();
                     }
                     catch { }
-                    MSGtextBox.Visibility = Visibility.Visible;
+                    DopParam.Text = "Конфиг с таким именем уже существует";
+                    DopParam.FontWeight = FontWeights.Bold;
+                    DopParam.FontSize = 26;
                     Task.Run(() =>
                     {
                         MSGThread = Thread.CurrentThread;
@@ -191,7 +195,9 @@ namespace OMineManager
         Thread MSGThread;
         private void msgmethod(object o)
         {
-            MSGtextBox.Visibility = Visibility.Collapsed;
+            DopParam.Text = "Дополнительные парамаетры:";
+            DopParam.FontWeight = FontWeights.Normal;
+            DopParam.FontSize = 18;
         }
         private void StartConfig_Click(object sender, RoutedEventArgs e)
         {
@@ -211,6 +217,7 @@ namespace OMineManager
                 MiningConfigName.Text = "";
                 Algotitm.SelectedIndex = -1;
                 Miner.SelectedIndex = -1;
+                Overclock.SelectedIndex = -1;
                 Pool.Text = "";
                 Port.Text = "";
                 Wallet.Text = "";
@@ -233,6 +240,14 @@ namespace OMineManager
                 else
                 {
                     Miner.SelectedIndex = -1;
+                }
+                if (PM.Profile.ConfigsList[n].Overclock != "")
+                {
+                    Overclock.SelectedItem = PM.Profile.ConfigsList[n].Overclock;
+                }
+                else
+                {
+                    Overclock.SelectedIndex = -1;
                 }
                 MiningConfigName.Text = PM.Profile.ConfigsList[n].Name;
                 Pool.Text = PM.Profile.ConfigsList[n].Pool;
@@ -296,6 +311,21 @@ namespace OMineManager
                 ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
                 ClocksList.SelectedIndex = -1;
                 PM.SaveProfile();
+                Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
+
+                string OC = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
+                if(PM.Profile.ConfigsList.Select(w => w.Overclock).Contains(OC))
+                {
+                    foreach (Profile.Config PC in PM.Profile.ConfigsList)
+                    {
+                        if(PC.Overclock == OC)
+                        {
+                            PC.Overclock = "";
+                            PM.SaveProfile();
+                        }
+                    }
+                    Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
+                }
             }
         }
         private void PlusClock_Click(object sender, RoutedEventArgs e)
@@ -303,6 +333,8 @@ namespace OMineManager
             PM.Profile.ClocksList.Add(new Profile.Overclock());
             ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
             ClocksList.SelectedIndex = PM.Profile.ClocksList.Count - 1;
+            Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
+            Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
         }
         private void SaveClock_Click(object sender, RoutedEventArgs e)
         {
@@ -314,7 +346,7 @@ namespace OMineManager
             if (n != -1)
             {
                 if (PM.Profile.ClocksList[n].Name == ClockName.Text ||
-                    !PM.Profile.ClocksList.Select(W => W.Name).Contains(ClockName.Text))
+                    !(new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name)).Contains(ClockName.Text))
                 {
                     if (PM.Profile.StartedClock == PM.Profile.ClocksList[n].Name)
                     {
@@ -392,6 +424,8 @@ namespace OMineManager
                     PM.SaveProfile();
                     ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
                     ClocksList.SelectedIndex = n;
+                    Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
+                    Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
                     return true;
                 }
                 else { return false; }
