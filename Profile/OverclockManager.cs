@@ -14,9 +14,9 @@ namespace OMineManager
     public static class OverclockManager
     {
         private static ControlMemory CM;
+        private static int GPUsCount;
         private static IHardware[] GPUs;
         private static List<ISensor> gpuTempSensors = new List<ISensor>();
-        private static List<ISensor> gpuFanSensors = new List<ISensor>();
         private static List<ISensor> gpuCoreClockSensors = new List<ISensor>();
         private static List<ISensor> gpuMemoryClockSensors = new List<ISensor>();
 
@@ -45,9 +45,8 @@ namespace OMineManager
                 }
                 catch { }
             }
-
-            /////////////////////
-
+            if (CM.GpuEntries[CM.GpuEntries.Length-1].PowerLimitCur == 0)
+            { GPUsCount = CM.GpuEntries.Length - 1; }
         }
         private static void ConnectToOHM()
         {
@@ -63,10 +62,6 @@ namespace OMineManager
                     {
                         gpuTempSensors.Add(s);
                     }
-                    if(s.Name == "GPU Fan" && s.SensorType == SensorType.Control)
-                    {
-                        gpuFanSensors.Add(s);
-                    }
                     if (s.Name == "GPU Core" && s.SensorType == SensorType.Clock)
                     {
                         gpuCoreClockSensors.Add(s);
@@ -80,7 +75,6 @@ namespace OMineManager
 
             StartMonitoring();
         }
-
         private static void StartMonitoring()
         {
             Task.Run(() =>
@@ -89,73 +83,50 @@ namespace OMineManager
                 {
                     try
                     {
-                        foreach (IHardware h in GPUs)
+                        CM.ReloadAll();
+                        string[] MS = new string[4];
+                        for (int i = 0; i < GPUsCount; i++)
                         {
-                            h.Update();
+                            MS[0] += To5Char(CM.GpuEntries[i].PowerLimitCur.ToString() + "%");
+                            MS[1] += To5Char((CM.GpuEntries[i].CoreClockBoostCur / 1000).ToString());
+                            MS[2] += To5Char((CM.GpuEntries[i].MemoryClockBoostCur / 1000).ToString());
+                            MS[3] += To5Char((CM.GpuEntries[i].FanSpeedCur).ToString() + "%");
                         }
-                        SetGPUsTemps();
-                        SetGPUsFans();
-                        SetGPUsCoreClock();
-                        SetGPUsMemoryClock();
+                        MainWindow.context.Send((object o) => { MainWindow.This.GPUsPowerLimit.Text = MS[0]; }, null);
+                        MainWindow.context.Send((object o) => { MainWindow.This.GPUsCoreClock.Text = MS[1]; }, null);
+                        MainWindow.context.Send((object o) => { MainWindow.This.GPUsMemoryClocks.Text = MS[2]; }, null);
+                        MainWindow.context.Send((object o) => { MainWindow.This.GPUsFans.Text = MS[3]; }, null);
+                    }
+                    catch { }
+                    try
+                    {
+                        for (int i = 0; i < GPUsCount; i++)
+                        {
+                            GPUs[i].Update();
+                        }
+                        string[] MS = new string[3];
+                        for (int i = 0; i < GPUsCount; i++)
+                        {
+                            MS[0] += To5Char(gpuTempSensors[i].Value.GetValueOrDefault().ToString() + "°C");
+                            MS[1] += To5Char(Math.Round(Convert.ToDouble(gpuCoreClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
+                            MS[2] += To5Char(Math.Round(Convert.ToDouble(gpuMemoryClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
+                        }
+                        MainWindow.context.Send((object o) => { MainWindow.This.GPUsTemps.Text = MS[0]; }, null);
+                        MainWindow.context.Send((object o) => { MainWindow.This.GPUsCoreClockAbs.Text = MS[1]; }, null);
+                        MainWindow.context.Send((object o) => { MainWindow.This.GPUsMemoryClocksAbs.Text = MS[2]; }, null);
                     }
                     catch { }
                     Thread.Sleep(1000);
                 }
             });
         }
-        private static void SetGPUsTemps()
+        private static string To5Char(string s)
         {
-            string Temps = "";
-            foreach (ISensor s in gpuTempSensors)
-            {
-                Temps += $", {s.Value.GetValueOrDefault().ToString()}";
-            }
-            if (Temps != "")
-            {
-                Temps = Temps.TrimStart(',', ' ');
-            }
-            MainWindow.context.Send((object o) => { MainWindow.This.GPUsTemps.Text = Temps; }, null);
-        }
-        private static void SetGPUsFans()
-        {
-            string Temps = "";
-            foreach (ISensor s in gpuFanSensors)
-            {
-                Temps += $", {s.Value.GetValueOrDefault().ToString()}";
-            }
-            if (Temps != "")
-            {
-                Temps = Temps.TrimStart(',', ' ');
-            }
-            MainWindow.context.Send((object o) => { MainWindow.This.GPUsFans.Text = Temps; }, null);
-        }
-        private static void SetGPUsCoreClock()
-        {
-            string Temps = "";
-            foreach (ISensor s in gpuCoreClockSensors)
-            {
-                double x = Math.Round(Convert.ToDouble(s.Value), MidpointRounding.AwayFromZero);
-                Temps += $", {x.ToString()}";
-            }
-            if (Temps != "")
-            {
-                Temps = Temps.TrimStart(',', ' ');
-            }
-            MainWindow.context.Send((object o) => { MainWindow.This.GPUsCoreClock.Text = Temps; }, null);
-        }
-        private static void SetGPUsMemoryClock()
-        {
-            string Temps = "";
-            foreach (ISensor s in gpuMemoryClockSensors)
-            {
-                double x = Math.Round(Convert.ToDouble(s.Value), MidpointRounding.AwayFromZero);
-                Temps += $", {x.ToString()}";
-            }
-            if (Temps != "")
-            {
-                Temps = Temps.TrimStart(',', ' ');
-            }
-            MainWindow.context.Send((object o) => { MainWindow.This.GPUsMemoryClocks.Text = Temps; }, null);
+            char[] cc = { ' ', ' ', ' ', ' ', ' ' };
+            char[] ch = s.ToCharArray();
+            for (int i = ch.Length - 1, j = cc.Length - 1; i > -1; i--, j--)
+            { cc[j] = ch[i]; }
+            return $"{cc[0]}{cc[1]}{cc[2]}{cc[3]}{cc[4]}";
         }
     }
 }

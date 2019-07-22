@@ -61,12 +61,16 @@ namespace OMineManager
         public Profile()
         {
             LogTextSize = 0;
+            ConfigsList = new List<Config>();
+            ClocksList = new List<Overclock>();
         }
 
         public string StartedConfig;
+        public string StartedClock;
         public string RigName;
         public bool[] GPUsSwitch;
         public List<Config> ConfigsList;
+        public List<Overclock> ClocksList;
         public double LogTextSize;
 
         public class Config
@@ -88,6 +92,19 @@ namespace OMineManager
             public string Port;
             public string Wallet;
             public string Params;
+        }
+        public class Overclock
+        {
+            public Overclock()
+            {
+                Name = "Новый разгон";
+            }
+
+            public string Name;
+            public int[] PowLim;
+            public int[] CoreClock;
+            public int[] MemoryClock;
+            public int[] FanSpeed;
         }
     }
 }

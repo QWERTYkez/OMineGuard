@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OMineManager"
         mc:Ignorable="d"
-        Title="OMineManager" Height="700" MinHeight="620" MinWidth="1100" Width="1000" Background="#FF686868"> <!--705-->
+        Title="OMineManager" Height="600" MinHeight="600" MinWidth="1100" Width="1000" Background="#FF686868"> <!--705-->
     <Grid Background="#FF686868">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -66,7 +66,7 @@
                                     </Grid.ColumnDefinitions>
                                     <Button x:Name="MinusConfig" Grid.Column="0" Margin="2,0,0,2" Content="-" Click="MinusConfig_Click"/>
                                     <Button x:Name="PlusConfig" Grid.Column="1" Margin="0,0,0,2" Content="+" Click="PlusConfig_Click"/>
-                                    <Button x:Name="ApplyConfig" Grid.Column="2" Margin="0,0,0,2" Content="apply" Click="ApplyConfig_Click"/>
+                                    <Button x:Name="ApplyConfig" Grid.Column="2" Margin="0,0,0,2" Content="save" Click="ApplyConfig_Click"/>
                                     <Button x:Name="StartConfig" Grid.Column="3" Margin="0,0,2,2" Content="start" Click="StartConfig_Click"/>
                                 </Grid>
                             </Grid>
@@ -103,61 +103,44 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <GroupBox Grid.Column="0" Width="250" Grid.RowSpan="20" Header="Список конфигураций:" Foreground="White" FontSize="16" Margin="0,0,5,0">
+                    <GroupBox Grid.Column="0" Width="250" Grid.RowSpan="20" Header="Список конфигураций:" Foreground="White" FontSize="16" Margin="0,0,10,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <ListBox x:Name="RigsLst" Grid.Row="1" Margin="2"/>
+                            <ListBox x:Name="ClocksList" Grid.Row="1" Margin="2" SelectionChanged="ClocksList_SelectionChanged"/>
                             <Grid Grid.Row="2">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition/>
                                     <ColumnDefinition/>
                                     <ColumnDefinition/>
+                                    <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
-                                <Button x:Name="MinuRig" Grid.Column="0" Margin="2,0,0,2" Content="-"/>
-                                <Button x:Name="PlusRg" Grid.Column="1" Margin="0,0,0,2" Content="+"/>
-                                <Button x:Name="PluRg" Grid.Column="2" Margin="0,0,2,2" Content="apply"/>
+                                <Button x:Name="MinuClock" Grid.Column="0" Margin="2,0,0,2" Content="-" Click="MinuClock_Click"/>
+                                <Button x:Name="PlusClock" Grid.Column="1" Margin="0,0,0,2" Content="+" Click="PlusClock_Click"/>
+                                <Button x:Name="SaveClockx" Grid.Column="2" Margin="0,0,0,2" Content="save" Click="SaveClock_Click"/>
+                                <Button x:Name="ApplyClock" Grid.Column="3" Margin="0,0,2,2" Content="apply" Click="ApplyClock_Click"/>
                             </Grid>
                         </Grid>
                     </GroupBox>
-                    <Border Grid.Row="0" Grid.Column="1" Padding="5" BorderThickness="3" BorderBrush="White" Margin="2">
+                    <Border Grid.Row="0" Grid.Column="1" Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="111"/>
+                                <ColumnDefinition Width="97"/>
                                 <ColumnDefinition />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" FontSize="16" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">Название:</TextBlock>
-                            <TextBox Grid.Column="1" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
+                            <TextBlock Grid.Column="0" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">Название:</TextBlock>
+                            <TextBox Grid.Column="1" x:Name="ClockName" Margin="3" FontSize="12" FontWeight="Bold" IsEnabled="False"></TextBox>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="1" Grid.Column="1" Padding="5" BorderThickness="3" BorderBrush="White" Margin="2">
+                    <Border Grid.Row="1" Grid.Column="1" Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="111"/>
-                                <ColumnDefinition />
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" FontSize="16" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">CoreVoltage:</TextBlock>
-                            <TextBox Grid.Row="0" Grid.Column="1" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Foreground="White"></TextBlock>
-                            <TextBlock Grid.Row="0" Grid.Column="2" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
-                            <CheckBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Center" IsChecked="True"></CheckBox>
-                        </Grid>
-                    </Border>
-                    <Border Grid.Row="2" Grid.Column="1" Padding="5" BorderThickness="3" BorderBrush="White" Margin="2">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="111"/>
+                                <ColumnDefinition Width="97"/>
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
@@ -165,17 +148,57 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" FontSize="16" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">PowerLimit:</TextBlock>
-                            <TextBox Grid.Row="0" Grid.Column="1" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Foreground="White"></TextBlock>
-                            <TextBlock Grid.Row="0" Grid.Column="2" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
-                            <CheckBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Center" IsChecked="True"></CheckBox>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">PowerLimit:</TextBlock>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="PowLim" FontSize="12" Margin="3" FontWeight="Bold" FontFamily="Consolas" IsEnabled="False"></TextBox>
+                            <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" x:Name="GPUsPowerLimit" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="2" FontSize="12" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
+                            <CheckBox Grid.Row="1" Grid.Column="2" x:Name="SwitcherPL" IsChecked="True" VerticalAlignment="Top" HorizontalAlignment="Center" IsEnabled="False" Checked="OCswitch_Checked" Unchecked="OCswitch_Checked"></CheckBox>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="3" Grid.Column="1" Padding="5" BorderThickness="3" BorderBrush="White" Margin="2">
+                    <Border Grid.Row="2" Grid.Column="1" Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="111"/>
+                                <ColumnDefinition Width="97"/>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" FontSize="12" Grid.RowSpan="3" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">CoreClock:</TextBlock>
+                            <TextBox Grid.Row="0" Grid.Column="1" FontSize="12" x:Name="CoreClock" Margin="3" FontWeight="Bold" FontFamily="Consolas" IsEnabled="False"></TextBox>
+                            <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" x:Name="GPUsCoreClock" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" x:Name="GPUsCoreClockAbs" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="2" FontSize="12" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
+                            <CheckBox Grid.Row="1" Grid.Column="2" x:Name="SwitcherCC" IsChecked="True" VerticalAlignment="Top" HorizontalAlignment="Center" IsEnabled="False" Checked="OCswitch_Checked" Unchecked="OCswitch_Checked"></CheckBox>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Row="3" Grid.Column="1" Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="97"/>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">MemoryClock:</TextBlock>
+                            <TextBox Grid.Row="0" Grid.Column="1" FontSize="12" x:Name="MemoryClock" Margin="3" FontWeight="Bold" FontFamily="Consolas" IsEnabled="False"></TextBox>
+                            <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" x:Name="GPUsMemoryClocks" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" x:Name="GPUsMemoryClocksAbs" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="2" FontSize="12" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
+                            <CheckBox Grid.Row="1" Grid.Column="2" x:Name="SwitcherMC" IsChecked="True" VerticalAlignment="Top" HorizontalAlignment="Center" IsEnabled="False" Checked="OCswitch_Checked" Unchecked="OCswitch_Checked"></CheckBox>
+                        </Grid>
+                    </Border>
+                    <Border Grid.Row="4" Grid.Column="1" Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="97"/>
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
@@ -183,50 +206,14 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" FontSize="16" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">CoreClock:</TextBlock>
-                            <TextBox Grid.Row="0" Grid.Column="1" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
-                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsCoreClock" Foreground="White"></TextBlock>
-                            <TextBlock Grid.Row="0" Grid.Column="2" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
-                            <CheckBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Center" IsChecked="True"></CheckBox>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">FanSpeed:</TextBlock>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="FanSpeed" Margin="3" FontSize="12" FontWeight="Bold" FontFamily="Consolas" IsEnabled="False"></TextBox>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsFans" FontSize="12" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Foreground="White" FontSize="12" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
+                            <CheckBox Grid.Row="1" Grid.Column="2" x:Name="SwitcherFS" IsChecked="True" VerticalAlignment="Top" HorizontalAlignment="Center" IsEnabled="False" Checked="OCswitch_Checked" Unchecked="OCswitch_Checked"></CheckBox>
                         </Grid>
                     </Border>
-                    <Border Grid.Row="4" Grid.Column="1" Padding="5" BorderThickness="3" BorderBrush="White" Margin="2">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="111"/>
-                                <ColumnDefinition />
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" FontSize="16" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">MemoryClock:</TextBlock>
-                            <TextBox Grid.Row="0" Grid.Column="1" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
-                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsMemoryClocks" Foreground="White"></TextBlock>
-                            <TextBlock Grid.Row="0" Grid.Column="2" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
-                            <CheckBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Center" IsChecked="True"></CheckBox>
-                        </Grid>
-                    </Border>
-                    <Border Grid.Row="5" Grid.Column="1" Padding="5" BorderThickness="3" BorderBrush="White" Margin="2">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="111"/>
-                                <ColumnDefinition />
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" FontSize="16" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">FanSpeed:</TextBlock>
-                            <TextBox Grid.Row="0" Grid.Column="1" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
-                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsFans" Foreground="White"></TextBlock>
-                            <TextBlock Grid.Row="0" Grid.Column="2" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
-                            <CheckBox Grid.Row="1" Grid.Column="2" VerticalAlignment="Top" HorizontalAlignment="Center" IsChecked="True"></CheckBox>
-                        </Grid>
-                    </Border>
-                    <Border Grid.Row="6" Grid.Column="1" Padding="5" BorderThickness="3" BorderBrush="White" Margin="2">
+                    <Border Grid.Row="5" Grid.Column="1" Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
                         <StackPanel>
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -234,17 +221,17 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="111"/>
+                                    <ColumnDefinition Width="97"/>
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" HorizontalAlignment="Right" Margin="3">Hashrate:</TextBlock>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Foreground="White" Margin="3"></TextBlock>
-                                <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" HorizontalAlignment="Right" Margin="3">Temperature:</TextBlock>
-                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsTemps" Foreground="White" Margin="3"></TextBlock>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Hashrate:</TextBlock>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Temperature:</TextBlock>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsTemps" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
                             </Grid>
                             <WrapPanel HorizontalAlignment="Right">
-                                <TextBlock Foreground="White" Margin="5">Тест:</TextBlock>
-                                <Button x:Name="KillProcess2" Click="KillProcess_Click">Запустить процесс</Button>
+                                <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
+                                <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>
                                 <Ellipse x:Name="IndicatorEl2" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
                             </WrapPanel>
                         </StackPanel>
