@@ -63,11 +63,14 @@ namespace OMineManager
             LogTextSize = 0;
             ConfigsList = new List<Config>();
             ClocksList = new List<Overclock>();
+            Digits = 4;
         }
 
         public string RigName;
         public string StartedConfig;
         public string StartedClock;
+        public string StartedProcess;
+        public int Digits;
         public bool[] GPUsSwitch;
         public List<Config> ConfigsList;
         public List<Overclock> ClocksList;

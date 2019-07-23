@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SM = OMineManager.SettingsManager;
 using PM = OMineManager.ProfileManager;
+using IM = OMineManager.InformManager;
 using OCM = OMineManager.OverclockManager;
 using System.Diagnostics;
 using System.Windows.Controls;
@@ -63,6 +64,9 @@ namespace OMineManager
         
         public static void StartMiner(Profile.Config Config)
         {
+            List<Profile.Overclock> LPO = 
+                PM.Profile.ClocksList.Where(oc => oc.Name == Config.Overclock).ToList();
+            if (LPO.Count > 0) OCM.ApplyOverclock(LPO[0]);
             StartedMiner = Config.Miner;
             StartMiningTime = DateTime.Now;
             string DT = StartMiningTime.ToString("HH.mm.ss - dd.MM.yy");
@@ -102,6 +106,7 @@ namespace OMineManager
                 Miner.StartInfo.UseShellExecute = false;
                 Miner.StartInfo.CreateNoWindow = true;
                 Miner.Start();
+                
                 Task.Run(() => ReadLog(logfile));
             }
             //Гмайнер
@@ -273,10 +278,14 @@ namespace OMineManager
             MainWindow.This.KillProcess.Content = "Завершить процесс";
             MainWindow.This.KillProcess2.Content = "Завершить процесс";
             RunIndication();
+            PM.Profile.StartedProcess = StartedProcessName;
+            PM.Profile.StartedConfig = Config.Name;
+            PM.SaveProfile();
+            IM.StartWaching(Config.Miner);
         }
         public static void KillProcess()
         {
-            foreach (Process proc in Process.GetProcessesByName(StartedProcessName))
+            foreach (Process proc in Process.GetProcessesByName(PM.Profile.StartedProcess))
             {
                 try
                 {
@@ -287,6 +296,7 @@ namespace OMineManager
             try
             {
                 IndicationThread.Abort();
+                IM.InformThread.Abort();
             }
             catch { }
             SetIndicationColor(Brushes.Red);
@@ -366,6 +376,7 @@ namespace OMineManager
                     }
                 }
                 catch { }
+                Thread.Sleep(200);
             }
         }
         public static void WriteToRichTextBox(object t)

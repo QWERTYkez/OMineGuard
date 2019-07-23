@@ -55,6 +55,10 @@ namespace OMineManager
             }
             TextSizeSlider.Value = PM.Profile.LogTextSize;
             TextSizeSlider.ValueChanged += TextSizeSlider_ValueChanged;
+            DigitsSlider.Value = PM.Profile.Digits;
+            Dig = PM.Profile.Digits;
+            Digits.Text = PM.Profile.Digits.ToString();
+            DigitsSlider.ValueChanged += DigitsSlider_ValueChanged;
         }
         #endregion
         #region RigName
@@ -203,11 +207,8 @@ namespace OMineManager
         {
             if (ApplyConfigM())
             {
+                MM.KillProcess();
                 Profile.Config PC = PM.Profile.ConfigsList[ConfigsList.SelectedIndex];
-                PM.Profile.StartedConfig = PC.Name;
-                PM.SaveProfile();
-                Profile.Overclock OC = PM.Profile.ClocksList.Where(oc => oc.Name == PC.Overclock).ToArray()[0];
-                OCM.ApplyOverclock(OC);
                 MM.StartMiner(PC);
                 TabConroller.SelectedIndex = 2;
             }
@@ -455,22 +456,27 @@ namespace OMineManager
                 SwitcherCC.IsEnabled = false;
                 SwitcherMC.IsEnabled = false;
                 SwitcherFS.IsEnabled = false;
+                SetParam(SwitcherPL, PowLim);
+                SetParam(SwitcherCC, CoreClock);
+                SetParam(SwitcherMC, MemoryClock);
+                SetParam(SwitcherFS, FanSpeed);
+                ClockName.Text = "";
             }
             else
             {
                 ClockName.Text = PM.Profile.ClocksList[n].Name;
-                SetParam(PM.Profile.ClocksList[n].PowLim, SwitcherPL, PowLim);
-                SetParam(PM.Profile.ClocksList[n].CoreClock, SwitcherCC, CoreClock);
-                SetParam(PM.Profile.ClocksList[n].MemoryClock, SwitcherMC, MemoryClock);
-                SetParam(PM.Profile.ClocksList[n].FanSpeed, SwitcherFS, FanSpeed);
                 ClockName.IsEnabled = true;
                 SwitcherPL.IsEnabled = true;
                 SwitcherCC.IsEnabled = true;
                 SwitcherMC.IsEnabled = true;
                 SwitcherFS.IsEnabled = true;
+                SetParam(SwitcherPL, PowLim, PM.Profile.ClocksList[n].PowLim);
+                SetParam(SwitcherCC, CoreClock, PM.Profile.ClocksList[n].CoreClock);
+                SetParam(SwitcherMC, MemoryClock, PM.Profile.ClocksList[n].MemoryClock);
+                SetParam(SwitcherFS, FanSpeed, PM.Profile.ClocksList[n].FanSpeed);
             }
         }
-        private void SetParam(int[] prams, CheckBox CB, TextBox TB)
+        private void SetParam(CheckBox CB, TextBox TB, int[] prams)
         {
             string str = "";
             if (prams == null)
@@ -483,12 +489,12 @@ namespace OMineManager
                 CB.IsChecked = false;
                 foreach (int x in prams)
                 {
-                    str += To5Char(x.ToString());
+                    str += ToNChar(x.ToString());
                 }
                 TB.Text = " " + str.TrimStart(',');
             }
         }
-        private void SetParam(uint[] prams, CheckBox CB, TextBox TB)
+        private void SetParam(CheckBox CB, TextBox TB, uint[] prams)
         {
             string str = "";
             if (prams == null)
@@ -501,18 +507,16 @@ namespace OMineManager
                 CB.IsChecked = false;
                 foreach (uint x in prams)
                 {
-                    str += To5Char(x.ToString());
+                    str += ToNChar(x.ToString());
                 }
                 TB.Text = " " + str.TrimStart(',');
             }
         }
-        private string To5Char(string s)
+        private void SetParam(CheckBox CB, TextBox TB)
         {
-            char[] cc = { ',', ' ', ' ', ' ', ' ' };
-            char[] ch = s.ToCharArray();
-            for (int i = ch.Length - 1, j = cc.Length - 1; i > -1; i--, j--)
-            { cc[j] = ch[i]; }
-            return $"{cc[0]}{cc[1]}{cc[2]}{cc[3]}{cc[4]}";
+            string str = "";
+            CB.IsChecked = true;
+            TB.Text = "";
         }
         private void OCswitch_Checked(object sender, RoutedEventArgs e)
         {
@@ -535,5 +539,75 @@ namespace OMineManager
             }
         }
         #endregion
+        #region ContextSends
+        public static void Sethashrate(object o)
+        {
+            if(o != null)
+            {
+                string str = "";
+                double[] x = (double[])((object[])o)[0];
+                foreach (double d in x)
+                {
+                    str += ToNChar(d.ToString());
+                }
+                This.GPUsHashrate.Text = " " + str.TrimStart(',');
+                if (!OCM.OHMisEnabled)
+                {
+                    str = "";
+                    int[] y = (int[])((object[])o)[1];
+                    foreach (double d in x)
+                    {
+                        str += ToNChar(d.ToString());
+                    }
+                    This.GPUsTemps.Text = " " + str.TrimStart(',');
+                }
+            }
+            else
+            {
+                This.GPUsHashrate.Text = "";
+                if (!OCM.OHMisEnabled) This.GPUsTemps.Text = "";
+            }
+        }
+        public static void SetMS1(object o)
+        {
+            string[] MS = (string[])o;
+            This.GPUsPowerLimit.Text = " " + MS[0].TrimStart(',');
+            This.GPUsCoreClock.Text = " " + MS[1].TrimStart(',');
+            This.GPUsMemoryClocks.Text = " " + MS[2].TrimStart(',');
+            This.GPUsFans.Text = " " + MS[3].TrimStart(',');
+        }
+        public static void SetMS2(object o)
+        {
+            string[] MS = (string[])o;
+            This.GPUsTemps.Text = " " + MS[0].TrimStart(',');
+            This.GPUsCoreClockAbs.Text = " " + MS[1].TrimStart(',');
+            This.GPUsMemoryClocksAbs.Text = " " + MS[2].TrimStart(',');
+        }
+        #endregion
+        private static int Dig;
+        public static string ToNChar(string s)
+        {
+            string ext = "";
+            char[] ch = s.ToCharArray();
+            Queue<char> st = new Queue<char>();
+            for (int i = 0; i < Dig - 1; i++)
+            { st.Enqueue(' '); }
+            for (int i = 0; i < Dig - 1 && i < ch.Length; i++)
+            {
+                st.Enqueue(ch[i]);
+                st.Dequeue();
+            }
+            ch = st.ToArray();
+            for (int i = 0; i < Dig - 1; i++)
+            { ext += ch[i]; }
+            return "," + ext.Replace(',', '.');
+        }
+        private void DigitsSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            int n = Convert.ToInt32(DigitsSlider.Value);
+            Dig = n; Digits.Text = n.ToString();
+            PM.Profile.Digits = n;
+            PM.SaveProfile();
+        }
     }
 }

@@ -224,11 +224,14 @@
                                     <ColumnDefinition/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Hashrate:</TextBlock>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="GPUsHashrate" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
                                 <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Temperature:</TextBlock>
                                 <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsTemps" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
                             </Grid>
                             <WrapPanel HorizontalAlignment="Right">
+                                <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="White">количество цифр:</TextBlock>
+                                <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="7" IsSnapToTickEnabled="True" TickFrequency="1"/>
+                                <TextBlock x:Name="Digits" FontSize="12" VerticalAlignment="Center" Foreground="White" Text="50" Margin="0,0,15,0"/>
                                 <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
                                 <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>
                                 <Ellipse x:Name="IndicatorEl2" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
