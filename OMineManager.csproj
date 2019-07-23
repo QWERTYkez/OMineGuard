@@ -81,9 +81,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Profile\MinersManager.cs" />
-    <Compile Include="Profile\OverclockManager.cs" />
-    <Compile Include="Profile\ProfileManager.cs" />
+    <Compile Include="Managers\InformManager.cs" />
+    <Compile Include="Managers\MinersManager.cs" />
+    <Compile Include="Managers\OverclockManager.cs" />
+    <Compile Include="Managers\ProfileManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

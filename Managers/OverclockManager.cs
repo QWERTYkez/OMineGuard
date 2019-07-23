@@ -13,7 +13,7 @@ namespace OMineManager
 {
     public static class OverclockManager
     {
-        private static ControlMemory CM;
+        private static ControlMemory CM; 
         private static int GPUsCount;
         private static IHardware[] GPUs;
         private static List<ISensor> gpuTempSensors = new List<ISensor>();
