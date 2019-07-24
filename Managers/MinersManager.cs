@@ -78,10 +78,11 @@ namespace OMineManager
             if (Config.Miner == SM.Miners.Claymore)
             {
                 dir = "Claymore's Dual Miner";
+                string lf = "logs/buflog.txt";
                 StartedProcessName = "EthDcrMiner64";
                 param = $" -epool {Config.Pool}:{Config.Port} " +
                     $"-ewal {Config.Wallet}.{PM.Profile.RigName} " +
-                    $"-logfile \"{logfile}\" {Config.Params}";
+                    $"-logfile \"{lf}\" {Config.Params}";
 
                 if (PM.Profile.GPUsSwitch != null)
                 {
@@ -107,7 +108,7 @@ namespace OMineManager
                 Miner.StartInfo.CreateNoWindow = true;
                 Miner.Start();
                 
-                Task.Run(() => ReadLog(logfile));
+                Task.Run(() => ReadLog(lf, logfile));
             }
             //Гмайнер
             if (Config.Miner == SM.Miners.Gminer)
@@ -195,7 +196,7 @@ namespace OMineManager
                 StartedProcessName = "bminer";
                 string algo = "";
 
-                switch (Config.Algoritm) //beam
+                switch (Config.Algoritm)
                 {
                     case "Equihash(144.5)":
                         algo = "equihash1445";
@@ -225,7 +226,7 @@ namespace OMineManager
                         algo = "zhash";
                         break;
                 }
-                param = $"-uri {algo}://{Config.Wallet}.{PM.Profile.RigName}@{Config.Pool}:{Config.Port} {Config.Params} -logfile \"{logfile}\"";
+                param = $"-uri {algo}://{Config.Wallet}.{PM.Profile.RigName}@{Config.Pool}:{Config.Port} {Config.Params} -logfile \"{logfile}\" -api 127.0.0.1:3333";
 
                 if(algo == "equihash1445")
                 {
@@ -299,6 +300,7 @@ namespace OMineManager
                 IM.InformThread.Abort();
             }
             catch { }
+            MainWindow.context.Send(MainWindow.Sethashrate, null);
             SetIndicationColor(Brushes.Red);
             MainWindow.This.KillProcess.Content = "Запустить процесс";
             MainWindow.This.KillProcess2.Content = "Запустить процесс";
@@ -346,11 +348,11 @@ namespace OMineManager
                 MainWindow.context.Send(WriteToRichTextBox, e.Data + Environment.NewLine);
             }
         }
-        private static void ReadLog(string logfile)
+        private static void ReadLog(string lf, string logfile)
         {
-            long end = 0;
-
-            if(Process.GetProcessesByName(StartedProcessName).Length == 0)
+            string str;
+            bool[] pass = new bool[5];
+            if (Process.GetProcessesByName(StartedProcessName).Length == 0)
             {
                 while (Process.GetProcessesByName(StartedProcessName).Length != 0)
                 {
@@ -361,21 +363,34 @@ namespace OMineManager
             {
                 try
                 {
-                    using (FileStream fstream = new FileStream(logfile, FileMode.Open))
+                    using (FileStream fstream = new FileStream(lf, FileMode.Open))
                     {
-                        if (fstream.Length > end)
+                        byte[] array = new byte[fstream.Length];
+                        fstream.Read(array, 0, array.Length);
+                        str = System.Text.Encoding.Default.GetString(array);
+
+                        pass[0] = str.Contains("srv_thr cnt: 1, IP: 127.0.0.1");
+                        pass[0] = str.Contains("recv: ");
+                        pass[0] = str.Contains("srv pck: ");
+                        pass[0] = str.Contains("srv bs: ");
+                        pass[0] = str.Contains("sent: ");
+
+                        if (!pass.Contains(true))
                         {
-                            byte[] array = new byte[fstream.Length - end];
-                            fstream.Seek(end, SeekOrigin.Current);
-                            fstream.Read(array, 0, array.Length);
-
-                            MainWindow.context.Send(WriteToRichTextBox, System.Text.Encoding.Default.GetString(array));
-
-                            end = fstream.Length;
+                            MainWindow.context.Send(WriteToRichTextBox, str);
+                            Task.Run(() =>
+                            {
+                                using (StreamWriter fstr = new StreamWriter(logfile, true))
+                                {
+                                    fstr.WriteLine(str);
+                                }
+                            });
                         }
                     }
+                    File.Delete(lf);
                 }
                 catch { }
+                File.Delete(lf);
                 Thread.Sleep(200);
             }
         }

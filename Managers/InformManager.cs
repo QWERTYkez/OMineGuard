@@ -14,12 +14,15 @@ namespace OMineManager
 {
     public static class InformManager
     {
-        public static MinerInfo Info = new MinerInfo();
+        public static MinerInfo Info;
         public static Thread InformThread;
         private static int MsCycle = 1000;
 
         public static void StartWaching(SM.Miners? Miner)
         {
+            MinerInfo Info = new MinerInfo();
+            HttpRequest request;
+            string content = "";
             Task.Run(() =>
             {
                 InformThread = Thread.CurrentThread;
@@ -84,8 +87,6 @@ namespace OMineManager
                             Thread.Sleep(MsCycle);
                         }
                     case SM.Miners.Gminer:
-                        HttpRequest request;
-                        string content = "";
                         Info.ShInvalid = null;
                         Info.Fanspeeds = null;
                         while (true)
@@ -121,7 +122,37 @@ namespace OMineManager
                     case SM.Miners.Bminer:
                         while (true)
                         {
+                            try
+                            {
+                                using (request = new HttpRequest())
+                                {
+                                    request.UserAgent = Http.ChromeUserAgent();
 
+                                    // Отправляем запрос.
+                                    HttpResponse response = request.Get("http://localhost:3333/api/status");
+                                    // Принимаем тело сообщения в виде строки.
+                                    content = response.ToString();
+                                    for (int i = 0; i < 20; i++)
+                                    {
+                                        content = content.Replace("{\"" + i + "\":", "[");
+                                    }
+                                    content = content.Replace("}}}}", "}}}]");
+                                }
+                                try
+                                {
+                                    BminerInfo INF = JsonConvert.DeserializeObject<BminerInfo>(content);
+
+                                    Info.Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToArray();
+                                    Info.Temperatures = INF.miners.Select(m => m.device.temperature).ToArray();
+                                    Info.Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToArray();
+                                    Info.ShAccepted = new int[] { INF.stratum.accepted_shares };
+                                    Info.ShAccepted = new int[] { INF.stratum.rejected_shares };
+
+                                    MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                                }
+                                catch { }
+                            }
+                            catch { }
                             Thread.Sleep(MsCycle);
                         }
                 }
@@ -149,6 +180,33 @@ namespace OMineManager
             public int temperature { get; set; }
         }
         #endregion
+        #region Bminer
+        public class BminerInfo
+        {
+            public BminerStratum stratum { get; set; }
+            public List<BminerMiner> miners { get; set; }
+
+        }
+        public class BminerStratum
+        {
+            public int accepted_shares { get; set; }
+            public int rejected_shares { get; set; }
+        }
+        public class BminerMiner
+        {
+            public BminerSolver solver { get; set; }
+            public BminerDevice device { get; set; }
+        }
+        public class BminerSolver
+        {
+            public double solution_rate { get; set; }
+        }
+        public class BminerDevice
+        {
+            public int temperature { get; set; }
+            public int fan_speed { get; set; }
+        }
+        #endregion
         public class MinerInfo
         {
             public double[] Hashrates;
@@ -159,6 +217,4 @@ namespace OMineManager
             public int[] ShInvalid;
         }
     }
-
-
 }

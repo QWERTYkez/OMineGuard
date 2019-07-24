@@ -525,7 +525,6 @@ namespace OMineManager
         }
         private void SetParam(CheckBox CB, TextBox TB)
         {
-            string str = "";
             CB.IsChecked = true;
             TB.Text = "";
         }
@@ -556,29 +555,56 @@ namespace OMineManager
             if(o != null)
             {
                 string str = "";
-                double[] x = (double[])((object[])o)[0];
-                foreach (double d in x)
+                if ((double[])((object[])o)[0] != null)
                 {
-                    str += ToNChar(d.ToString());
-                }
-                This.GPUsHashrate.Text = " " + str.TrimStart(',');
-                This.TotalHashrate.Text = x.Sum().ToString();
-                if (!OCM.OHMisEnabled)
-                {
-                    str = "";
-                    int[] y = (int[])((object[])o)[1];
+                    double[] x = (double[])((object[])o)[0];
                     foreach (double d in x)
                     {
                         str += ToNChar(d.ToString());
                     }
-                    This.GPUsTemps.Text = " " + str.TrimStart(',');
+                    This.GPUsHashrate.Text = " " + str.TrimStart(',');
+                    This.GPUsHashrate2.Text = " " + str.TrimStart(',');
+                    This.TotalHashrate.Text = x.Sum().ToString().Replace(',', '.');
+                    This.TotalHashrate2.Text = x.Sum().ToString().Replace(',', '.');
+                }
+                else
+                {
+                    This.GPUsHashrate.Text = "";
+                    This.GPUsHashrate2.Text = "";
+                    This.TotalHashrate.Text = "";
+                    This.TotalHashrate2.Text = "";
+                }
+                if (!OCM.OHMisEnabled)
+                {
+                    if ((int[])((object[])o)[1] != null)
+                    {
+                        str = "";
+                        int[] y = (int[])((object[])o)[1];
+                        foreach (double d in y)
+                        {
+                            str += ToNChar(d.ToString());
+                        }
+                        This.GPUsTemps.Text = " " + str.TrimStart(',');
+                        This.GPUsTemps2.Text = " " + str.TrimStart(',');
+                    }
+                    else
+                    {
+                        This.GPUsTemps.Text = "";
+                        This.GPUsTemps2.Text = "";
+                    }
                 }
             }
             else
             {
                 This.GPUsHashrate.Text = "";
+                This.GPUsHashrate2.Text = "";
                 This.TotalHashrate.Text = "";
-                if (!OCM.OHMisEnabled) This.GPUsTemps.Text = "";
+                This.TotalHashrate2.Text = "";
+                if (!OCM.OHMisEnabled)
+                {
+                    This.GPUsTemps.Text = "";
+                    This.GPUsTemps2.Text = "";
+                }
             }
         }
         public static void SetMS1(object o)
@@ -593,6 +619,7 @@ namespace OMineManager
         {
             string[] MS = (string[])o;
             This.GPUsTemps.Text = " " + MS[0].TrimStart(',');
+            This.GPUsTemps2.Text = " " + MS[0].TrimStart(',');
             This.GPUsCoreClockAbs.Text = " " + MS[1].TrimStart(',');
             This.GPUsMemoryClocksAbs.Text = " " + MS[2].TrimStart(',');
         }

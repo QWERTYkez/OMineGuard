@@ -225,34 +225,32 @@
                         </Grid>
                     </Border>
                     <Border Grid.Row="5" Grid.Column="1" Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
-                        <StackPanel>
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="97"/>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Hashrate:</TextBlock>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsHashrate" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
-                                <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Temperature:</TextBlock>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsTemps" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
-                                <TextBlock Grid.Row="2" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Total Hashrate:</TextBlock>
-                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalHashrate" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
-                                <WrapPanel Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right">
-                                    <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="White">количество цифр:</TextBlock>
-                                    <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="7" IsSnapToTickEnabled="True" TickFrequency="1"/>
-                                    <TextBlock x:Name="Digits" FontSize="12" VerticalAlignment="Center" Foreground="White" Text="50" Margin="0,0,15,0"/>
-                                    <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
-                                    <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>
-                                    <Ellipse x:Name="IndicatorEl2" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
-                                </WrapPanel>
-                            </Grid>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="97"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Hashrate:</TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsHashrate" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Temperature:</TextBlock>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsTemps" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                            <TextBlock Grid.Row="2" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Total Hashrate:</TextBlock>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalHashrate" FontSize="12" Foreground="White" Margin="15,3,3,3" FontFamily="Consolas" Padding="0"></TextBlock>
+                            <WrapPanel Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right">
+                                <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="White">количество цифр:</TextBlock>
+                                <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="7" IsSnapToTickEnabled="True" TickFrequency="1"/>
+                                <TextBlock x:Name="Digits" FontSize="12" VerticalAlignment="Center" Foreground="White" Text="50" Margin="0,0,15,0"/>
+                                <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
+                                <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>
+                                <Ellipse x:Name="IndicatorEl2" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
+                            </WrapPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </TabItem>
@@ -265,16 +263,34 @@
                     <ScrollViewer x:Name="LogScroller" Grid.Row="0">
                         <RichTextBox x:Name="MinerLog" Background="Black" Foreground="White" IsReadOnly="True" Block.LineHeight="1" FontFamily="Consolas"/>
                     </ScrollViewer>
-                    <WrapPanel Grid.Row="1" HorizontalAlignment="Right" Margin="3,3,3,2">
-                        <TextBlock Foreground="White" Text="Размер шрифта:" Margin="10,0,5,0"></TextBlock>
-                        <Slider x:Name="TextSizeSlider" Margin="10,0,5,0" Width="100" VerticalAlignment="Center" Minimum="8" Maximum="24" 
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="97"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Hashrate:</TextBlock>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsHashrate2" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Temperature:</TextBlock>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsTemps2" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Total Hashrate:</TextBlock>
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalHashrate2" FontSize="12" Foreground="White" Margin="15,3,3,3" FontFamily="Consolas" Padding="0"></TextBlock>
+                        <WrapPanel Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right">
+                            <TextBlock Foreground="White" Text="Размер шрифта:" Margin="10,0,5,0"></TextBlock>
+                            <Slider x:Name="TextSizeSlider" Margin="10,0,5,0" Width="100" VerticalAlignment="Center" Minimum="8" Maximum="24" 
                                 IsSnapToTickEnabled="True" TickFrequency="1"></Slider>
-                        <TextBlock x:Name="TextSizeTB" Width="40" Foreground="White">20</TextBlock>
-                        <TextBlock Foreground="White" Text="Автопрокрутка:" Margin="40,0,5,0"></TextBlock>
-                        <CheckBox x:Name="Autoscroll" VerticalAlignment="Center" Margin="0,0,5,0" IsChecked="True" Checked="Autoscroll_Checked" Unchecked="Autoscroll_Checked"></CheckBox>
-                        <Button x:Name="KillProcess" Click="KillProcess_Click">Запустить процесс</Button>
-                        <Ellipse x:Name="IndicatorEl" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
-                    </WrapPanel>
+                            <TextBlock x:Name="TextSizeTB" Width="40" Foreground="White">20</TextBlock>
+                            <TextBlock Foreground="White" Text="Автопрокрутка:" Margin="40,0,5,0"></TextBlock>
+                            <CheckBox x:Name="Autoscroll" VerticalAlignment="Center" Margin="0,0,5,0" IsChecked="True" Checked="Autoscroll_Checked" Unchecked="Autoscroll_Checked"></CheckBox>
+                            <Button x:Name="KillProcess" Click="KillProcess_Click">Запустить процесс</Button>
+                            <Ellipse x:Name="IndicatorEl" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
+                        </WrapPanel>
+                    </Grid>
                 </Grid>
             </TabItem>
         </TabControl>
