@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SM = OMineManager.SettingsManager;
 using MW = OMineManager.MainWindow;
+using xNet;
 
 namespace OMineManager
 {
@@ -15,17 +16,8 @@ namespace OMineManager
     {
         public static MinerInfo Info = new MinerInfo();
         public static Thread InformThread;
-        private static int MsCycle = 3000;
+        private static int MsCycle = 1000;
 
-        public class MinerInfo
-        {
-            public double[] Hashrates;
-            public int[] Temperatures;
-            public int[] Fanspeeds;
-            public int[] ShAccepted;
-            public int[] ShRejected;
-            public int[] ShInvalid;
-        }
         public static void StartWaching(SM.Miners? Miner)
         {
             Task.Run(() =>
@@ -92,9 +84,38 @@ namespace OMineManager
                             Thread.Sleep(MsCycle);
                         }
                     case SM.Miners.Gminer:
+                        HttpRequest request;
+                        string content = "";
+                        Info.ShInvalid = null;
+                        Info.Fanspeeds = null;
                         while (true)
                         {
+                            try
+                            {
+                                using (request = new HttpRequest())
+                                {
+                                    request.UserAgent = Http.ChromeUserAgent();
 
+                                    // Отправляем запрос.
+                                    HttpResponse response = request.Get("http://localhost:3333/stat");
+                                    // Принимаем тело сообщения в виде строки.
+                                    content = response.ToString();
+                                }
+                                try
+                                {
+                                    GminerDevice[] GDs = JsonConvert.DeserializeObject<GminerInfo>(content).
+                                            devices.OrderBy(GD => GD.gpu_id).ToArray();
+
+                                    Info.Hashrates = GDs.Select(GD => GD.speed).ToArray();
+                                    Info.Temperatures = GDs.Select(GD => GD.temperature).ToArray();
+                                    Info.ShAccepted = GDs.Select(GD => GD.accepted_shares).ToArray();
+                                    Info.ShRejected = GDs.Select(GD => GD.rejected_shares).ToArray();
+
+                                    MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                                }
+                                catch { }
+                            }
+                            catch { }
                             Thread.Sleep(MsCycle);
                         }
                     case SM.Miners.Bminer:
@@ -106,13 +127,38 @@ namespace OMineManager
                 }
             });
         }
+        #region Claymore
         public class ClaymoreInfo
         {
             public int id { get; set; }
             public object error { get; set; }
             public List<string> result { get; set; }
         }
+        #endregion
+        #region Gminer
+        public class GminerInfo
+        {
+            public GminerDevice[] devices { get; set; }
+        }
+        public class GminerDevice
+        {
+            public int gpu_id { get; set; }
+            public double speed { get; set; }
+            public int accepted_shares { get; set; }
+            public int rejected_shares { get; set; }
+            public int temperature { get; set; }
+        }
+        #endregion
+        public class MinerInfo
+        {
+            public double[] Hashrates;
+            public int[] Temperatures;
+            public int[] Fanspeeds;
+            public int[] ShAccepted;
+            public int[] ShRejected;
+            public int[] ShInvalid;
+        }
     }
 
-    
+
 }

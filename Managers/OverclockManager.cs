@@ -230,8 +230,17 @@ namespace OMineManager
                     catch { }
                 }
 
-                CM = nConf;
-                CM.CommitChanges();
+                bool b = false;
+                while (!b)
+                {
+                    try
+                    {
+                        CM = nConf;
+                        CM.CommitChanges();
+                        b = true;
+                    }
+                    catch { }
+                }
             });
         }
     }

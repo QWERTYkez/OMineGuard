@@ -170,6 +170,15 @@ namespace OMineManager
                     PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
                     PM.Profile.ConfigsList[n].Params = Params.Text;
                     PM.Profile.ConfigsList[n].Overclock = Overclock.Text;
+                    try
+                    {
+                        PM.Profile.ConfigsList[n].MinHashrate = Convert.ToDouble(MinHashrate.Text);
+                    }
+                    catch
+                    {
+                        PM.Profile.ConfigsList[n].MinHashrate = 0;
+                    }
+                    
                     PM.SaveProfile();
                     ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
                     ConfigsList.SelectedIndex = n;
@@ -226,6 +235,7 @@ namespace OMineManager
                 Port.Text = "";
                 Wallet.Text = "";
                 Params.Text = "";
+                MinHashrate.Text = "";
             }
             else
             {
@@ -258,6 +268,7 @@ namespace OMineManager
                 Port.Text = PM.Profile.ConfigsList[n].Port;
                 Wallet.Text = PM.Profile.ConfigsList[n].Wallet;
                 Params.Text = PM.Profile.ConfigsList[n].Params;
+                MinHashrate.Text = PM.Profile.ConfigsList[n].MinHashrate.ToString();
             }
         }
         private void Algotitm_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -551,6 +562,7 @@ namespace OMineManager
                     str += ToNChar(d.ToString());
                 }
                 This.GPUsHashrate.Text = " " + str.TrimStart(',');
+                This.TotalHashrate.Text = x.Sum().ToString();
                 if (!OCM.OHMisEnabled)
                 {
                     str = "";
@@ -565,6 +577,7 @@ namespace OMineManager
             else
             {
                 This.GPUsHashrate.Text = "";
+                This.TotalHashrate.Text = "";
                 if (!OCM.OHMisEnabled) This.GPUsTemps.Text = "";
             }
         }

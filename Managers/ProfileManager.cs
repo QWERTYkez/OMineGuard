@@ -87,6 +87,7 @@ namespace OMineManager
                 Wallet = "";
                 Params = "";
                 Overclock = "";
+                MinHashrate = 0;
             }
 
             public string Name;
@@ -97,6 +98,7 @@ namespace OMineManager
             public string Wallet;
             public string Params;
             public string Overclock;
+            public double MinHashrate;
         }
         public class Overclock
         {

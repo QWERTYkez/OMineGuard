@@ -72,19 +72,31 @@
                             </Grid>
                         </GroupBox>
                         <TextBlock Grid.Row="0" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="16">Название:</TextBlock>
-                        <TextBox Grid.Row="0" Grid.Column="2" x:Name="MiningConfigName" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
+                        <TextBox Grid.Row="0" Grid.Column="2" x:Name="MiningConfigName" Height="30" Margin="3" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Center"></TextBox>
                         <TextBlock Grid.Row="0" Grid.Column="3" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="16" HorizontalAlignment="Right">Разгон:</TextBlock>
-                        <ComboBox Grid.Row="0" Grid.Column="4" x:Name="Overclock" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></ComboBox>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="16" HorizontalAlignment="Right">Алгоритм:</TextBlock>
-                        <ComboBox Grid.Row="1" Grid.Column="2" x:Name="Algotitm" Height="30" Margin="3" FontSize="16" FontWeight="Bold" SelectionChanged="Algotitm_SelectionChanged"></ComboBox>
-                        <TextBlock Grid.Row="1" Grid.Column="3" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="16">Майнер:</TextBlock>
-                        <ComboBox Grid.Row="1" Grid.Column="4" x:Name="Miner" Height="30" Margin="3" FontSize="16" FontWeight="Bold" IsEnabled="False"></ComboBox>
+                        <ComboBox Grid.Row="0" Grid.Column="4" x:Name="Overclock" Height="30" Margin="3" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Center"></ComboBox>
+                        <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="94"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="16" HorizontalAlignment="Right">Алгоритм:</TextBlock>
+                            <ComboBox Grid.Column="1" x:Name="Algotitm" Height="30" Margin="3" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Center" SelectionChanged="Algotitm_SelectionChanged"></ComboBox>
+                            <TextBlock Grid.Column="2" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="16">Майнер:</TextBlock>
+                            <ComboBox Grid.Column="3" x:Name="Miner" Height="30" Margin="3" FontSize="16" FontWeight="Bold" IsEnabled="False" VerticalContentAlignment="Center"></ComboBox>
+                            <TextBlock Grid.Column="4" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="16" HorizontalAlignment="Right">Мин. хешрет:</TextBlock>
+                            <TextBox Grid.Column="5" x:Name="MinHashrate" Height="30" Margin="3" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Center"></TextBox>
+                        </Grid>
                         <TextBlock Grid.Row="2" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="16" HorizontalAlignment="Right">Пул:</TextBlock>
-                        <TextBox Grid.Row="2" Grid.Column="2" x:Name="Pool" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
+                        <TextBox Grid.Row="2" Grid.Column="2" x:Name="Pool" Height="30" Margin="3" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Center"></TextBox>
                         <TextBlock Grid.Row="2" Grid.Column="3" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="15,5,5,5" FontSize="16" HorizontalAlignment="Right">Порт:</TextBlock>
-                        <TextBox Grid.Row="2" Grid.Column="4" x:Name="Port" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
+                        <TextBox Grid.Row="2" Grid.Column="4" x:Name="Port" Height="30" Margin="3" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Center"></TextBox>
                         <TextBlock Grid.Row="3" Grid.Column="1" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center" Margin="5" FontSize="16" HorizontalAlignment="Right">Кошелек:</TextBlock>
-                        <TextBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="5" x:Name="Wallet" Height="30" Margin="3" FontSize="16" FontWeight="Bold"></TextBox>
+                        <TextBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="5" x:Name="Wallet" Height="30" Margin="3" FontSize="16" FontWeight="Bold" VerticalContentAlignment="Center"></TextBox>
                         <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="6" x:Name="DopParam" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="5" FontSize="18">Дополнительные парамаетры:</TextBlock>
                         <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="6" x:Name="Params" Margin="3" FontSize="16" FontWeight="Bold" TextWrapping="Wrap"></TextBox>
                     </Grid>
@@ -218,24 +230,28 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="97"/>
                                     <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Hashrate:</TextBlock>
-                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="GPUsHashrate" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsHashrate" Foreground="White" FontSize="12" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
                                 <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Temperature:</TextBlock>
-                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GPUsTemps" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="GPUsTemps" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Foreground="White" FontSize="12" HorizontalAlignment="Right" Margin="3">Total Hashrate:</TextBlock>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalHashrate" FontSize="12" Foreground="White" Margin="5,3,3,3" FontFamily="Consolas"></TextBlock>
+                                <WrapPanel Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right">
+                                    <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="White">количество цифр:</TextBlock>
+                                    <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="7" IsSnapToTickEnabled="True" TickFrequency="1"/>
+                                    <TextBlock x:Name="Digits" FontSize="12" VerticalAlignment="Center" Foreground="White" Text="50" Margin="0,0,15,0"/>
+                                    <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
+                                    <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>
+                                    <Ellipse x:Name="IndicatorEl2" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
+                                </WrapPanel>
                             </Grid>
-                            <WrapPanel HorizontalAlignment="Right">
-                                <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="White">количество цифр:</TextBlock>
-                                <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="7" IsSnapToTickEnabled="True" TickFrequency="1"/>
-                                <TextBlock x:Name="Digits" FontSize="12" VerticalAlignment="Center" Foreground="White" Text="50" Margin="0,0,15,0"/>
-                                <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
-                                <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>
-                                <Ellipse x:Name="IndicatorEl2" Height="15" Width="15" Fill="Red" Margin="7,0,2,0"></Ellipse>
-                            </WrapPanel>
                         </StackPanel>
                     </Border>
                 </Grid>
