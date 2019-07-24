@@ -350,6 +350,7 @@ namespace OMineManager
         }
         private static void ReadLog(string lf, string logfile)
         {
+            long end = 0;
             string str;
             bool[] pass = new bool[5];
             if (Process.GetProcessesByName(StartedProcessName).Length == 0)
@@ -365,34 +366,39 @@ namespace OMineManager
                 {
                     using (FileStream fstream = new FileStream(lf, FileMode.Open))
                     {
-                        byte[] array = new byte[fstream.Length];
-                        fstream.Read(array, 0, array.Length);
-                        str = System.Text.Encoding.Default.GetString(array);
-
-                        pass[0] = str.Contains("srv_thr cnt: 1, IP: 127.0.0.1");
-                        pass[0] = str.Contains("recv: ");
-                        pass[0] = str.Contains("srv pck: ");
-                        pass[0] = str.Contains("srv bs: ");
-                        pass[0] = str.Contains("sent: ");
-
-                        if (!pass.Contains(true))
+                        if (fstream.Length > end)
                         {
-                            MainWindow.context.Send(WriteToRichTextBox, str);
-                            Task.Run(() =>
+                            byte[] array = new byte[fstream.Length - end];
+                            fstream.Seek(end, SeekOrigin.Current);
+                            fstream.Read(array, 0, array.Length);
+                            str = System.Text.Encoding.Default.GetString(array);
+
+                            pass[0] = str.Contains("srv_thr cnt: 1, IP: 127.0.0.1");
+                            pass[0] = str.Contains("recv: ");
+                            pass[0] = str.Contains("srv pck: ");
+                            pass[0] = str.Contains("srv bs: ");
+                            pass[0] = str.Contains("sent: ");
+
+                            if (!pass.Contains(true))
                             {
-                                using (StreamWriter fstr = new StreamWriter(logfile, true))
+                                MainWindow.context.Send(WriteToRichTextBox, str);
+                                Task.Run(() =>
                                 {
-                                    fstr.WriteLine(str);
-                                }
-                            });
+                                    using (StreamWriter fstr = new StreamWriter(logfile, true))
+                                    {
+                                        fstr.WriteLine(str);
+                                    }
+                                });
+                            }
+
+                            end = fstream.Length;
                         }
                     }
-                    File.Delete(lf);
                 }
                 catch { }
-                File.Delete(lf);
                 Thread.Sleep(200);
             }
+            File.Delete(lf);
         }
         public static void WriteToRichTextBox(object t)
         {
