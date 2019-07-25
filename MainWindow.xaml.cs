@@ -9,9 +9,12 @@ using PM = OMineManager.ProfileManager;
 using SM = OMineManager.SettingsManager;
 using MM = OMineManager.MinersManager;
 using OCM = OMineManager.OverclockManager;
+using IM = OMineManager.InformManager;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using System.Windows.Documents;
+using System.IO;
 
 namespace OMineManager
 {
@@ -35,6 +38,9 @@ namespace OMineManager
         {
             PM.Initialize();
             Algotitm.ItemsSource = SM.MinersD.Keys;
+            AutoStart.IsChecked = PM.Profile.Autostart;
+            AutoStart.Checked += AutoStart_Checked;
+            AutoStart.Unchecked += AutoStart_Checked;
             Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
             GPUsCB.ItemsSource = new string[] { "Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" };
             if (PM.Profile.GPUsSwitch != null)
@@ -59,6 +65,12 @@ namespace OMineManager
             Dig = PM.Profile.Digits;
             Digits.Text = PM.Profile.Digits.ToString();
             DigitsSlider.ValueChanged += DigitsSlider_ValueChanged;
+
+            if (PM.Profile.Autostart)
+            {
+                MM.StartLastMiner(null);
+                TabConroller.SelectedIndex = 2;
+            }
         }
         #endregion
         #region RigName
@@ -216,7 +228,6 @@ namespace OMineManager
         {
             if (ApplyConfigM())
             {
-                MM.KillProcess();
                 Profile.Config PC = PM.Profile.ConfigsList[ConfigsList.SelectedIndex];
                 MM.StartMiner(PC);
                 TabConroller.SelectedIndex = 2;
@@ -303,6 +314,7 @@ namespace OMineManager
             string str = (string)KillProcess.Content;
             if (str == "Завершить процесс")
             {
+                IM.StopWachdog();
                 MM.KillProcess();
             }
             if (str == "Запустить процесс")
@@ -648,6 +660,44 @@ namespace OMineManager
             Dig = n; Digits.Text = n.ToString();
             PM.Profile.Digits = n;
             PM.SaveProfile();
+        }
+        public static void SystemMessage(string str)
+        { context.Send(systemMessage, str); }
+        private static void systemMessage(object o)
+        {
+            string str = (string)o;
+            Brush br = Brushes.Yellow;
+
+            TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
+                MainWindow.This.MinerLog.Document.ContentEnd);
+            tr.Text = $">> >> >> >> {str}";
+            tr.ApplyPropertyValue(TextElement.ForegroundProperty, br);
+            This.MinerLog.AppendText(Environment.NewLine);
+        }
+        private void AutoStart_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AutoStart.IsChecked == true)
+            {
+                PM.Profile.Autostart = true;
+                PM.SaveProfile();
+            }
+            if (AutoStart.IsChecked == false)
+            {
+                PM.Profile.Autostart = false;
+                PM.SaveProfile();
+            }
+        }
+        public static void WriteGeneralLog(string str)
+        {
+            Task.Run(() => 
+            {
+                using (FileStream fstream = new FileStream("GeneralLogfile.txt", FileMode.Append))
+                {
+                    string DT = DateTime.Now.ToString("HH:mm:ss - dd.MM.yy");
+                    byte[] array = System.Text.Encoding.Default.GetBytes($"{DT} | >> {str}");
+                    fstream.Write(array, 0, array.Length);
+                }
+            });
         }
     }
 }

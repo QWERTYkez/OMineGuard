@@ -21,11 +21,11 @@ namespace OMineManager
         private static List<ISensor> gpuCoreClockSensors = new List<ISensor>();
         private static List<ISensor> gpuMemoryClockSensors = new List<ISensor>();
         public static bool OHMisEnabled = false;
+        public static bool MSIconnecting = false;
 
         public static void Initialize()
         {
             Task.Run(() => { ConnectToMSI(); });
-            Task.Run(() => { ConnectToOHM(); });
         }
 
         private static void ConnectToMSI()
@@ -37,13 +37,13 @@ namespace OMineManager
                     Thread.Sleep(50);
                 }
             }
-            bool b = false;
-            while (!b)
+            while (!MSIconnecting)
             {
                 try
                 {
                     CM = new ControlMemory();
-                    b = true;
+                    MSIconnecting = true;
+                    ConnectToOHM();
                 }
                 catch { }
             }
@@ -111,7 +111,10 @@ namespace OMineManager
                             MS[1] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuCoreClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
                             MS[2] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuMemoryClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
                         }
-                        MainWindow.context.Send(MainWindow.SetMS2, MS);
+                        if (MS[0] != null)
+                        {
+                            MainWindow.context.Send(MainWindow.SetMS2, MS);
+                        }
                     }
                     catch { }
                     Thread.Sleep(1000);
@@ -120,8 +123,11 @@ namespace OMineManager
         }
         public static void ApplyOverclock(Profile.Overclock OC)
         {
-            MainWindow.This.ClocksList.SelectedIndex =
+            MainWindow.context.Send((object o) => 
+            {
+                MainWindow.This.ClocksList.SelectedIndex =
                 PM.Profile.ClocksList.Select(W => W.Name).ToList().IndexOf(OC.Name);
+            }, null);
             Task.Run(() => 
             {
                 ControlMemory nConf = CM;
@@ -238,6 +244,7 @@ namespace OMineManager
                         CM = nConf;
                         CM.CommitChanges();
                         b = true;
+                        MainWindow.SystemMessage("Параметры разгона установлены");
                     }
                     catch { }
                 }

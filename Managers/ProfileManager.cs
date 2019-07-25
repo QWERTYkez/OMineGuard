@@ -64,9 +64,11 @@ namespace OMineManager
             ConfigsList = new List<Config>();
             ClocksList = new List<Overclock>();
             Digits = 4;
+            Autostart = false;
         }
 
         public string RigName;
+        public bool Autostart;
         public string StartedConfig;
         public string StartedClock;
         public string StartedProcess;

@@ -8,7 +8,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using SM = OMineManager.SettingsManager;
 using MW = OMineManager.MainWindow;
+using MM = OMineManager.MinersManager;
+using PM = OMineManager.ProfileManager;
 using xNet;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace OMineManager
 {
@@ -23,6 +27,10 @@ namespace OMineManager
             MinerInfo Info = new MinerInfo();
             HttpRequest request;
             string content = "";
+            SWT = DateTime.Now;
+            CardsCount = PM.Profile.GPUsSwitch.Where(x => x == true).Count();
+            SecurityMode1 = false;
+            SecurityMode2 = false;
             Task.Run(() =>
             {
                 InformThread = Thread.CurrentThread;
@@ -76,6 +84,7 @@ namespace OMineManager
                                     catch { }
 
                                     MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                                    HashrateWachdog(Info);
                                 }
                                 finally
                                 {
@@ -113,6 +122,7 @@ namespace OMineManager
                                     Info.ShRejected = GDs.Select(GD => GD.rejected_shares).ToArray();
 
                                     MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                                    HashrateWachdog(Info);
                                 }
                                 catch { }
                             }
@@ -149,6 +159,7 @@ namespace OMineManager
                                     Info.ShAccepted = new int[] { INF.stratum.rejected_shares };
 
                                     MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                                    HashrateWachdog(Info);
                                 }
                                 catch { }
                             }
@@ -158,6 +169,132 @@ namespace OMineManager
                 }
             });
         }
+        #region Wachdog
+        public static double MinHashrate;
+        private static DateTime SWT;
+        private static DateTime WDT1;
+        private static DateTime WDT2;
+        private static bool SecurityMode1;
+        private static bool SecurityMode2;
+        private static int GK;
+        private static int WachdogInterval = 60 * 2;
+        private static int StartingInterval = 60 * 5;
+        private static int CardsCount;
+        public static void HashrateWachdog(MinerInfo Info)
+        {
+            if (Info.Hashrates.Length < CardsCount)
+            {
+                MW.WriteGeneralLog("Перезапуск компьютера из-за отвала карты");
+                Task.Run(() =>
+                {
+                    MW.context.Send(MM.KillProcess, null);
+                    Process.Start("shutdown", "/r /t 0");
+                });
+                return;
+            }
+
+            if ((SWT - DateTime.Now).Seconds < StartingInterval) return;
+
+            if (Info.Hashrates.Sum() < MinHashrate)
+            {
+                if (!SecurityMode1)
+                {
+                    SecurityMode1 = true;
+                    WDT1 = DateTime.Now;
+                }
+                else
+                {
+                    if ((WDT1 - DateTime.Now).Seconds > WachdogInterval)
+                    {
+                        MW.WriteGeneralLog("Перезапуск майнера из-за падения хешрейта");
+                        Task.Run(() => 
+                        {
+                            MW.context.Send(MM.KillProcess, null);
+                            Thread.Sleep(10000);
+                            MW.context.Send(MM.StartLastMiner, null);
+                        });
+                        return;
+                    }
+                }
+            }
+            else if (SecurityMode1)
+            {
+                SecurityMode1 = false;
+            }
+
+        back:
+            if (!SecurityMode2)
+            {
+                for (int i = 0; i < Info.Hashrates.Length; i++)
+                {
+                    if (Info.Hashrates[i] == 0)
+                    {
+                        GK = i;
+                        SecurityMode2 = true;
+                        WDT2 = DateTime.Now;
+                    }
+                }
+            }
+            else
+            {
+                if (Info.Hashrates[GK] == 0 && (WDT2 - DateTime.Now).Seconds > WachdogInterval)
+                {
+                    MW.WriteGeneralLog($"Перезапуск майнера из-за отвала GPU{GK}");
+                    Task.Run(() =>
+                    {
+                        MW.context.Send(MM.KillProcess, null);
+                        Thread.Sleep(10000);
+                        MW.context.Send(MM.StartLastMiner, null);
+                    });
+                    return;
+                }
+                else
+                {
+                    SecurityMode2 = false;
+                    goto back;
+                }
+            }
+        }
+        private static Thread InternetWachdogThread;
+        private static bool InternetConnectionState;
+        public static void StartInternetWachdog()
+        {
+            Task.Run(() => 
+            {
+                InternetWachdogThread = Thread.CurrentThread;
+                InternetConnectionState = true;
+                bool ICS;
+                while (true)
+                {
+                    ICS = InternetConnetction();
+                    if (InternetConnectionState != ICS)
+                    {
+                        if (InternetConnectionState == true)
+                        {
+                            MW.WriteGeneralLog($"Остановка работы из-за потери интернет соединения");
+                            MW.context.Send(MM.KillProcess, null);
+                        }
+                        else
+                        {
+                            MW.WriteGeneralLog($"Возобновление работы");
+                            MW.context.Send(MM.StartLastMiner, null);
+                        }
+                        InternetConnectionState = ICS;
+                    }
+
+                    Thread.Sleep(1000);
+                }
+            });
+        }
+        public static void StopWachdog()
+        {
+            try
+            {
+                InternetWachdogThread.Abort();
+            }
+            catch { }
+        }
+        #endregion
         #region Claymore
         public class ClaymoreInfo
         {
@@ -216,5 +353,37 @@ namespace OMineManager
             public int[] ShRejected;
             public int[] ShInvalid;
         }
+        #region Internet
+        public static bool InternetConnetction()
+        {
+            InternetConnectionState_e cs = new InternetConnectionState_e();
+            InternetGetConnectedState(ref cs, 0);
+
+            IC = new bool[] 
+            {
+                (cs & InternetConnectionState_e.INTERNET_CONNECTION_LAN) == InternetConnectionState_e.INTERNET_CONNECTION_LAN,
+                (cs & InternetConnectionState_e.INTERNET_CONNECTION_MODEM) == InternetConnectionState_e.INTERNET_CONNECTION_MODEM,
+                (cs & InternetConnectionState_e.INTERNET_CONNECTION_PROXY) == InternetConnectionState_e.INTERNET_CONNECTION_PROXY
+            };
+
+            return IC[0] || IC[1] || IC[2];
+        }
+        public static bool[] IC;
+        #endregion
+        #region DLLimport
+        [DllImport("wininet.dll", CharSet = CharSet.Auto)]
+        private extern static bool InternetGetConnectedState(ref InternetConnectionState_e lpdwFlags, int dwReserved);
+
+        [Flags]
+        enum InternetConnectionState_e : int
+        {
+            INTERNET_CONNECTION_MODEM = 0x01,      // true
+            INTERNET_CONNECTION_LAN = 0x02,     // true 
+            INTERNET_CONNECTION_PROXY = 0x04,       // true
+            INTERNET_RAS_INSTALLED = 0x10,
+            INTERNET_CONNECTION_OFFLINE = 0x20,
+            INTERNET_CONNECTION_CONFIGURED = 0x40
+        }
+        #endregion
     }
 }
