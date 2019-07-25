@@ -297,6 +297,26 @@
                     </Grid>
                 </Grid>
             </TabItem>
+            <TabItem Header="Inform Manager">
+                <StackPanel HorizontalAlignment="Center">
+                    <Border Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
+                        <WrapPanel HorizontalAlignment="Center">
+                            <TextBlock Foreground="White">VK Informer:</TextBlock>
+                            <CheckBox x:Name="VKInformerToggle" VerticalAlignment="Center" Margin="10,0,0,0"></CheckBox>
+                            <TextBlock Foreground="White" Margin="20,0,0,0">user id:</TextBlock>
+                            <TextBox x:Name="VKuserID" Width="200" Margin="10,0,0,0"></TextBox>
+                        </WrapPanel>
+                    </Border>
+                    <Border Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
+                        <WrapPanel HorizontalAlignment="Center">
+                            <TextBlock Foreground="White">Telegram Informer:</TextBlock>
+                            <CheckBox x:Name="TelegramInformerToggle" VerticalAlignment="Center" Margin="10,0,0,0" IsEnabled="False"></CheckBox>
+                            <TextBlock Foreground="White" Margin="20,0,0,0">user id:</TextBlock>
+                            <TextBox Width="200" Margin="10,0,0,0" IsEnabled="False"></TextBox>
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>

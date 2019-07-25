@@ -13,6 +13,7 @@ using PM = OMineManager.ProfileManager;
 using xNet;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Windows;
 
 namespace OMineManager
 {
@@ -28,7 +29,9 @@ namespace OMineManager
             HttpRequest request;
             string content = "";
             SWT = DateTime.Now;
-            CardsCount = PM.Profile.GPUsSwitch.Where(x => x == true).Count();
+            if (PM.Profile.GPUsSwitch != null)
+            { CardsCount = PM.Profile.GPUsSwitch.Where(x => x == true).Count(); }
+            else CardsCount = 0;
             SecurityMode1 = false;
             SecurityMode2 = false;
             Task.Run(() =>
@@ -169,6 +172,28 @@ namespace OMineManager
                 }
             });
         }
+        #region InformMessage
+        public static void InformMessage(string message)
+        {
+            if (PM.Profile.Informer.VkInform && PM.Profile.Informer.VKuserID != null)
+            {
+                Task.Run(() =>
+                {
+                    using (var request = new HttpRequest())
+                    {
+                        var urlParams = new RequestParams();
+
+                        urlParams["user_id"] = PM.Profile.Informer.VKuserID;
+                        urlParams["message"] = $"{PM.Profile.RigName} >> {message}";
+                        urlParams["access_token"] = "6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929";
+                        urlParams["v"] = "5.73";
+
+                        string content = request.Post("https://api.vk.com/method/messages.send", urlParams).ToString();
+                    }
+                });
+            }
+        }
+        #endregion
         #region Wachdog
         public static double MinHashrate;
         private static DateTime SWT;
@@ -185,15 +210,31 @@ namespace OMineManager
             if (Info.Hashrates.Length < CardsCount)
             {
                 MW.WriteGeneralLog("Перезапуск компьютера из-за отвала карты");
+                InformMessage("Перезапуск из-за отвала карты");
                 Task.Run(() =>
                 {
                     MW.context.Send(MM.KillProcess, null);
+                    Thread.Sleep(5000);
                     Process.Start("shutdown", "/r /t 0");
+                    Application.Current.Shutdown();
                 });
                 return;
             }
 
             if ((SWT - DateTime.Now).Seconds < StartingInterval) return;
+
+            if (Info.Hashrates.Sum() == 0)
+            {
+                MW.WriteGeneralLog("Перезапуск майнера из-за падения хешрейта");
+                InformMessage("падение хешрейта, перезапуск майнера");
+                Task.Run(() =>
+                {
+                    MW.context.Send(MM.KillProcess, null);
+                    Thread.Sleep(10000);
+                    MW.context.Send(MM.StartLastMiner, null);
+                });
+                return;
+            }
 
             if (Info.Hashrates.Sum() < MinHashrate)
             {
@@ -206,8 +247,9 @@ namespace OMineManager
                 {
                     if ((WDT1 - DateTime.Now).Seconds > WachdogInterval)
                     {
-                        MW.WriteGeneralLog("Перезапуск майнера из-за падения хешрейта");
-                        Task.Run(() => 
+                        MW.WriteGeneralLog("Перезапуск майнера из-за низкого хешрейта");
+                        InformMessage("низкий хешрейт, перезапуск майнера");
+                        Task.Run(() =>
                         {
                             MW.context.Send(MM.KillProcess, null);
                             Thread.Sleep(10000);
@@ -240,6 +282,7 @@ namespace OMineManager
                 if (Info.Hashrates[GK] == 0 && (WDT2 - DateTime.Now).Seconds > WachdogInterval)
                 {
                     MW.WriteGeneralLog($"Перезапуск майнера из-за отвала GPU{GK}");
+                    InformMessage($"Перезапуск майнера из-за отвала GPU{GK}");
                     Task.Run(() =>
                     {
                         MW.context.Send(MM.KillProcess, null);
@@ -277,6 +320,7 @@ namespace OMineManager
                         else
                         {
                             MW.WriteGeneralLog($"Возобновление работы");
+                            InformMessage($"Возобновление работы после сбоя интернет соединения");
                             MW.context.Send(MM.StartLastMiner, null);
                         }
                         InternetConnectionState = ICS;

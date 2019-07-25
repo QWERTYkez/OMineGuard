@@ -63,6 +63,7 @@ namespace OMineManager
             LogTextSize = 0;
             ConfigsList = new List<Config>();
             ClocksList = new List<Overclock>();
+            Informer = new InformManager();
             Digits = 4;
             Autostart = false;
         }
@@ -76,6 +77,7 @@ namespace OMineManager
         public bool[] GPUsSwitch;
         public List<Config> ConfigsList;
         public List<Overclock> ClocksList;
+        public InformManager Informer;
         public double LogTextSize;
 
         public class Config
@@ -114,6 +116,17 @@ namespace OMineManager
             public int[] CoreClock;
             public int[] MemoryClock;
             public uint[] FanSpeed;
+        }
+        public class InformManager
+        {
+            public InformManager()
+            {
+                VkInform = false;
+                VKuserID = "";
+            }
+
+            public bool VkInform;
+            public string VKuserID;
         }
     }
 }

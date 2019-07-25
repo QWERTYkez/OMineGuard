@@ -296,6 +296,7 @@ namespace OMineManager
 
                 }
                 MainWindow.SystemMessage($"{dir} запущен");
+                IM.InformMessage($"{dir} запущен");
                 MainWindow.context.Send((object o) => 
                 {
                     MainWindow.This.KillProcess.Content = "Завершить процесс";

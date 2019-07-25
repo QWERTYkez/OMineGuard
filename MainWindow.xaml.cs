@@ -65,13 +65,50 @@ namespace OMineManager
             Dig = PM.Profile.Digits;
             Digits.Text = PM.Profile.Digits.ToString();
             DigitsSlider.ValueChanged += DigitsSlider_ValueChanged;
+            if (!PM.Profile.Informer.VkInform)
+            {
+                VKuserID.IsEnabled = false;
+                VKInformerToggle.IsChecked = false;
+            }
+            else
+            {
+                VKuserID.IsEnabled = true;
+                VKInformerToggle.IsChecked = true;
+            }
+            VKuserID.Text = PM.Profile.Informer.VKuserID;
+            VKInformerToggle.Checked += VKInformerToggle_Click;
+            VKInformerToggle.Unchecked += VKInformerToggle_Click;
+            VKuserID.TextChanged += VKuserID_TextChanged;
 
+            Autostart();
+        }
+        private void Autostart()
+        {
             if (PM.Profile.Autostart)
             {
-                MM.StartLastMiner(null);
-                TabConroller.SelectedIndex = 2;
+                if (IM.InternetConnetction())
+                {
+                    IM.InformMessage("OMineManager запущен");
+                    MM.StartLastMiner(null);
+                    TabConroller.SelectedIndex = 2;
+                }
+                else
+                {
+                    SystemMessage("Ожидание подключения к интернету");
+                    while (true)
+                    {
+                        if (IM.InternetConnetction())
+                        {
+                            SystemMessage("Соединение с интернетом установлено");
+                            IM.InformMessage("OMineManager запущен, после установления интернет соединения");
+                            MM.StartLastMiner(null);
+                            TabConroller.SelectedIndex = 2;
+                        }
+                        Thread.Sleep(1000);
+                    }
+                }
             }
-        }
+        } 
         #endregion
         #region RigName
         private void RigName_TextChanged(object sender, TextChangedEventArgs e)
@@ -698,6 +735,24 @@ namespace OMineManager
                     fstream.Write(array, 0, array.Length);
                 }
             });
+        }
+        private void VKInformerToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (VKInformerToggle.IsChecked == true)
+            {
+                VKuserID.IsEnabled = true;
+                PM.Profile.Informer.VkInform = true;
+            }
+            else
+            {
+                VKuserID.IsEnabled = false;
+                PM.Profile.Informer.VkInform = false;
+            }
+        }
+        private void VKuserID_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            PM.Profile.Informer.VKuserID = VKuserID.Text;
+            PM.SaveProfile();
         }
     }
 }
