@@ -248,7 +248,7 @@
                             <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalHashrate" FontSize="12" Foreground="White" Margin="15,3,3,3" FontFamily="Consolas" Padding="0"></TextBlock>
                             <WrapPanel Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right">
                                 <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="White">количество цифр:</TextBlock>
-                                <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="7" IsSnapToTickEnabled="True" TickFrequency="1"/>
+                                <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="10" IsSnapToTickEnabled="True" TickFrequency="1"/>
                                 <TextBlock x:Name="Digits" FontSize="12" VerticalAlignment="Center" Foreground="White" Text="50" Margin="0,0,15,0"/>
                                 <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
                                 <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>

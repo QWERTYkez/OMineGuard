@@ -65,12 +65,22 @@ namespace OMineManager
         {
             StartMiner(PM.Profile.ConfigsList.Single(p => p.Name == PM.profile.StartedConfig));
         }
+        public static void StartLastMiner()
+        {
+            StartMiner(PM.Profile.ConfigsList.Single(p => p.Name == PM.profile.StartedConfig));
+        }
+        public static Thread StaartProcessThread;
         public static void StartMiner(Profile.Config Config)
         {
             KillProcess();
-            MainWindow.This.MinerLog.Document.Blocks.Clear();
-            Task.Run(() => 
+            try
             {
+                StaartProcessThread.Abort();
+            }
+            catch { }
+            StaartProcessThread = new Thread(new ThreadStart(() => 
+            {
+                StaartProcessThread = Thread.CurrentThread;
                 List<Profile.Overclock> LPO =
                 PM.Profile.ClocksList.Where(oc => oc.Name == Config.Overclock).ToList();
                 if (LPO.Count > 0)
@@ -102,7 +112,7 @@ namespace OMineManager
                     StartedProcessName = "EthDcrMiner64";
                     param = $" -epool {Config.Pool}:{Config.Port} " +
                         $"-ewal {Config.Wallet}.{PM.Profile.RigName} " +
-                        $"-logfile \"{lf}\" {Config.Params}";
+                        $"-logfile \"{lf}\" -wd 0 {Config.Params}";
 
                     if (PM.Profile.GPUsSwitch != null)
                     {
@@ -297,11 +307,7 @@ namespace OMineManager
                 }
                 MainWindow.SystemMessage($"{dir} запущен");
                 IM.InformMessage($"{dir} запущен");
-                MainWindow.context.Send((object o) => 
-                {
-                    MainWindow.This.KillProcess.Content = "Завершить процесс";
-                    MainWindow.This.KillProcess2.Content = "Завершить процесс";
-                }, null);
+                MainWindow.context.Send(ButtonSetTitleToStop, null);
                 IM.MinHashrate = Config.MinHashrate;
                 RunIndication();
                 PM.Profile.StartedProcess = StartedProcessName;
@@ -309,7 +315,8 @@ namespace OMineManager
                 PM.SaveProfile();
                 IM.StartWaching(Config.Miner);
                 IM.StartInternetWachdog();
-            });
+            }));
+            StaartProcessThread.Start();
         }
         public static void KillProcess(object o)
         {
@@ -317,54 +324,84 @@ namespace OMineManager
         }
         public static void KillProcess()
         {
+            bool b = false;
             foreach (Process proc in Process.GetProcessesByName(PM.Profile.StartedProcess))
             {
                 try
                 {
                     proc.Kill();
+                    b = true;
                 }
                 catch { }
             }
-            MainWindow.SystemMessage("Процесс завершен");
+            if (b) MainWindow.SystemMessage("Процесс завершен");
             try
             {
                 IndicationThread.Abort();
                 IM.InformThread.Abort();
             }
             catch { }
+            try
+            {
+                File.Delete("MinersLogs/buflog.txt");
+            }
+            catch { }
             MainWindow.context.Send(MainWindow.Sethashrate, null);
-            SetIndicationColor(Brushes.Red);
+            MainWindow.context.Send(SetIndicationColor, Brushes.Red);
+            MainWindow.context.Send(ButtonSetTitleToStart, null);
+        }
+        private static void ButtonSetTitleToStart(object o)
+        {
             MainWindow.This.KillProcess.Content = "Запустить процесс";
             MainWindow.This.KillProcess2.Content = "Запустить процесс";
+        }
+        private static void ButtonSetTitleToStop(object o)
+        {
+            MainWindow.This.KillProcess.Content = "Завершить процесс";
+            MainWindow.This.KillProcess2.Content = "Завершить процесс";
+        }
+        public static void RestartMining()
+        {
+            KillProcess();
+            Thread.Sleep(10000);
+            StartLastMiner();
         }
         #region Indicator
         private static Thread IndicationThread;
         private static void RunIndication()
         {
-            Task.Run(()=> 
+            try
             {
-                IndicationThread = Thread.CurrentThread;
-                if (Process.GetProcessesByName(StartedProcessName).Length == 0)
-                {
-                    while (Process.GetProcessesByName(StartedProcessName).Length == 0)
-                    {
-                        Thread.Sleep(50);
-                    }
-                }
-                while (Process.GetProcessesByName(StartedProcessName).Length != 0)
-                {
-                    MainWindow.context.Send(SetIndicationColor, Brushes.Lime);
-                    Thread.Sleep(700);
-                    MainWindow.context.Send(SetIndicationColor, null);
-                    Thread.Sleep(300);
-                }
-                MainWindow.context.Send(SetIndicationColor, Brushes.Red);
-                MainWindow.context.Send((object o) => 
-                {
-                    MainWindow.This.KillProcess.Content = "Запустить процесс";
-                    MainWindow.This.KillProcess2.Content = "Запустить процесс";
-                }, null);
-            });
+                IndicationThread.Abort();
+            }
+            catch { }
+            IndicationThread = new Thread(new ThreadStart(() =>
+             {
+                 IndicationThread = Thread.CurrentThread;
+                 if (Process.GetProcessesByName(StartedProcessName).Length == 0)
+                 {
+                     while (Process.GetProcessesByName(StartedProcessName).Length == 0)
+                     {
+                         Thread.Sleep(50);
+                     }
+                 }
+                 while (Process.GetProcessesByName(StartedProcessName).Length != 0)
+                 {
+                     MainWindow.context.Send(SetIndicationColor, Brushes.Lime);
+                     Thread.Sleep(700);
+                     MainWindow.context.Send(SetIndicationColor, null);
+                     Thread.Sleep(300);
+                 }
+                 MainWindow.context.Send(SetIndicationColor, Brushes.Red);
+                 MainWindow.context.Send((object o) =>
+                 {
+                     MainWindow.This.KillProcess.Content = "Запустить процесс";
+                     MainWindow.This.KillProcess2.Content = "Запустить процесс";
+                 }, null);
+             }));
+            IndicationThread.Start();
+
+
         }
         private static void SetIndicationColor(object o)
         {
@@ -384,7 +421,6 @@ namespace OMineManager
         {
             long end = 0;
             string str;
-            bool[] pass = new bool[5];
             if (Process.GetProcessesByName(StartedProcessName).Length == 0)
             {
                 while (Process.GetProcessesByName(StartedProcessName).Length != 0)
@@ -405,13 +441,9 @@ namespace OMineManager
                             fstream.Read(array, 0, array.Length);
                             str = System.Text.Encoding.Default.GetString(array);
 
-                            pass[0] = str.Contains("srv_thr cnt: 1, IP: 127.0.0.1");
-                            pass[0] = str.Contains("recv: ");
-                            pass[0] = str.Contains("srv pck: ");
-                            pass[0] = str.Contains("srv bs: ");
-                            pass[0] = str.Contains("sent: ");
-
-                            if (!pass.Contains(true))
+                            if (!(str.Contains("srv") || 
+                                  str.Contains("recv") || 
+                                  str.Contains("sent")))
                             {
                                 MainWindow.context.Send(WriteToRichTextBox, str);
                                 Task.Run(() =>
@@ -430,7 +462,7 @@ namespace OMineManager
                 catch { }
                 Thread.Sleep(200);
             }
-            File.Delete(lf);
+            File.Delete("MinersLogs/buflog.txt");
         }
         public static void WriteToRichTextBox(object t)
         {
@@ -478,19 +510,19 @@ namespace OMineManager
         }
         public static void WriteLog(string str, Brush brush)
         {
-            TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
-                MainWindow.This.MinerLog.Document.ContentEnd);
-            tr.Text = str;
-            tr.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
-            MainWindow.This.MinerLog.AppendText(Environment.NewLine);
+            //TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
+            //    MainWindow.This.MinerLog.Document.ContentEnd);
+            //tr.Text = str;
+            //tr.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
+            //MainWindow.This.MinerLog.AppendText(Environment.NewLine);
         }
         public static void WriteLog(string str)
         {
-            TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
-                MainWindow.This.MinerLog.Document.ContentEnd);
-            tr.Text = str;
-            tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.White);
-            MainWindow.This.MinerLog.AppendText(Environment.NewLine);
+            //TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
+            //    MainWindow.This.MinerLog.Document.ContentEnd);
+            //tr.Text = str;
+            //tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.White);
+            //MainWindow.This.MinerLog.AppendText(Environment.NewLine);
         }
         #endregion
     }

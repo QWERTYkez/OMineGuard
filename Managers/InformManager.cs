@@ -23,6 +23,7 @@ namespace OMineManager
         public static Thread InformThread;
         private static int MsCycle = 1000;
 
+        private static Thread WachingThread;
         public static void StartWaching(SM.Miners? Miner)
         {
             MinerInfo Info = new MinerInfo();
@@ -34,7 +35,13 @@ namespace OMineManager
             else CardsCount = 0;
             SecurityMode1 = false;
             SecurityMode2 = false;
-            Task.Run(() =>
+
+            try
+            {
+                WachingThread.Abort();
+            }
+            catch { }
+            WachingThread = new Thread(new ThreadStart(() =>
             {
                 InformThread = Thread.CurrentThread;
                 switch (Miner)
@@ -170,7 +177,8 @@ namespace OMineManager
                             Thread.Sleep(MsCycle);
                         }
                 }
-            });
+            }));
+            WachingThread.Start();
         }
         #region InformMessage
         public static void InformMessage(string message)
@@ -202,8 +210,8 @@ namespace OMineManager
         private static bool SecurityMode1;
         private static bool SecurityMode2;
         private static int GK;
-        private static int WachdogInterval = 60 * 2;
-        private static int StartingInterval = 60 * 5;
+        private static int WachdogInterval = 30;
+        private static int StartingInterval = 30;
         private static int CardsCount;
         public static void HashrateWachdog(MinerInfo Info)
         {
@@ -221,7 +229,7 @@ namespace OMineManager
                 return;
             }
 
-            if ((SWT - DateTime.Now).Seconds < StartingInterval) return;
+            if ((DateTime.Now - SWT).TotalSeconds < StartingInterval) return;
 
             if (Info.Hashrates.Sum() == 0)
             {
@@ -229,9 +237,7 @@ namespace OMineManager
                 InformMessage("падение хешрейта, перезапуск майнера");
                 Task.Run(() =>
                 {
-                    MW.context.Send(MM.KillProcess, null);
-                    Thread.Sleep(10000);
-                    MW.context.Send(MM.StartLastMiner, null);
+                    MM.RestartMining();
                 });
                 return;
             }
@@ -245,15 +251,13 @@ namespace OMineManager
                 }
                 else
                 {
-                    if ((WDT1 - DateTime.Now).Seconds > WachdogInterval)
+                    if ((DateTime.Now - WDT1).TotalSeconds > WachdogInterval)
                     {
                         MW.WriteGeneralLog("Перезапуск майнера из-за низкого хешрейта");
                         InformMessage("низкий хешрейт, перезапуск майнера");
                         Task.Run(() =>
                         {
-                            MW.context.Send(MM.KillProcess, null);
-                            Thread.Sleep(10000);
-                            MW.context.Send(MM.StartLastMiner, null);
+                            MM.RestartMining();
                         });
                         return;
                     }
@@ -279,15 +283,13 @@ namespace OMineManager
             }
             else
             {
-                if (Info.Hashrates[GK] == 0 && (WDT2 - DateTime.Now).Seconds > WachdogInterval)
+                if (Info.Hashrates[GK] == 0 && (DateTime.Now - WDT2).TotalSeconds > WachdogInterval)
                 {
                     MW.WriteGeneralLog($"Перезапуск майнера из-за отвала GPU{GK}");
                     InformMessage($"Перезапуск майнера из-за отвала GPU{GK}");
                     Task.Run(() =>
                     {
-                        MW.context.Send(MM.KillProcess, null);
-                        Thread.Sleep(10000);
-                        MW.context.Send(MM.StartLastMiner, null);
+                        MM.RestartMining();
                     });
                     return;
                 }
@@ -302,7 +304,12 @@ namespace OMineManager
         private static bool InternetConnectionState;
         public static void StartInternetWachdog()
         {
-            Task.Run(() => 
+            try
+            {
+                InternetWachdogThread.Abort();
+            }
+            catch { }
+            InternetWachdogThread = new Thread(new ThreadStart(() =>
             {
                 InternetWachdogThread = Thread.CurrentThread;
                 InternetConnectionState = true;
@@ -328,7 +335,8 @@ namespace OMineManager
 
                     Thread.Sleep(1000);
                 }
-            });
+            }));
+            InternetWachdogThread.Start();
         }
         public static void StopWachdog()
         {
@@ -430,4 +438,5 @@ namespace OMineManager
         }
         #endregion
     }
+} }
 }

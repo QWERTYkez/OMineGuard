@@ -37,6 +37,7 @@ namespace OMineManager
         private void IniProfile()
         {
             PM.Initialize();
+            CreateDirectories();
             Algotitm.ItemsSource = SM.MinersD.Keys;
             AutoStart.IsChecked = PM.Profile.Autostart;
             AutoStart.Checked += AutoStart_Checked;
@@ -81,6 +82,19 @@ namespace OMineManager
             VKuserID.TextChanged += VKuserID_TextChanged;
 
             Autostart();
+        }
+        private void CreateDirectories()
+        {
+            DirectoryInfo dirInfo;
+            string[] dirs = new string[] { "MinersLogs", "Claymore's Dual Miner", "Gminer", "Bminer" };
+            foreach (string dir in dirs)
+            {
+                dirInfo = new DirectoryInfo(dir);
+                if (!dirInfo.Exists)
+                {
+                    dirInfo.Create();
+                }
+            }
         }
         private void Autostart()
         {
@@ -213,7 +227,7 @@ namespace OMineManager
                     }
                     PM.Profile.ConfigsList[n].Name = MiningConfigName.Text;
                     PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
-                    PM.Profile.ConfigsList[n].Miner = (SM.Miners)Miner.SelectedItem;
+                    PM.Profile.ConfigsList[n].Miner = (SM.Miners?)Miner.SelectedItem;
                     PM.Profile.ConfigsList[n].Pool = Pool.Text;
                     PM.Profile.ConfigsList[n].Port = Port.Text;
                     PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
@@ -397,7 +411,7 @@ namespace OMineManager
             ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
             ClocksList.SelectedIndex = PM.Profile.ClocksList.Count - 1;
             Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
-            Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
+            Overclock.SelectedIndex = PM.Profile.ClocksList.Count - 1;
         }
         private void SaveClock_Click(object sender, RoutedEventArgs e)
         {
@@ -488,7 +502,10 @@ namespace OMineManager
                     ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
                     ClocksList.SelectedIndex = n;
                     Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
-                    Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
+                    if (ConfigsList.SelectedIndex != -1)
+                    {
+                        Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
+                    }
                     return true;
                 }
                 else { return false; }
