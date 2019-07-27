@@ -98,8 +98,7 @@ namespace OMineManager
                     OCM.ApplyOverclock(LPO[0]);
                 }
                 StartedMiner = Config.Miner;
-                StartMiningTime = DateTime.Now;
-                string DT = StartMiningTime.ToString("HH.mm.ss - dd.MM.yy");
+                string DT = DateTime.Now.ToString("HH.mm.ss - dd.MM.yy");
                 StartedProcessName = default;
                 string param = default;
                 string logfile = $"MinersLogs/log {DT} {Config.Name}.txt";

@@ -724,7 +724,7 @@ namespace OMineManager
 
             TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
                 MainWindow.This.MinerLog.Document.ContentEnd);
-            tr.Text = $">> >> >> >> {str}";
+            tr.Text = $"{DateTime.Now.ToString("dd MMMM - HH.mm.ss")} >> {str}";
             tr.ApplyPropertyValue(TextElement.ForegroundProperty, br);
             This.MinerLog.AppendText(Environment.NewLine);
         }

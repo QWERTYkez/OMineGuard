@@ -233,8 +233,8 @@ namespace OMineManager
 
             if (Info.Hashrates.Sum() == 0)
             {
-                MW.WriteGeneralLog("Перезапуск майнера из-за падения хешрейта");
-                InformMessage("падение хешрейта, перезапуск майнера");
+                MW.WriteGeneralLog("Перезапуск майнера из-за нулевого хешрейта");
+                InformMessage("нулевой хешрейт, перезапуск майнера");
                 Task.Run(() =>
                 {
                     MM.RestartMining();
@@ -438,5 +438,4 @@ namespace OMineManager
         }
         #endregion
     }
-} }
-}
+} 
