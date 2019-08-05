@@ -80,7 +80,6 @@ namespace OMineManager
             catch { }
             StaartProcessThread = new Thread(new ThreadStart(() => 
             {
-                StaartProcessThread = Thread.CurrentThread;
                 List<Profile.Overclock> LPO =
                 PM.Profile.ClocksList.Where(oc => oc.Name == Config.Overclock).ToList();
                 if (LPO.Count > 0)
@@ -337,7 +336,7 @@ namespace OMineManager
             try
             {
                 IndicationThread.Abort();
-                IM.InformThread.Abort();
+                IM.WachingThread.Abort();
             }
             catch { }
             try
@@ -361,12 +360,13 @@ namespace OMineManager
         }
         public static void RestartMining()
         {
+            IM.StartIdleWatchdog();
             KillProcess();
             Thread.Sleep(10000);
             StartLastMiner();
         }
         #region Indicator
-        private static Thread IndicationThread;
+        public static Thread IndicationThread;
         private static void RunIndication()
         {
             try

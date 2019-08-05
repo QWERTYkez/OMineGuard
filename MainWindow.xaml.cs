@@ -15,18 +15,23 @@ using System.Diagnostics;
 using Newtonsoft.Json;
 using System.Windows.Documents;
 using System.IO;
+using System.Reflection;
 
 namespace OMineManager
 {
     public partial class MainWindow : Window
     {
+        public const string Ver = "1.1";
+        public static string Version;
         public static MainWindow This;
         public static bool AutoScroll = true;
         public static SynchronizationContext context = SynchronizationContext.Current;
 
         public MainWindow()
         {
+            Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             InitializeComponent();
+            Title += $" {Version}"; 
             This = this;
             IniProfile();
             OCM.Initialize();

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using IM = OMineManager.InformManager;
 
 namespace OMineManager
 {
@@ -16,6 +18,20 @@ namespace OMineManager
         private void Application_Exit(object sender, ExitEventArgs e)
         {
             MinersManager.KillProcess();
+            AbortThread(InformManager.WachingThread);
+            IM.StopWachdog();
+            IM.StopIdleWatchdog();
+            AbortThread(MinersManager.IndicationThread);
+            AbortThread(MinersManager.StaartProcessThread);
+
+        }
+        private void AbortThread(Thread t)
+        {
+            try
+            {
+                t.Abort();
+            }
+            catch { }
         }
     }
 }

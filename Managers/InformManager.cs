@@ -14,22 +14,169 @@ using xNet;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Windows;
+using System.Net.NetworkInformation;
 
 namespace OMineManager
 {
     public static class InformManager
     {
-        public static MinerInfo Info;
-        public static Thread InformThread;
+        private static MinerInfo info;
+        private static object InfoKey;
+        public static MinerInfo Info
+        {
+            get { lock (InfoKey) return info; }
+            set { lock (InfoKey) info = value; }
+        }
         private static int MsCycle = 1000;
 
-        private static Thread WachingThread;
+        public static Thread WachingThread;
+        private static ThreadStart WachingClaymore = new ThreadStart(() =>
+        {
+            TcpClient client;
+            while (true)
+            {
+                try
+                {
+                    client = new TcpClient("127.0.0.1", 3333);
+                    Byte[] data = Encoding.UTF8.GetBytes("{ \"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"miner_getstat2\"}");
+                    NetworkStream stream = client.GetStream();
+                    try
+                    {
+                        // Отправка сообщения
+                        stream.Write(data, 0, data.Length);
+                        // Получение ответа
+                        Byte[] readingData = new Byte[256];
+                        String responseData = String.Empty;
+                        StringBuilder completeMessage = new StringBuilder();
+                        int numberOfBytesRead = 0;
+                        do
+                        {
+                            numberOfBytesRead = stream.Read(readingData, 0, readingData.Length);
+                            completeMessage.AppendFormat("{0}", Encoding.UTF8.GetString(readingData, 0, numberOfBytesRead));
+                        }
+                        while (stream.DataAvailable);
+                        try
+                        {
+                            List<string> LS = JsonConvert.DeserializeObject<ClaymoreInfo>(completeMessage.ToString()).result;
+                            Info.Hashrates = JsonConvert.DeserializeObject<double[]>($"[{LS[3].Replace(";", ",")}]");
+                            for (int i = 0; i < Info.Hashrates.Length; i++)
+                            {
+                                Info.Hashrates[i] = Info.Hashrates[i] / 1000;
+                            }
+                            int lt = Info.Hashrates.Length;
+                            int[] xx = JsonConvert.DeserializeObject<int[]>($"[{LS[6].Replace(";", ",")}]");
+                            Info.Temperatures = new int[lt];
+                            Info.Fanspeeds = new int[lt];
+                            for (int n = 0; n < xx.Length; n = n + 2)
+                            {
+                                Info.Temperatures[n / 2] = (byte)xx[n];
+                                Info.Fanspeeds[n / 2] = (byte)xx[n + 1];
+                            }
+                            Info.ShAccepted = JsonConvert.DeserializeObject<int[]>($"[{LS[9].Replace(";", ",")}]");
+                            Info.ShRejected = JsonConvert.DeserializeObject<int[]>($"[{LS[10].Replace(";", ",")}]");
+                            Info.ShInvalid = JsonConvert.DeserializeObject<int[]>($"[{LS[11].Replace(";", ",")}]");
+                        }
+                        catch { }
+
+                        MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                        if (SWT == null) SWT = DateTime.Now;
+                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
+                    }
+                    finally
+                    {
+                        stream.Close();
+                        client.Close();
+                    }
+                }
+                catch { }
+                Thread.Sleep(MsCycle);
+            }
+        });
+        private static ThreadStart WachingGminer = new ThreadStart(() =>
+        {
+            string content = "";
+            HttpRequest request;
+            Info.ShInvalid = null;
+            Info.Fanspeeds = null;
+            while (true)
+            {
+                try
+                {
+                    using (request = new HttpRequest())
+                    {
+                        request.UserAgent = Http.ChromeUserAgent();
+
+                        // Отправляем запрос.
+                        HttpResponse response = request.Get("http://localhost:3333/stat");
+                        // Принимаем тело сообщения в виде строки.
+                        content = response.ToString();
+                    }
+                    try
+                    {
+                        GminerDevice[] GDs = JsonConvert.DeserializeObject<GminerInfo>(content).
+                                devices.OrderBy(GD => GD.gpu_id).ToArray();
+
+                        Info.Hashrates = GDs.Select(GD => GD.speed).ToArray();
+                        Info.Temperatures = GDs.Select(GD => GD.temperature).ToArray();
+                        Info.ShAccepted = GDs.Select(GD => GD.accepted_shares).ToArray();
+                        Info.ShRejected = GDs.Select(GD => GD.rejected_shares).ToArray();
+
+                        MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                        if (SWT == null) SWT = DateTime.Now;
+                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
+                    }
+                    catch { }
+                }
+                catch { }
+                Thread.Sleep(MsCycle);
+            }
+        });
+        private static ThreadStart WachingBminer = new ThreadStart(() =>
+        {
+            string content = "";
+            HttpRequest request;
+            while (true)
+            {
+                try
+                {
+                    using (request = new HttpRequest())
+                    {
+                        request.UserAgent = Http.ChromeUserAgent();
+
+                        // Отправляем запрос.
+                        HttpResponse response = request.Get("http://localhost:3333/api/status");
+                        // Принимаем тело сообщения в виде строки.
+                        content = response.ToString();
+                        for (int i = 0; i < 20; i++)
+                        {
+                            content = content.Replace("{\"" + i + "\":", "[");
+                        }
+                        content = content.Replace("}}}}", "}}}]");
+                    }
+                    try
+                    {
+                        BminerInfo INF = JsonConvert.DeserializeObject<BminerInfo>(content);
+
+                        Info.Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToArray();
+                        Info.Temperatures = INF.miners.Select(m => m.device.temperature).ToArray();
+                        Info.Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToArray();
+                        Info.ShAccepted = new int[] { INF.stratum.accepted_shares };
+                        Info.ShAccepted = new int[] { INF.stratum.rejected_shares };
+
+                        MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                        if (SWT == null) SWT = DateTime.Now;
+                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
+                    }
+                    catch { }
+                }
+                catch { }
+                Thread.Sleep(MsCycle);
+            }
+        });
+        private static ThreadStart TS = new ThreadStart(() => { });
         public static void StartWaching(SM.Miners? Miner)
         {
-            MinerInfo Info = new MinerInfo();
-            HttpRequest request;
-            string content = "";
-            SWT = DateTime.Now;
+            SWT = null;
             if (PM.Profile.GPUsSwitch != null)
             { CardsCount = PM.Profile.GPUsSwitch.Where(x => x == true).Count(); }
             else CardsCount = 0;
@@ -41,143 +188,21 @@ namespace OMineManager
                 WachingThread.Abort();
             }
             catch { }
-            WachingThread = new Thread(new ThreadStart(() =>
+            ///////////////////
+            
+            switch (Miner)
             {
-                InformThread = Thread.CurrentThread;
-                switch (Miner)
-                {
-                    case SM.Miners.Claymore:
-                        TcpClient client;
-                        while (true)
-                        {
-                            try
-                            {
-                                client = new TcpClient("127.0.0.1", 3333);
-                                Byte[] data = Encoding.UTF8.GetBytes("{ \"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"miner_getstat2\"}");
-                                NetworkStream stream = client.GetStream();
-                                try
-                                {
-                                    // Отправка сообщения
-                                    stream.Write(data, 0, data.Length);
-                                    // Получение ответа
-                                    Byte[] readingData = new Byte[256];
-                                    String responseData = String.Empty;
-                                    StringBuilder completeMessage = new StringBuilder();
-                                    int numberOfBytesRead = 0;
-                                    do
-                                    {
-                                        numberOfBytesRead = stream.Read(readingData, 0, readingData.Length);
-                                        completeMessage.AppendFormat("{0}", Encoding.UTF8.GetString(readingData, 0, numberOfBytesRead));
-                                    }
-                                    while (stream.DataAvailable);
-                                    try
-                                    {
-                                        List<string> LS = JsonConvert.DeserializeObject<ClaymoreInfo>(completeMessage.ToString()).result;
-                                        Info.Hashrates = JsonConvert.DeserializeObject<double[]>($"[{LS[3].Replace(";", ",")}]");
-                                        for (int i = 0; i < Info.Hashrates.Length; i++)
-                                        {
-                                            Info.Hashrates[i] = Info.Hashrates[i] / 1000;
-                                        }
-                                        int lt = Info.Hashrates.Length;
-                                        int[] xx = JsonConvert.DeserializeObject<int[]>($"[{LS[6].Replace(";", ",")}]");
-                                        Info.Temperatures = new int[lt];
-                                        Info.Fanspeeds = new int[lt];
-                                        for (int n = 0; n < xx.Length; n = n + 2)
-                                        {
-                                            Info.Temperatures[n / 2] = (byte)xx[n];
-                                            Info.Fanspeeds[n / 2] = (byte)xx[n + 1];
-                                        }
-                                        Info.ShAccepted = JsonConvert.DeserializeObject<int[]>($"[{LS[9].Replace(";", ",")}]");
-                                        Info.ShRejected = JsonConvert.DeserializeObject<int[]>($"[{LS[10].Replace(";", ",")}]");
-                                        Info.ShInvalid = JsonConvert.DeserializeObject<int[]>($"[{LS[11].Replace(";", ",")}]");
-                                    }
-                                    catch { }
-
-                                    MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
-                                    HashrateWachdog(Info);
-                                }
-                                finally
-                                {
-                                    stream.Close();
-                                    client.Close();
-                                }
-                            }
-                            catch { }
-                            Thread.Sleep(MsCycle);
-                        }
-                    case SM.Miners.Gminer:
-                        Info.ShInvalid = null;
-                        Info.Fanspeeds = null;
-                        while (true)
-                        {
-                            try
-                            {
-                                using (request = new HttpRequest())
-                                {
-                                    request.UserAgent = Http.ChromeUserAgent();
-
-                                    // Отправляем запрос.
-                                    HttpResponse response = request.Get("http://localhost:3333/stat");
-                                    // Принимаем тело сообщения в виде строки.
-                                    content = response.ToString();
-                                }
-                                try
-                                {
-                                    GminerDevice[] GDs = JsonConvert.DeserializeObject<GminerInfo>(content).
-                                            devices.OrderBy(GD => GD.gpu_id).ToArray();
-
-                                    Info.Hashrates = GDs.Select(GD => GD.speed).ToArray();
-                                    Info.Temperatures = GDs.Select(GD => GD.temperature).ToArray();
-                                    Info.ShAccepted = GDs.Select(GD => GD.accepted_shares).ToArray();
-                                    Info.ShRejected = GDs.Select(GD => GD.rejected_shares).ToArray();
-
-                                    MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
-                                    HashrateWachdog(Info);
-                                }
-                                catch { }
-                            }
-                            catch { }
-                            Thread.Sleep(MsCycle);
-                        }
-                    case SM.Miners.Bminer:
-                        while (true)
-                        {
-                            try
-                            {
-                                using (request = new HttpRequest())
-                                {
-                                    request.UserAgent = Http.ChromeUserAgent();
-
-                                    // Отправляем запрос.
-                                    HttpResponse response = request.Get("http://localhost:3333/api/status");
-                                    // Принимаем тело сообщения в виде строки.
-                                    content = response.ToString();
-                                    for (int i = 0; i < 20; i++)
-                                    {
-                                        content = content.Replace("{\"" + i + "\":", "[");
-                                    }
-                                    content = content.Replace("}}}}", "}}}]");
-                                }
-                                try
-                                {
-                                    BminerInfo INF = JsonConvert.DeserializeObject<BminerInfo>(content);
-
-                                    Info.Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToArray();
-                                    Info.Temperatures = INF.miners.Select(m => m.device.temperature).ToArray();
-                                    Info.Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToArray();
-                                    Info.ShAccepted = new int[] { INF.stratum.accepted_shares };
-                                    Info.ShAccepted = new int[] { INF.stratum.rejected_shares };
-
-                                    MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
-                                    HashrateWachdog(Info);
-                                }
-                                catch { }
-                            }
-                            catch { }
-                            Thread.Sleep(MsCycle);
-                        }
-                }
-            }));
+                case SM.Miners.Claymore:
+                    TS = WachingClaymore;
+                    break;
+                case SM.Miners.Gminer:
+                    TS = WachingGminer;
+                    break;
+                case SM.Miners.Bminer:
+                    TS = WachingBminer;
+                    break;
+            }
+            WachingThread = new Thread(TS);
             WachingThread.Start();
         }
         #region InformMessage
@@ -192,7 +217,7 @@ namespace OMineManager
                         var urlParams = new RequestParams();
 
                         urlParams["user_id"] = PM.Profile.Informer.VKuserID;
-                        urlParams["message"] = $"{PM.Profile.RigName} >> {message}";
+                        urlParams["message"] = $"{PM.Profile.RigName} >> {message}{Environment.NewLine}{MW.Version}";
                         urlParams["access_token"] = "6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929";
                         urlParams["v"] = "5.73";
 
@@ -204,7 +229,7 @@ namespace OMineManager
         #endregion
         #region Wachdog
         public static double MinHashrate;
-        private static DateTime SWT;
+        private static DateTime? SWT;
         private static DateTime WDT1;
         private static DateTime WDT2;
         private static bool SecurityMode1;
@@ -217,8 +242,8 @@ namespace OMineManager
         {
             if (Info.Hashrates.Length < CardsCount)
             {
-                MW.WriteGeneralLog("Перезапуск компьютера из-за отвала карты");
-                InformMessage("Перезапуск из-за отвала карты");
+                MW.WriteGeneralLog("Перезагрузка из-за отвала карты");
+                InformMessage("Перезагрузка из-за отвала карты");
                 Task.Run(() =>
                 {
                     MW.context.Send(MM.KillProcess, null);
@@ -228,8 +253,6 @@ namespace OMineManager
                 });
                 return;
             }
-
-            if ((DateTime.Now - SWT).TotalSeconds < StartingInterval) return;
 
             if (Info.Hashrates.Sum() == 0)
             {
@@ -299,8 +322,41 @@ namespace OMineManager
                     goto back;
                 }
             }
+
+            if (Info.Hashrates.Sum() > MinHashrate)
+            {
+                StopIdleWatchdog();
+                return;
+            }
         }
+
         private static Thread InternetWachdogThread;
+        private static ThreadStart InternetWachdogTS = new ThreadStart(() =>
+        {
+            InternetConnectionState = true;
+            bool ICS;
+            while (true)
+            {
+                ICS = InternetConnetction();
+                if (InternetConnectionState != ICS)
+                {
+                    if (InternetConnectionState == true)
+                    {
+                        MW.WriteGeneralLog($"Остановка работы из-за потери интернет соединения");
+                        MW.context.Send(MM.KillProcess, null);
+                    }
+                    else
+                    {
+                        MW.WriteGeneralLog($"Возобновление работы");
+                        InformMessage($"Возобновление работы после сбоя интернет соединения");
+                        MW.context.Send(MM.StartLastMiner, null);
+                    }
+                    InternetConnectionState = ICS;
+                }
+
+                Thread.Sleep(1000);
+            }
+        });
         private static bool InternetConnectionState;
         public static void StartInternetWachdog()
         {
@@ -309,33 +365,7 @@ namespace OMineManager
                 InternetWachdogThread.Abort();
             }
             catch { }
-            InternetWachdogThread = new Thread(new ThreadStart(() =>
-            {
-                InternetWachdogThread = Thread.CurrentThread;
-                InternetConnectionState = true;
-                bool ICS;
-                while (true)
-                {
-                    ICS = InternetConnetction();
-                    if (InternetConnectionState != ICS)
-                    {
-                        if (InternetConnectionState == true)
-                        {
-                            MW.WriteGeneralLog($"Остановка работы из-за потери интернет соединения");
-                            MW.context.Send(MM.KillProcess, null);
-                        }
-                        else
-                        {
-                            MW.WriteGeneralLog($"Возобновление работы");
-                            InformMessage($"Возобновление работы после сбоя интернет соединения");
-                            MW.context.Send(MM.StartLastMiner, null);
-                        }
-                        InternetConnectionState = ICS;
-                    }
-
-                    Thread.Sleep(1000);
-                }
-            }));
+            InternetWachdogThread = new Thread(InternetWachdogTS);
             InternetWachdogThread.Start();
         }
         public static void StopWachdog()
@@ -343,6 +373,38 @@ namespace OMineManager
             try
             {
                 InternetWachdogThread.Abort();
+            }
+            catch { }
+        }
+
+        private static Thread IdleWatchdogThread;
+        private static int IdleWatchdogTimeout = 6 * 60; //sec
+        private static ThreadStart IdleWatchdogTS = new ThreadStart(() =>
+        {
+            Thread.Sleep(1000 * IdleWatchdogTimeout);
+            MW.WriteGeneralLog("Перезагрузка из-за простоя");
+            InformMessage("Перезагрузка из-за простоя");
+            MW.context.Send(MM.KillProcess, null);
+            Thread.Sleep(5000);
+            Process.Start("shutdown", "/r /t 0");
+            Application.Current.Shutdown();
+        });
+        public static void StartIdleWatchdog()
+        {
+            if (IdleWatchdogThread.IsAlive) return;
+            try
+            {
+                IdleWatchdogThread.Abort();
+            }
+            catch { }
+            IdleWatchdogThread = new Thread(IdleWatchdogTS);
+            IdleWatchdogThread.Start();
+        }
+        public static void StopIdleWatchdog()
+        {
+            try
+            {
+                IdleWatchdogThread.Abort();
             }
             catch { }
         }
@@ -406,6 +468,8 @@ namespace OMineManager
             public int[] ShInvalid;
         }
         #region Internet
+        private static Ping ping = new Ping();
+        private static PingReply pingReply;
         public static bool InternetConnetction()
         {
             InternetConnectionState_e cs = new InternetConnectionState_e();
@@ -417,8 +481,16 @@ namespace OMineManager
                 (cs & InternetConnectionState_e.INTERNET_CONNECTION_MODEM) == InternetConnectionState_e.INTERNET_CONNECTION_MODEM,
                 (cs & InternetConnectionState_e.INTERNET_CONNECTION_PROXY) == InternetConnectionState_e.INTERNET_CONNECTION_PROXY
             };
+            if (IC[0] || IC[1] || IC[2])
+            {
+                for (byte i = 0; i < 4; i++)
+                {
+                    pingReply = ping.Send("8.8.8.8");
+                    if (pingReply.Status == IPStatus.Success) return true;
+                }
+            }
 
-            return IC[0] || IC[1] || IC[2];
+            return false;
         }
         public static bool[] IC;
         #endregion
