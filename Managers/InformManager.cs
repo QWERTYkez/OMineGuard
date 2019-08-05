@@ -21,7 +21,7 @@ namespace OMineManager
     public static class InformManager
     {
         private static MinerInfo info;
-        private static object InfoKey;
+        private static object InfoKey = new object();
         public static MinerInfo Info
         {
             get { lock (InfoKey) return info; }
@@ -176,6 +176,7 @@ namespace OMineManager
         private static ThreadStart TS = new ThreadStart(() => { });
         public static void StartWaching(SM.Miners? Miner)
         {
+            Info = new MinerInfo();
             SWT = null;
             if (PM.Profile.GPUsSwitch != null)
             { CardsCount = PM.Profile.GPUsSwitch.Where(x => x == true).Count(); }
@@ -217,7 +218,7 @@ namespace OMineManager
                         var urlParams = new RequestParams();
 
                         urlParams["user_id"] = PM.Profile.Informer.VKuserID;
-                        urlParams["message"] = $"{PM.Profile.RigName} >> {message}{Environment.NewLine}{MW.Version}";
+                        urlParams["message"] = $"{PM.Profile.RigName} >> {message}{Environment.NewLine}[{MW.Version}]";
                         urlParams["access_token"] = "6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929";
                         urlParams["v"] = "5.73";
 
