@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -18,6 +16,9 @@ namespace OMineManager
 {
     public static class TCPserver
     {
+        static Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+
         private static TcpListener server = new TcpListener(IPAddress.Any, 2111);
         public static Thread ServerThread;
         public static ThreadStart ServerTS = new ThreadStart(() =>
@@ -59,11 +60,12 @@ namespace OMineManager
                 string JSON;
                 byte[] array;
                 {
-                    NetworkStream ns = client.GetStream();
+                    NetworkStream stream = client.GetStream();
+
                     while (client.Connected)  // пока клиент подключен, ждем приходящие сообщения
                     {
                         byte[] msg = new byte[MessageLength];     // готовим место для принятия сообщения
-                        int count = ns.Read(msg, 0, msg.Length);   // читаем сообщение от клиента
+                        int count = stream.Read(msg, 0, msg.Length);   // читаем сообщение от клиента
                         if (count > 0)
                         {
                             string request = Encoding.Default.GetString(msg, 0, count);
@@ -79,7 +81,7 @@ namespace OMineManager
                                     {
                                         JSON = JsonConvert.SerializeObject(PM.Profile);
                                         array = Encoding.Default.GetBytes(JSON);
-                                        ns.Write(array, 0, array.Length);
+                                        stream.Write(array, 0, array.Length);
                                     }
                                     break;
                                 case "set profile":
@@ -94,7 +96,7 @@ namespace OMineManager
                                     {
                                         JSON = JsonConvert.SerializeObject(IM.Info);
                                         array = Encoding.Default.GetBytes(JSON);
-                                        ns.Write(array, 0, array.Length);
+                                        stream.Write(array, 0, array.Length);
                                     }
                                     break;
                                 case "restart pc":
@@ -110,8 +112,15 @@ namespace OMineManager
                                         });
                                     }
                                     break;
+                                case "close stream":
+                                    {
+                                        stream.Close();
+                                        stream.Dispose();
+                                    }
+                                    break;
                             }
                         }
+                        Thread.Sleep(100);
                     }
                 }
                 ClientServiceThreads.Remove(Thread.CurrentThread);

@@ -8,7 +8,6 @@ using IM = OMineManager.InformManager;
 using OCM = OMineManager.OverclockManager;
 using System.Diagnostics;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.IO;
 using System.Threading;
 using System.Windows.Media;

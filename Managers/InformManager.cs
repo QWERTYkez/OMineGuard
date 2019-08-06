@@ -374,7 +374,7 @@ namespace OMineManager
         }
 
         private static Thread IdleWatchdogThread = new Thread(new ThreadStart(() => { }));
-        private static int IdleWatchdogTimeout = 5 * 60; //sec
+        private static int IdleWatchdogTimeout = 3 * 60; //sec
         private static ThreadStart IdleWatchdogTS = new ThreadStart(() =>
         {
             Thread.Sleep(1000 * IdleWatchdogTimeout);

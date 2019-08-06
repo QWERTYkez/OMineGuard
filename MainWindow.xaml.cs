@@ -12,7 +12,6 @@ using OCM = OMineManager.OverclockManager;
 using IM = OMineManager.InformManager;
 using TCP = OMineManager.TCPserver;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using Newtonsoft.Json;
 using System.Windows.Documents;
 using System.IO;
@@ -22,7 +21,7 @@ namespace OMineManager
 {
     public partial class MainWindow : Window
     {
-        public const string Ver = "1.1";
+        public const string Ver = "1.2";
         public static string Version;
         public static MainWindow This;
         public static bool AutoScroll = true;
