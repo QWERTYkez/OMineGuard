@@ -38,24 +38,19 @@ namespace OMineManager
                 {
                     client = new TcpClient("127.0.0.1", 3333);
                     Byte[] data = Encoding.UTF8.GetBytes("{ \"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"miner_getstat2\"}");
-                    NetworkStream stream = client.GetStream();
-                    try
+                    using (NetworkStream stream = client.GetStream())
                     {
-                        // Отправка сообщения
-                        stream.Write(data, 0, data.Length);
-                        // Получение ответа
-                        Byte[] readingData = new Byte[256];
-                        String responseData = String.Empty;
-                        StringBuilder completeMessage = new StringBuilder();
-                        int numberOfBytesRead = 0;
-                        do
-                        {
-                            numberOfBytesRead = stream.Read(readingData, 0, readingData.Length);
-                            completeMessage.AppendFormat("{0}", Encoding.UTF8.GetString(readingData, 0, numberOfBytesRead));
-                        }
-                        while (stream.DataAvailable);
                         try
                         {
+                            // Отправка сообщения
+                            stream.Write(data, 0, data.Length);
+                            // Получение ответа
+                            Byte[] readingData = new Byte[256];
+                            string responseData = string.Empty;
+                            StringBuilder completeMessage = new StringBuilder();
+                            int numberOfBytesRead = 0;
+                            numberOfBytesRead = stream.Read(readingData, 0, readingData.Length);
+                            completeMessage.AppendFormat("{0}", Encoding.UTF8.GetString(readingData, 0, numberOfBytesRead));
                             List<string> LS = JsonConvert.DeserializeObject<ClaymoreInfo>(completeMessage.ToString()).result;
                             Info.Hashrates = JsonConvert.DeserializeObject<double[]>($"[{LS[3].Replace(";", ",")}]");
                             for (int i = 0; i < Info.Hashrates.Length; i++)
@@ -74,20 +69,23 @@ namespace OMineManager
                             Info.ShAccepted = JsonConvert.DeserializeObject<int[]>($"[{LS[9].Replace(";", ",")}]");
                             Info.ShRejected = JsonConvert.DeserializeObject<int[]>($"[{LS[10].Replace(";", ",")}]");
                             Info.ShInvalid = JsonConvert.DeserializeObject<int[]>($"[{LS[11].Replace(";", ",")}]");
-                        }
-                        catch { }
 
-                        MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
-                        if (SWT == null) SWT = DateTime.Now;
-                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
-                    }
-                    finally
-                    {
-                        stream.Close();
-                        client.Close();
+                            MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
+                            if (SWT == null) SWT = DateTime.Now;
+                            if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
+                        }
+                        catch
+                        {
+                            MW.context.Send(MW.Sethashrate, null);
+                            Info = new MinerInfo();
+                        }
                     }
                 }
-                catch { }
+                catch
+                {
+                    MW.context.Send(MW.Sethashrate, null);
+                    Info = new MinerInfo();
+                }
                 Thread.Sleep(MsCycle);
             }
         });
@@ -124,9 +122,17 @@ namespace OMineManager
                         if (SWT == null) SWT = DateTime.Now;
                         if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
                     }
-                    catch { }
+                    catch
+                    {
+                        MW.context.Send(MW.Sethashrate, null);
+                        Info = new MinerInfo();
+                    }
                 }
-                catch { }
+                catch
+                {
+                    MW.context.Send(MW.Sethashrate, null);
+                    Info = new MinerInfo();
+                }
                 Thread.Sleep(MsCycle);
             }
         });
@@ -166,9 +172,17 @@ namespace OMineManager
                         if (SWT == null) SWT = DateTime.Now;
                         if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
                     }
-                    catch { }
+                    catch
+                    {
+                        MW.context.Send(MW.Sethashrate, null);
+                        Info = new MinerInfo();
+                    }
                 }
-                catch { }
+                catch
+                {
+                    MW.context.Send(MW.Sethashrate, null);
+                    Info = new MinerInfo();
+                }
                 Thread.Sleep(MsCycle);
             }
         });
@@ -397,7 +411,6 @@ namespace OMineManager
             }));
             RebootPCThread.Start();
         }
-
         #endregion
         #region Claymore
         public class ClaymoreInfo
@@ -450,6 +463,16 @@ namespace OMineManager
         #endregion
         public class MinerInfo
         {
+            public MinerInfo()
+            {
+                Hashrates = null;
+                Temperatures = null;
+                Fanspeeds = null;
+                ShAccepted = null;
+                ShRejected = null;
+                ShInvalid = null;
+            }
+
             public double[] Hashrates;
             public int[] Temperatures;
             public int[] Fanspeeds;
