@@ -72,6 +72,7 @@ namespace OMineManager
         public static Thread StaartProcessThread;
         public static void StartMiner(Profile.Config Config)
         {
+            IM.StartIdleWatchdog();
             KillProcess();
             try
             {
@@ -358,12 +359,26 @@ namespace OMineManager
             MainWindow.This.KillProcess.Content = "Завершить процесс";
             MainWindow.This.KillProcess2.Content = "Завершить процесс";
         }
-        public static void RestartMining()
+        private static Thread RestartMiningThread;
+        private static ThreadStart RestartMiningTS = new ThreadStart(() => 
         {
-            IM.StartIdleWatchdog();
             KillProcess();
             Thread.Sleep(10000);
             StartLastMiner();
+            Thread.CurrentThread.Abort();
+        });
+        public static void RestartMining()
+        {
+            RestartMiningThread = new Thread(RestartMiningTS);
+            RestartMiningThread.Start();
+        }
+        public static void StopRMT()
+        {
+            try
+            {
+                RestartMiningThread.Abort();
+            }
+            catch { }
         }
         #region Indicator
         public static Thread IndicationThread;

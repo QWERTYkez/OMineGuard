@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using IM = OMineManager.InformManager;
+using MM = OMineManager.MinersManager;
 
 namespace OMineManager
 {
@@ -21,9 +22,10 @@ namespace OMineManager
             AbortThread(InformManager.WachingThread);
             IM.StopWachdog();
             IM.StopIdleWatchdog();
+            MM.StopRMT();
             AbortThread(MinersManager.IndicationThread);
             AbortThread(MinersManager.StaartProcessThread);
-
+            TCPserver.AbortTCP();
         }
         private void AbortThread(Thread t)
         {

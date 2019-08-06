@@ -89,6 +89,7 @@
     <Compile Include="Managers\MinersManager.cs" />
     <Compile Include="Managers\OverclockManager.cs" />
     <Compile Include="Managers\ProfileManager.cs" />
+    <Compile Include="Managers\TCPserver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -10,6 +10,7 @@ using SM = OMineManager.SettingsManager;
 using MM = OMineManager.MinersManager;
 using OCM = OMineManager.OverclockManager;
 using IM = OMineManager.InformManager;
+using TCP = OMineManager.TCPserver;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using Newtonsoft.Json;
@@ -31,11 +32,10 @@ namespace OMineManager
         {
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             InitializeComponent();
-            Title += $" {Version}"; 
+            Title += $" v.{Ver}"; 
             This = this;
             IniProfile();
             OCM.Initialize();
-
         }
 
         #region InitializeProfile
@@ -87,6 +87,61 @@ namespace OMineManager
             VKuserID.TextChanged += VKuserID_TextChanged;
 
             Autostart();
+
+            TCP.ServerStart();
+        }
+        public static void UpdateProfile()
+        {
+            
+            This.Algotitm.ItemsSource = SM.MinersD.Keys;
+            This.AutoStart.Checked -= This.AutoStart_Checked;
+            This.AutoStart.Unchecked -= This.AutoStart_Checked;
+            This.AutoStart.IsChecked = PM.Profile.Autostart;
+            This.AutoStart.Checked += This.AutoStart_Checked;
+            This.AutoStart.Unchecked += This.AutoStart_Checked;
+            This.Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
+            if (PM.Profile.GPUsSwitch != null)
+            { This.GPUsCB.SelectedIndex = PM.Profile.GPUsSwitch.Length; }
+            else { This.GPUsCB.SelectedIndex = 0; }
+            if (PM.Profile.RigName != null)
+            { This.RigName.Text = PM.Profile.RigName; }
+            if (PM.Profile.ConfigsList == null)
+            { PM.Profile.ConfigsList = new List<Profile.Config>(); }
+            This.ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+            This.ConfigsList.SelectedItem = PM.Profile.StartedConfig;
+            This.ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
+            This.ClocksList.SelectedItem = PM.Profile.StartedClock;
+            if (PM.Profile.LogTextSize != 0)
+            {
+                This.MinerLog.FontSize = PM.Profile.LogTextSize;
+                This.TextSizeTB.Text = PM.Profile.LogTextSize.ToString();
+            }
+            This.TextSizeSlider.ValueChanged -= This.TextSizeSlider_ValueChanged;
+            This.TextSizeSlider.Value = PM.Profile.LogTextSize;
+            This.TextSizeSlider.ValueChanged += This.TextSizeSlider_ValueChanged;
+            This.DigitsSlider.Value = PM.Profile.Digits;
+            Dig = PM.Profile.Digits;
+            This.DigitsSlider.ValueChanged -= This.DigitsSlider_ValueChanged;
+            This.Digits.Text = PM.Profile.Digits.ToString();
+            This.DigitsSlider.ValueChanged += This.DigitsSlider_ValueChanged;
+
+            This.VKInformerToggle.Checked -= This.VKInformerToggle_Click;
+            This.VKInformerToggle.Unchecked -= This.VKInformerToggle_Click;
+            This.VKuserID.TextChanged -= This.VKuserID_TextChanged;
+            if (!PM.Profile.Informer.VkInform)
+            {
+                This.VKuserID.IsEnabled = false;
+                This.VKInformerToggle.IsChecked = false;
+            }
+            else
+            {
+                This.VKuserID.IsEnabled = true;
+                This.VKInformerToggle.IsChecked = true;
+            }
+            This.VKuserID.Text = PM.Profile.Informer.VKuserID;
+            This.VKInformerToggle.Checked += This.VKInformerToggle_Click;
+            This.VKInformerToggle.Unchecked += This.VKInformerToggle_Click;
+            This.VKuserID.TextChanged += This.VKuserID_TextChanged;
         }
         private void CreateDirectories()
         {

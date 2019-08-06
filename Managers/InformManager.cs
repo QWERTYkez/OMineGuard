@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using SM = OMineManager.SettingsManager;
 using MW = OMineManager.MainWindow;
 using MM = OMineManager.MinersManager;
@@ -189,7 +188,6 @@ namespace OMineManager
                 WachingThread.Abort();
             }
             catch { }
-            ///////////////////
             
             switch (Miner)
             {
@@ -211,20 +209,22 @@ namespace OMineManager
         {
             if (PM.Profile.Informer.VkInform && PM.Profile.Informer.VKuserID != null)
             {
-                Task.Run(() =>
+                Thread Thr = new Thread(new ThreadStart(() =>
                 {
                     using (var request = new HttpRequest())
                     {
                         var urlParams = new RequestParams();
 
                         urlParams["user_id"] = PM.Profile.Informer.VKuserID;
-                        urlParams["message"] = $"{PM.Profile.RigName} >> {message}{Environment.NewLine}[{MW.Version}]";
+                        urlParams["message"] = $"{PM.Profile.RigName} >> {message}{Environment.NewLine}[ver {MW.Ver}]";
                         urlParams["access_token"] = "6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929";
                         urlParams["v"] = "5.73";
 
                         string content = request.Post("https://api.vk.com/method/messages.send", urlParams).ToString();
                     }
-                });
+                    Thread.CurrentThread.Abort();
+                }));
+                Thr.Start();
             }
         }
         #endregion
@@ -245,13 +245,15 @@ namespace OMineManager
             {
                 MW.WriteGeneralLog("Перезагрузка из-за отвала карты");
                 InformMessage("Перезагрузка из-за отвала карты");
-                Task.Run(() =>
+                Thread Thr = new Thread(new ThreadStart(() => 
                 {
                     MW.context.Send(MM.KillProcess, null);
                     Thread.Sleep(5000);
                     Process.Start("shutdown", "/r /t 0");
                     Application.Current.Shutdown();
-                });
+                    Thread.CurrentThread.Abort();
+                }));
+                Thr.Start();
                 return;
             }
 
@@ -259,10 +261,7 @@ namespace OMineManager
             {
                 MW.WriteGeneralLog("Перезапуск майнера из-за нулевого хешрейта");
                 InformMessage("нулевой хешрейт, перезапуск майнера");
-                Task.Run(() =>
-                {
-                    MM.RestartMining();
-                });
+                MM.RestartMining();
                 return;
             }
 
@@ -279,10 +278,7 @@ namespace OMineManager
                     {
                         MW.WriteGeneralLog("Перезапуск майнера из-за низкого хешрейта");
                         InformMessage("низкий хешрейт, перезапуск майнера");
-                        Task.Run(() =>
-                        {
-                            MM.RestartMining();
-                        });
+                        MM.RestartMining();
                         return;
                     }
                 }
@@ -311,10 +307,7 @@ namespace OMineManager
                 {
                     MW.WriteGeneralLog($"Перезапуск майнера из-за отвала GPU{GK}");
                     InformMessage($"Перезапуск майнера из-за отвала GPU{GK}");
-                    Task.Run(() =>
-                    {
-                        MM.RestartMining();
-                    });
+                    MM.RestartMining();
                     return;
                 }
                 else
@@ -345,12 +338,14 @@ namespace OMineManager
                     {
                         MW.WriteGeneralLog($"Остановка работы из-за потери интернет соединения");
                         MW.context.Send(MM.KillProcess, null);
+                        TCPserver.AbortTCP();
                     }
                     else
                     {
                         MW.WriteGeneralLog($"Возобновление работы");
                         InformMessage($"Возобновление работы после сбоя интернет соединения");
                         MW.context.Send(MM.StartLastMiner, null);
+                        TCPserver.ServerStart();
                     }
                     InternetConnectionState = ICS;
                 }
@@ -378,8 +373,8 @@ namespace OMineManager
             catch { }
         }
 
-        private static Thread IdleWatchdogThread;
-        private static int IdleWatchdogTimeout = 6 * 60; //sec
+        private static Thread IdleWatchdogThread = new Thread(new ThreadStart(() => { }));
+        private static int IdleWatchdogTimeout = 5 * 60; //sec
         private static ThreadStart IdleWatchdogTS = new ThreadStart(() =>
         {
             Thread.Sleep(1000 * IdleWatchdogTimeout);
