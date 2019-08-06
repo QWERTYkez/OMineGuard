@@ -11,6 +11,7 @@ using MW = OMineManager.MainWindow;
 using MM = OMineManager.MinersManager;
 using System.Diagnostics;
 using System.Windows;
+using System;
 
 namespace OMineManager
 {
@@ -59,15 +60,17 @@ namespace OMineManager
                 int MessageLength = 100;
                 string JSON;
                 byte[] array;
+                using (NetworkStream stream = client.GetStream())
                 {
-                    NetworkStream stream = client.GetStream();
-
-                    while (client.Connected)  // пока клиент подключен, ждем приходящие сообщения
+                    stream.Write(new byte[] { 1, 2, 3 }, 0, 3);
+                    DateTime DT = DateTime.Now;
+                    while ((DateTime.Now - DT).TotalSeconds < 60 * 3)  // пока клиент подключен, ждем приходящие сообщения
                     {
                         byte[] msg = new byte[MessageLength];     // готовим место для принятия сообщения
                         int count = stream.Read(msg, 0, msg.Length);   // читаем сообщение от клиента
                         if (count > 0)
                         {
+                            DT = DateTime.Now;
                             string request = Encoding.Default.GetString(msg, 0, count);
                             ClientRequest CR = JsonConvert.DeserializeObject<ClientRequest>(request);
                             switch (CR.header)
@@ -114,15 +117,15 @@ namespace OMineManager
                                     break;
                                 case "close stream":
                                     {
-                                        stream.Close();
-                                        stream.Dispose();
+                                        DT -= new TimeSpan(0, 5, 0);
                                     }
                                     break;
                             }
                         }
                         Thread.Sleep(100);
                     }
-                }
+                    stream.Write(new byte[] { 4, 5, 6 }, 0, 3);
+                }  //dispose stream
                 ClientServiceThreads.Remove(Thread.CurrentThread);
                 Thread.CurrentThread.Abort();
             }));

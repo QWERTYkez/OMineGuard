@@ -6,6 +6,7 @@ using SM = OMineManager.SettingsManager;
 using PM = OMineManager.ProfileManager;
 using IM = OMineManager.InformManager;
 using OCM = OMineManager.OverclockManager;
+using MW = OMineManager.MainWindow;
 using System.Diagnostics;
 using System.Windows.Controls;
 using System.IO;
@@ -366,8 +367,10 @@ namespace OMineManager
             StartLastMiner();
             Thread.CurrentThread.Abort();
         });
-        public static void RestartMining()
+        public static void RestartMining(string cause)
         {
+            MW.WriteGeneralLog($"{cause}, перезапуск майнера");
+            IM.InformMessage($"{cause}, перезапуск майнера");
             RestartMiningThread = new Thread(RestartMiningTS);
             RestartMiningThread.Start();
         }

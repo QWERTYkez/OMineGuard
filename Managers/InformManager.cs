@@ -243,25 +243,13 @@ namespace OMineManager
         {
             if (Info.Hashrates.Length < CardsCount)
             {
-                MW.WriteGeneralLog("Перезагрузка из-за отвала карты");
-                InformMessage("Перезагрузка из-за отвала карты");
-                Thread Thr = new Thread(new ThreadStart(() => 
-                {
-                    MW.context.Send(MM.KillProcess, null);
-                    Thread.Sleep(5000);
-                    Process.Start("shutdown", "/r /t 0");
-                    Application.Current.Shutdown();
-                    Thread.CurrentThread.Abort();
-                }));
-                Thr.Start();
+                RebootPC("Ошибка количества GPUs");
                 return;
             }
 
             if (Info.Hashrates.Sum() == 0)
             {
-                MW.WriteGeneralLog("Перезапуск майнера из-за нулевого хешрейта");
-                InformMessage("нулевой хешрейт, перезапуск майнера");
-                MM.RestartMining();
+                MM.RestartMining($"Нулевой хешрейт");
                 return;
             }
 
@@ -276,9 +264,7 @@ namespace OMineManager
                 {
                     if ((DateTime.Now - WDT1).TotalSeconds > WachdogInterval)
                     {
-                        MW.WriteGeneralLog("Перезапуск майнера из-за низкого хешрейта");
-                        InformMessage("низкий хешрейт, перезапуск майнера");
-                        MM.RestartMining();
+                        MM.RestartMining($"Низкий хешрейт");
                         return;
                     }
                 }
@@ -305,9 +291,7 @@ namespace OMineManager
             {
                 if (Info.Hashrates[GK] == 0 && (DateTime.Now - WDT2).TotalSeconds > WachdogInterval)
                 {
-                    MW.WriteGeneralLog($"Перезапуск майнера из-за отвала GPU{GK}");
-                    InformMessage($"Перезапуск майнера из-за отвала GPU{GK}");
-                    MM.RestartMining();
+                    MM.RestartMining($"Отвал GPU{GK}");
                     return;
                 }
                 else
@@ -336,16 +320,14 @@ namespace OMineManager
                 {
                     if (InternetConnectionState == true)
                     {
-                        MW.WriteGeneralLog($"Остановка работы из-за потери интернет соединения");
+                        MW.WriteGeneralLog($"Интернет потерян, остановка работы");
                         MW.context.Send(MM.KillProcess, null);
-                        TCPserver.AbortTCP();
                     }
                     else
                     {
-                        MW.WriteGeneralLog($"Возобновление работы");
-                        InformMessage($"Возобновление работы после сбоя интернет соединения");
+                        MW.WriteGeneralLog($"Интернет воостановлен, возобновление работы");
+                        InformMessage($"Интернет воостановлен, возобновление работы");
                         MW.context.Send(MM.StartLastMiner, null);
-                        TCPserver.ServerStart();
                     }
                     InternetConnectionState = ICS;
                 }
@@ -378,12 +360,8 @@ namespace OMineManager
         private static ThreadStart IdleWatchdogTS = new ThreadStart(() =>
         {
             Thread.Sleep(1000 * IdleWatchdogTimeout);
-            MW.WriteGeneralLog("Перезагрузка из-за простоя");
-            InformMessage("Перезагрузка из-за простоя");
-            MW.context.Send(MM.KillProcess, null);
-            Thread.Sleep(5000);
-            Process.Start("shutdown", "/r /t 0");
-            Application.Current.Shutdown();
+            RebootPC("Бездействие");
+            Thread.CurrentThread.Abort();
         });
         public static void StartIdleWatchdog()
         {
@@ -404,6 +382,22 @@ namespace OMineManager
             }
             catch { }
         }
+
+        public static void RebootPC(string cause)
+        {
+            MW.WriteGeneralLog($"{cause}, перезагрузка");
+            InformMessage($"{cause}, перезагрузка");
+            Thread RebootPCThread = new Thread(new ThreadStart(() =>
+            {
+                MW.context.Send(MM.KillProcess, null);
+                Thread.Sleep(5000);
+                Process.Start("shutdown", "/r /t 0");
+                Application.Current.Shutdown();
+                Thread.CurrentThread.Abort();
+            }));
+            RebootPCThread.Start();
+        }
+
         #endregion
         #region Claymore
         public class ClaymoreInfo
