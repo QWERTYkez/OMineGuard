@@ -196,7 +196,9 @@ namespace OMineManager
             }
         });
         static List<NetworkStream> INFstreams = new List<NetworkStream>();
+        private static List<NetworkStream> deleteList = new List<NetworkStream>();
         private static IM.AVGMinerInfo inf;
+        private static object INFkey = new object();
         private static ThreadStart INFsendTS = new ThreadStart(() =>
         {
             string JS;
@@ -213,16 +215,24 @@ namespace OMineManager
             JS = JsonConvert.SerializeObject(new object[] { "js", $"{arrayJSI.Length}" });
             arrayJS = Encoding.Default.GetBytes(JS);
 
-            
-            foreach (NetworkStream ns in INFstreams)
+            lock (INFkey)
             {
-                try
+                foreach (NetworkStream ns in INFstreams)
                 {
-                    ns.Write(arrayJS, 0, arrayJS.Length);
-                    ns.Write(arrayJSI, 0, arrayJSI.Length);
+                    try
+                    {
+                        ns.Write(arrayJS, 0, arrayJS.Length);
+                        ns.Write(arrayJSI, 0, arrayJSI.Length);
+                    }
+                    catch (System.IO.IOException) { deleteList.Add(ns); }
                 }
-                catch { }
+                while (deleteList.Count > 0)
+                {
+                    INFstreams.Remove(deleteList[0]);
+                    deleteList.Remove(deleteList[0]);
+                }
             }
+            
             Thread.CurrentThread.Abort();
         });
 
