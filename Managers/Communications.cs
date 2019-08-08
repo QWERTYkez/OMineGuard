@@ -17,18 +17,16 @@ namespace OMineManager
 {
     public static class TCPserver
     {
-        static Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-
-        private static TcpListener server = new TcpListener(IPAddress.Any, 2111);
-        public static Thread ServerThread;
-        public static ThreadStart ServerTS = new ThreadStart(() =>
+        #region MSG
+        private static TcpListener MSGserver = new TcpListener(IPAddress.Any, 2111);
+        public static Thread MSGServerThread;
+        public static ThreadStart MSGServerTS = new ThreadStart(() =>
         {
             while (true)
             {
                 try
                 {
-                    server.Start();
+                    MSGserver.Start();
                     break;
                 }
                 catch { }
@@ -37,7 +35,7 @@ namespace OMineManager
             {
                 try
                 {
-                    ClientService(server.AcceptTcpClient());
+                    MSGClientService(MSGserver.AcceptTcpClient());
                 }
                 catch { }
             }
@@ -46,14 +44,14 @@ namespace OMineManager
         {
             try
             {
-                ServerThread.Abort();
+                MSGServerThread.Abort();
             }
             catch { }
-            ServerThread = new Thread(ServerTS);
-            ServerThread.Start();
+            MSGServerThread = new Thread(MSGServerTS);
+            MSGServerThread.Start();
         }
-        static List<Thread> ClientServiceThreads = new List<Thread>();
-        static void ClientService(TcpClient client)
+        static List<Thread> MSGClientServiceThreads = new List<Thread>();
+        static void MSGClientService(TcpClient client)
         {
             Thread ClientThread = new Thread(new ThreadStart(() =>
             {
@@ -126,10 +124,10 @@ namespace OMineManager
                     }
                     stream.Write(new byte[] { 4, 5, 6 }, 0, 3);
                 }  //dispose stream
-                ClientServiceThreads.Remove(Thread.CurrentThread);
+                MSGClientServiceThreads.Remove(Thread.CurrentThread);
                 Thread.CurrentThread.Abort();
             }));
-            ClientServiceThreads.Add(ClientThread);
+            MSGClientServiceThreads.Add(ClientThread);
             ClientThread.Start();
         }
 
@@ -137,15 +135,16 @@ namespace OMineManager
         {
             try
             {
-                server.Stop();
+                MSGserver.Stop();
             }
             catch { }
             try
             {
-                ServerThread.Abort();
+                MSGServerThread.Abort();
+                INFServerThread.Abort();
             }
             catch { }
-            foreach (Thread T in ClientServiceThreads)
+            foreach (Thread T in MSGClientServiceThreads)
             {
                 try
                 {
@@ -154,11 +153,85 @@ namespace OMineManager
                 catch { }
             }
         }
-    }
 
-    public class ClientRequest
-    {
-        public string header;
-        public string body;
+        public class ClientRequest
+        {
+            public string header;
+            public string body;
+        }
+        #endregion
+
+        #region INF
+        private static TcpListener INFserver = new TcpListener(IPAddress.Any, 2112);
+        public static Thread INFServerThread;
+        public static void INFServerStart()
+        {
+            try
+            {
+                INFServerThread.Abort();
+
+            }
+            catch { }
+            INFServerThread = new Thread(INFServerTS);
+            INFServerThread.Start();
+        }
+        public static ThreadStart INFServerTS = new ThreadStart(() =>
+        {
+            while (true)
+            {
+                try
+                {
+                    INFserver.Start();
+                    break;
+                }
+                catch { }
+            }
+            while (true)
+            {
+                try
+                {
+                    INFstreams.Add(INFserver.AcceptTcpClient().GetStream());
+                }
+                catch { }
+            }
+        });
+        static List<NetworkStream> INFstreams = new List<NetworkStream>();
+        private static IM.AVGMinerInfo inf;
+        private static ThreadStart INFsendTS = new ThreadStart(() =>
+        {
+            string JS;
+            byte[] arrayJS;
+            string JSI;
+            byte[] arrayJSI;
+            string Info;
+
+            Info = JsonConvert.SerializeObject(inf);
+
+            JSI = JsonConvert.SerializeObject(new object[] { "info", Info });
+            arrayJSI = Encoding.Default.GetBytes(JSI);
+
+            JS = JsonConvert.SerializeObject(new object[] { "js", $"{arrayJSI.Length}" });
+            arrayJS = Encoding.Default.GetBytes(JS);
+
+            
+            foreach (NetworkStream ns in INFstreams)
+            {
+                try
+                {
+                    ns.Write(arrayJS, 0, arrayJS.Length);
+                    ns.Write(arrayJSI, 0, arrayJSI.Length);
+                }
+                catch { }
+            }
+            Thread.CurrentThread.Abort();
+        });
+
+        public static void INFsend(IM.AVGMinerInfo info)
+        {
+            inf = info;
+            Thread th = new Thread(INFsendTS);
+            th.Start();
+        }
+        #endregion
     }
 }

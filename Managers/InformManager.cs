@@ -9,6 +9,7 @@ using SM = OMineManager.SettingsManager;
 using MW = OMineManager.MainWindow;
 using MM = OMineManager.MinersManager;
 using PM = OMineManager.ProfileManager;
+using TCP = OMineManager.TCPserver;
 using xNet;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
@@ -19,19 +20,125 @@ namespace OMineManager
 {
     public static class InformManager
     {
-        private static MinerInfo info;
+        #region INFO
+        private static MinerInfo currentInfo;
         private static object InfoKey = new object();
         public static MinerInfo Info
         {
-            get { lock (InfoKey) return info; }
-            set { lock (InfoKey) info = value; }
+            get { lock (InfoKey) return currentInfo; }
+            set
+            {
+                AVGMinerInfo avg = null;
+                lock (InfoKey)
+                {
+                    currentInfo = value;
+                    if (value.Hashrates != null)
+                    {
+                        LInfo.Add(value);
+                        avg = AVGInfo;
+                    }
+                }
+                if (avg != null)
+                {
+                    TCP.INFsend(avg);
+                }
+            }
         }
+        public static AVGMinerInfo AVGInfo
+        {
+            get
+            {
+                DateTime DT = LInfo[LInfo.Count - 1].TimeStamp;
+                AVGMinerInfo AVG = new AVGMinerInfo(DT, LInfo[LInfo.Count - 1].Hashrates.Length, LInfo[LInfo.Count - 1]);
+                LInfo = LInfo.Where(x => (DT - x.TimeStamp).TotalSeconds < 20).ToList();
+                int k = LInfo.Count;
+                foreach (MinerInfo MI in LInfo)
+                {
+                    for (int i = 0; i < MI.Hashrates.Length; i++)
+                    {
+                        AVG.AVGHashrates[i] += MI.Hashrates[i] / k;
+                        AVG.AVGTemperatures[i] += Convert.ToDouble(MI.Temperatures[i]) / k;
+                        if (MI.Fanspeeds != null)
+                        {
+                            AVG.AVGFanspeeds[i] += Convert.ToDouble(MI.Fanspeeds[i]) / k;
+                        }
+                    }
+                }
+                AVG.ShAccepted = LInfo[LInfo.Count - 1].ShAccepted;
+                if (LInfo[LInfo.Count - 1].ShInvalid != null)
+                {
+                    AVG.ShInvalid = LInfo[LInfo.Count - 1].ShInvalid;
+                }
+                if (LInfo[LInfo.Count - 1].ShRejected != null)
+                {
+                    AVG.ShRejected = LInfo[LInfo.Count - 1].ShRejected;
+                }
+                return AVG;
+            }
+        }
+        public class AVGMinerInfo
+        {
+            public AVGMinerInfo(DateTime DT, int i, MinerInfo MI)
+            {
+                AVGHashrates = new double[i];
+                AVGTemperatures = new double[i];
+                AVGFanspeeds = new double[i];
+                ShAccepted = MI.ShAccepted;
+                ShRejected = MI.ShRejected;
+                ShInvalid = MI.ShInvalid;
+                TimeStamp = DT;
+            }
+
+            public DateTime TimeStamp { get; private set; }
+            public double[] AVGHashrates;
+            public double[] AVGTemperatures;
+            public double[] AVGFanspeeds;
+            public int[] ShAccepted;
+            public int[] ShRejected;
+            public int[] ShInvalid;
+        }
+        private static List<MinerInfo> LInfo = new List<MinerInfo>();
+
+        #endregion
+
         private static int MsCycle = 1000;
 
+        static double[] derr;
+        private static void ErrorGethashrate()
+        {
+            MW.context.Send(MW.Sethashrate, null);
+            if (Info != null)
+            {
+                if (Info.Hashrates != null)
+                {
+                    Info = new MinerInfo(Info.Hashrates.Length);
+                    derr = new double[Info.Hashrates.Length];
+                    for (int i = 0; i < Info.Hashrates.Length; i++) derr[i] = -1;
+                }
+                else
+                {
+                    Info = new MinerInfo(null, null, null, null, null, null);
+                    derr = null;
+                }
+            }
+            else
+            {
+                Info = new MinerInfo(null, null, null, null, null, null);
+                derr = null;
+            }
+            if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(derr);
+        }
         public static Thread WachingThread;
         private static ThreadStart WachingClaymore = new ThreadStart(() =>
         {
             TcpClient client;
+            MinerInfo MI;
+            double[] Hashrates;
+            int[] Temperatures;
+            int[] Fanspeeds;
+            int[] ShAccepted;
+            int[] ShRejected;
+            int[] ShInvalid;
             while (true)
             {
                 try
@@ -45,46 +152,46 @@ namespace OMineManager
                             // Отправка сообщения
                             stream.Write(data, 0, data.Length);
                             // Получение ответа
-                            Byte[] readingData = new Byte[256];
+                            Byte[] readingData = new Byte[1024];
                             string responseData = string.Empty;
                             StringBuilder completeMessage = new StringBuilder();
                             int numberOfBytesRead = 0;
                             numberOfBytesRead = stream.Read(readingData, 0, readingData.Length);
                             completeMessage.AppendFormat("{0}", Encoding.UTF8.GetString(readingData, 0, numberOfBytesRead));
                             List<string> LS = JsonConvert.DeserializeObject<ClaymoreInfo>(completeMessage.ToString()).result;
-                            Info.Hashrates = JsonConvert.DeserializeObject<double[]>($"[{LS[3].Replace(";", ",")}]");
-                            for (int i = 0; i < Info.Hashrates.Length; i++)
+                            Hashrates = JsonConvert.DeserializeObject<double[]>($"[{LS[3].Replace(";", ",")}]");
+                            for (int i = 0; i < Hashrates.Length; i++)
                             {
-                                Info.Hashrates[i] = Info.Hashrates[i] / 1000;
+                                Hashrates[i] = Hashrates[i] / 1000;
                             }
-                            int lt = Info.Hashrates.Length;
+                            int lt = Hashrates.Length;
                             int[] xx = JsonConvert.DeserializeObject<int[]>($"[{LS[6].Replace(";", ",")}]");
-                            Info.Temperatures = new int[lt];
-                            Info.Fanspeeds = new int[lt];
+                            Temperatures = new int[lt];
+                            Fanspeeds = new int[lt];
                             for (int n = 0; n < xx.Length; n = n + 2)
                             {
-                                Info.Temperatures[n / 2] = (byte)xx[n];
-                                Info.Fanspeeds[n / 2] = (byte)xx[n + 1];
+                                Temperatures[n / 2] = (byte)xx[n];
+                                Fanspeeds[n / 2] = (byte)xx[n + 1];
                             }
-                            Info.ShAccepted = JsonConvert.DeserializeObject<int[]>($"[{LS[9].Replace(";", ",")}]");
-                            Info.ShRejected = JsonConvert.DeserializeObject<int[]>($"[{LS[10].Replace(";", ",")}]");
-                            Info.ShInvalid = JsonConvert.DeserializeObject<int[]>($"[{LS[11].Replace(";", ",")}]");
+                            ShAccepted = JsonConvert.DeserializeObject<int[]>($"[{LS[9].Replace(";", ",")}]");
+                            ShRejected = JsonConvert.DeserializeObject<int[]>($"[{LS[10].Replace(";", ",")}]");
+                            ShInvalid = JsonConvert.DeserializeObject<int[]>($"[{LS[11].Replace(";", ",")}]");
 
-                            MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
-                            if (SWT == null) SWT = DateTime.Now;
-                            if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
+                            MI = new MinerInfo(Hashrates, Temperatures, Fanspeeds, ShAccepted, ShRejected, ShInvalid);
+                            Info = MI;
+
+                            MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
+                            if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(MI.Hashrates);
                         }
                         catch
                         {
-                            MW.context.Send(MW.Sethashrate, null);
-                            Info = new MinerInfo();
+                            ErrorGethashrate();
                         }
                     }
                 }
                 catch
                 {
-                    MW.context.Send(MW.Sethashrate, null);
-                    Info = new MinerInfo();
+                    ErrorGethashrate();
                 }
                 Thread.Sleep(MsCycle);
             }
@@ -93,8 +200,11 @@ namespace OMineManager
         {
             string content = "";
             HttpRequest request;
-            Info.ShInvalid = null;
-            Info.Fanspeeds = null;
+            MinerInfo MI;
+            double[] Hashrates;
+            int[] Temperatures;
+            int[] ShAccepted;
+            int[] ShRejected;
             while (true)
             {
                 try
@@ -113,25 +223,25 @@ namespace OMineManager
                         GminerDevice[] GDs = JsonConvert.DeserializeObject<GminerInfo>(content).
                                 devices.OrderBy(GD => GD.gpu_id).ToArray();
 
-                        Info.Hashrates = GDs.Select(GD => GD.speed).ToArray();
-                        Info.Temperatures = GDs.Select(GD => GD.temperature).ToArray();
-                        Info.ShAccepted = GDs.Select(GD => GD.accepted_shares).ToArray();
-                        Info.ShRejected = GDs.Select(GD => GD.rejected_shares).ToArray();
+                        Hashrates = GDs.Select(GD => GD.speed).ToArray();
+                        Temperatures = GDs.Select(GD => GD.temperature).ToArray();
+                        ShAccepted = GDs.Select(GD => GD.accepted_shares).ToArray();
+                        ShRejected = GDs.Select(GD => GD.rejected_shares).ToArray();
 
-                        MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
-                        if (SWT == null) SWT = DateTime.Now;
-                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
+                        MI = new MinerInfo(Hashrates, Temperatures, null, ShAccepted, ShRejected, null);
+                        Info = MI;
+
+                        MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
+                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(MI.Hashrates);
                     }
                     catch
                     {
-                        MW.context.Send(MW.Sethashrate, null);
-                        Info = new MinerInfo();
+                        ErrorGethashrate();
                     }
                 }
                 catch
                 {
-                    MW.context.Send(MW.Sethashrate, null);
-                    Info = new MinerInfo();
+                    ErrorGethashrate();
                 }
                 Thread.Sleep(MsCycle);
             }
@@ -140,6 +250,12 @@ namespace OMineManager
         {
             string content = "";
             HttpRequest request;
+            MinerInfo MI;
+            double[] Hashrates;
+            int[] Temperatures;
+            int[] Fanspeeds;
+            int[] ShAccepted;
+            int[] ShRejected;
             while (true)
             {
                 try
@@ -162,26 +278,26 @@ namespace OMineManager
                     {
                         BminerInfo INF = JsonConvert.DeserializeObject<BminerInfo>(content);
 
-                        Info.Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToArray();
-                        Info.Temperatures = INF.miners.Select(m => m.device.temperature).ToArray();
-                        Info.Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToArray();
-                        Info.ShAccepted = new int[] { INF.stratum.accepted_shares };
-                        Info.ShAccepted = new int[] { INF.stratum.rejected_shares };
+                        Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToArray();
+                        Temperatures = INF.miners.Select(m => m.device.temperature).ToArray();
+                        Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToArray();
+                        ShAccepted = new int[] { INF.stratum.accepted_shares };
+                        ShRejected = new int[] { INF.stratum.rejected_shares };
 
-                        MW.context.Send(MW.Sethashrate, new object[] { Info.Hashrates, Info.Temperatures });
-                        if (SWT == null) SWT = DateTime.Now;
-                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(Info);
+                        MI = new MinerInfo(Hashrates, Temperatures, Fanspeeds, ShAccepted, ShRejected, null);
+                        Info = MI;
+
+                        MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
+                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(MI.Hashrates);
                     }
                     catch
                     {
-                        MW.context.Send(MW.Sethashrate, null);
-                        Info = new MinerInfo();
+                        ErrorGethashrate();
                     }
                 }
                 catch
                 {
-                    MW.context.Send(MW.Sethashrate, null);
-                    Info = new MinerInfo();
+                    ErrorGethashrate();
                 }
                 Thread.Sleep(MsCycle);
             }
@@ -189,8 +305,7 @@ namespace OMineManager
         private static ThreadStart TS = new ThreadStart(() => { });
         public static void StartWaching(SM.Miners? Miner)
         {
-            Info = new MinerInfo();
-            SWT = null;
+            SWT = DateTime.Now;
             if (PM.Profile.GPUsSwitch != null)
             { CardsCount = PM.Profile.GPUsSwitch.Where(x => x == true).Count(); }
             else CardsCount = 0;
@@ -251,23 +366,35 @@ namespace OMineManager
         private static bool SecurityMode2;
         private static int GK;
         private static int WachdogInterval = 30;
-        private static int StartingInterval = 30;
+        private static int StartingInterval = 60;
         private static int CardsCount;
-        public static void HashrateWachdog(MinerInfo Info)
+        public static void HashrateWachdog(double[] Hashrates)
         {
-            if (Info.Hashrates.Length < CardsCount)
+            if(Hashrates == null)
+            {
+                StartIdleWatchdog();
+                return;
+            }
+            
+            if (Hashrates.Length < CardsCount)
             {
                 RebootPC("Ошибка количества GPUs");
                 return;
             }
 
-            if (Info.Hashrates.Sum() == 0)
+            if (Hashrates.Sum() < 0)
+            {
+                StartIdleWatchdog();
+                return;
+            }
+
+            if (Hashrates.Sum() == 0)
             {
                 MM.RestartMining($"Нулевой хешрейт");
                 return;
             }
 
-            if (Info.Hashrates.Sum() < MinHashrate)
+            if (Hashrates.Sum() < MinHashrate)
             {
                 if (!SecurityMode1)
                 {
@@ -283,17 +410,14 @@ namespace OMineManager
                     }
                 }
             }
-            else if (SecurityMode1)
-            {
-                SecurityMode1 = false;
-            }
+            else if (SecurityMode1) SecurityMode1 = false;
 
         back:
             if (!SecurityMode2)
             {
-                for (int i = 0; i < Info.Hashrates.Length; i++)
+                for (int i = 0; i < Hashrates.Length; i++)
                 {
-                    if (Info.Hashrates[i] == 0)
+                    if (Hashrates[i] == 0)
                     {
                         GK = i;
                         SecurityMode2 = true;
@@ -303,7 +427,7 @@ namespace OMineManager
             }
             else
             {
-                if (Info.Hashrates[GK] == 0 && (DateTime.Now - WDT2).TotalSeconds > WachdogInterval)
+                if (Hashrates[GK] == 0 && (DateTime.Now - WDT2).TotalSeconds > WachdogInterval)
                 {
                     MM.RestartMining($"Отвал GPU{GK}");
                     return;
@@ -315,7 +439,7 @@ namespace OMineManager
                 }
             }
 
-            if (Info.Hashrates.Sum() > MinHashrate)
+            if (Hashrates.Sum() > MinHashrate)
             {
                 StopIdleWatchdog();
                 return;
@@ -463,16 +587,38 @@ namespace OMineManager
         #endregion
         public class MinerInfo
         {
-            public MinerInfo()
+            public MinerInfo(double[] Hashrates, int[] Temperatures, int[] Fanspeeds, int[] ShAccepted, int[] ShRejected, int[] ShInvalid)
             {
-                Hashrates = null;
-                Temperatures = null;
-                Fanspeeds = null;
-                ShAccepted = null;
-                ShRejected = null;
-                ShInvalid = null;
+                this.Hashrates = Hashrates;
+                this.Temperatures = Temperatures;
+                this.Fanspeeds = Fanspeeds;
+                this.ShAccepted = ShAccepted;
+                this.ShRejected = ShRejected;
+                this.ShInvalid = ShInvalid;
+                TimeStamp = DateTime.Now;
+            }
+            public MinerInfo(DateTime DT, int i, MinerInfo MI)
+            {
+                Hashrates = new double[i];
+                Temperatures = new int[i];
+                Fanspeeds = new int[i];
+                ShAccepted = MI.ShAccepted;
+                ShRejected = MI.ShRejected;
+                ShInvalid = MI.ShInvalid;
+                TimeStamp = DT;
+            }
+            public MinerInfo(int i)
+            {
+                Hashrates = new double[i];
+                Temperatures = new int[i];
+                Fanspeeds = new int[i];
+                ShAccepted = new int[i];
+                ShRejected = new int[i];
+                ShInvalid = new int[i];
+                TimeStamp = DateTime.Now;
             }
 
+            public DateTime TimeStamp { get; private set; }
             public double[] Hashrates;
             public int[] Temperatures;
             public int[] Fanspeeds;

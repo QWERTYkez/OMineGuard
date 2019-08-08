@@ -87,12 +87,12 @@ namespace OMineManager
                 {
                     if (!OCM.MSIconnecting)
                     {
-                        MainWindow.SystemMessage("Ожидание соединения с MSI Afterburner");
+                        MW.SystemMessage("Ожидание соединения с MSI Afterburner");
                         while (!OCM.MSIconnecting)
                         {
                             Thread.Sleep(1000);
                         }
-                        MainWindow.SystemMessage("Соединение с MSI Afterburner установлено");
+                        MW.SystemMessage("Соединение с MSI Afterburner установлено");
                     }
 
                     OCM.ApplyOverclock(LPO[0]);

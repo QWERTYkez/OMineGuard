@@ -88,6 +88,7 @@ namespace OMineManager
             Autostart();
 
             TCP.ServerStart();
+            TCP.INFServerStart();
         }
         public static void UpdateProfile()
         {
@@ -735,6 +736,10 @@ namespace OMineManager
         public static void SetMS1(object o)
         {
             string[] MS = (string[])o;
+            for (int i = 0; i < MS.Length; i++)
+            {
+                MS[i] = MS[i] ?? "error";
+            }
             This.GPUsPowerLimit.Text = " " + MS[0].TrimStart(',');
             This.GPUsCoreClock.Text = " " + MS[1].TrimStart(',');
             This.GPUsMemoryClocks.Text = " " + MS[2].TrimStart(',');
@@ -743,6 +748,10 @@ namespace OMineManager
         public static void SetMS2(object o)
         {
             string[] MS = (string[])o;
+            for (int i = 0; i < MS.Length; i++)
+            {
+                MS[i] = MS[i] ?? "error";
+            }
             This.GPUsTemps.Text = " " + MS[0].TrimStart(',');
             This.GPUsTemps2.Text = " " + MS[0].TrimStart(',');
             This.GPUsCoreClockAbs.Text = " " + MS[1].TrimStart(',');
