@@ -118,6 +118,29 @@ namespace OMineManager
                 }
             });
         }
+        private static int SetParam(int i, int multiply, int[] param, int max, int min, int def)
+        {
+            if (param != null)
+            {
+                if (param.Length > i)
+                {
+                    if (param[i] * multiply > max)
+                    {
+                        return max;
+                    }
+                    else if (param[i] * multiply < min)
+                    {
+                        return min;
+                    }
+                    else
+                    {
+                        return param[i] * multiply;
+                    }
+                }
+                else { return def; }
+            }
+            else { return def; }
+        }
         public static void ApplyOverclock(Profile.Overclock OC)
         {
             MainWindow.context.Send((object o) => 
@@ -143,79 +166,29 @@ namespace OMineManager
                 {
                     try
                     {
-                        if (OC.PowLim != null)
-                        {
-                            if (OC.PowLim.Length > i)
-                            {
-                                if (OC.PowLim[i] > nConf.GpuEntries[i].PowerLimitMax)
-                                {
-                                    nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitMax;
-                                }
-                                else if (OC.PowLim[i] < nConf.GpuEntries[i].PowerLimitMin)
-                                {
-                                    nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitMin;
-                                }
-                                else
-                                {
-                                    nConf.GpuEntries[i].PowerLimitCur = OC.PowLim[i];
-                                }
-                            }
-                            else { nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitDef; }
-                        }
-                        else { nConf.GpuEntries[i].PowerLimitCur = nConf.GpuEntries[i].PowerLimitDef; }
+                        nConf.GpuEntries[i].PowerLimitCur = SetParam(i, 1, OC.PowLim,
+                        nConf.GpuEntries[i].PowerLimitMax,
+                        nConf.GpuEntries[i].PowerLimitMin,
+                        nConf.GpuEntries[i].PowerLimitDef);
                     }
                     catch { }
-
                     try
                     {
-                        if (OC.CoreClock != null)
-                        {
-                            if (OC.CoreClock.Length > i)
-                            {
-                                if (OC.CoreClock[i] * 1000 > nConf.GpuEntries[i].CoreClockBoostMax)
-                                {
-                                    nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostMax;
-                                }
-                                else if (OC.CoreClock[i] * 1000 < nConf.GpuEntries[i].CoreClockBoostMin)
-                                {
-                                    nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostMin;
-                                }
-                                else
-                                {
-                                    nConf.GpuEntries[i].CoreClockBoostCur = OC.CoreClock[i] * 1000;
-                                }
-                            }
-                            else { nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostDef; }
-                        }
-                        else { nConf.GpuEntries[i].CoreClockBoostCur = nConf.GpuEntries[i].CoreClockBoostDef; }
+                        nConf.GpuEntries[i].CoreClockBoostCur = SetParam(i, 1000, OC.CoreClock,
+                        nConf.GpuEntries[i].CoreClockBoostMax,
+                        nConf.GpuEntries[i].CoreClockBoostMin,
+                        nConf.GpuEntries[i].CoreClockBoostDef);
                     }
                     catch { }
-
                     try
                     {
-                        if (OC.MemoryClock != null)
-                        {
-                            if (OC.MemoryClock.Length > i)
-                            {
-                                if (OC.MemoryClock[i] * 1000 > nConf.GpuEntries[i].MemoryClockBoostMax)
-                                {
-                                    nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostMax;
-                                }
-                                else if (OC.MemoryClock[i] * 1000 < nConf.GpuEntries[i].MemoryClockBoostMin)
-                                {
-                                    nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostMin;
-                                }
-                                else
-                                {
-                                    nConf.GpuEntries[i].MemoryClockBoostCur = OC.MemoryClock[i] * 1000;
-                                }
-                            }
-                            else { nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostDef; }
-                        }
-                        else { nConf.GpuEntries[i].MemoryClockBoostCur = nConf.GpuEntries[i].MemoryClockBoostDef; }
+                        nConf.GpuEntries[i].MemoryClockBoostCur = SetParam(i, 1000, OC.MemoryClock,
+                        nConf.GpuEntries[i].MemoryClockBoostMax,
+                        nConf.GpuEntries[i].MemoryClockBoostMin,
+                        nConf.GpuEntries[i].MemoryClockBoostDef);
                     }
                     catch { }
-
+                    
                     try
                     {
                         if (OC.FanSpeed != null)
