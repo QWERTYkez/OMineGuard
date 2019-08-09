@@ -30,12 +30,9 @@ namespace OMineManager
 
         private static void ConnectToMSI()
         {
-            if (Process.GetProcessesByName("MSIAfterburner").Length == 0)
+            while (Process.GetProcessesByName("MSIAfterburner").Length == 0)
             {
-                while (Process.GetProcessesByName("MSIAfterburner").Length == 0)
-                {
-                    Thread.Sleep(50);
-                }
+                Thread.Sleep(100);
             }
             while (!MSIconnecting)
             {
@@ -130,7 +127,17 @@ namespace OMineManager
             }, null);
             Task.Run(() => 
             {
+                CM.ReloadAll();
                 ControlMemory nConf = CM;
+                if (nConf.GpuEntries.Length > 0)
+                {
+                    while (nConf.GpuEntries[0].PowerLimitMax == 0)
+                    {
+                        Thread.Sleep(50);
+                        CM.ReloadAll();
+                        nConf = CM;
+                    }
+                }
 
                 for (int i = 0; i < nConf.GpuEntries.Length; i++)
                 {
