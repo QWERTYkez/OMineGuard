@@ -309,8 +309,6 @@ namespace OMineManager
             if (PM.Profile.GPUsSwitch != null)
             { CardsCount = PM.Profile.GPUsSwitch.Where(x => x == true).Count(); }
             else CardsCount = 0;
-            SecurityMode1 = false;
-            SecurityMode2 = false;
 
             try
             {
@@ -360,12 +358,7 @@ namespace OMineManager
         #region Wachdog
         public static double MinHashrate;
         private static DateTime? SWT;
-        private static DateTime WDT1;
-        private static DateTime WDT2;
-        private static bool SecurityMode1;
-        private static bool SecurityMode2;
-        private static int GK;
-        private static int WachdogInterval = 30;
+        private static string GPUs = "";
         private static int StartingInterval = 60;
         private static int CardsCount;
         public static void HashrateWachdog(double[] Hashrates)
@@ -376,74 +369,46 @@ namespace OMineManager
                 return;
             }
             
-            if (Hashrates.Length < CardsCount)
+            if (Hashrates.Length < CardsCount)  //блок неправильного количества карт
             {
                 RebootPC("Ошибка количества GPUs");
                 return;
             }
-
-            if (Hashrates.Sum() < 0)
+            if (Hashrates.Sum() < 0)  //блок бездействия
             {
                 StartIdleWatchdog();
                 return;
             }
-
-            if (Hashrates.Sum() == 0)
+            if (Hashrates.Sum() == 0)  //блок нулевого хешрейта
             {
                 MM.RestartMining($"Нулевой хешрейт");
                 return;
             }
-
-            if (Hashrates.Sum() < MinHashrate)
-            {
-                if (!SecurityMode1)
-                {
-                    SecurityMode1 = true;
-                    WDT1 = DateTime.Now;
-                }
-                else
-                {
-                    if ((DateTime.Now - WDT1).TotalSeconds > WachdogInterval)
-                    {
-                        MM.RestartMining($"Низкий хешрейт");
-                        return;
-                    }
-                }
-            }
-            else if (SecurityMode1) SecurityMode1 = false;
-
-        back:
-            if (!SecurityMode2)
-            {
-                for (int i = 0; i < Hashrates.Length; i++)
+            {// блок падения карт
+                for (int i = 0; i < CardsCount; i++)
                 {
                     if (Hashrates[i] == 0)
                     {
-                        GK = i;
-                        SecurityMode2 = true;
-                        WDT2 = DateTime.Now;
+                        GPUs += $", {i}";
                     }
                 }
-            }
-            else
-            {
-                if (Hashrates[GK] == 0 && (DateTime.Now - WDT2).TotalSeconds > WachdogInterval)
+                if (GPUs != "")
                 {
-                    MM.RestartMining($"Отвал GPU{GK}");
+                    GPUs.TrimStart(',');
+                    MM.RestartMining($"Отвал GPUs:{GPUs}");
                     return;
                 }
-                else
-                {
-                    SecurityMode2 = false;
-                    goto back;
-                }
             }
-
-            if (Hashrates.Sum() > MinHashrate)
+            
+            if (Hashrates.Sum() < MinHashrate)  //блок низкого хешрейта
             {
-                StopIdleWatchdog();
+                StartLHWatchdog();
                 return;
             }
+
+            // блок отключения вачдогов
+            if (Hashrates.Sum() > 0) StopIdleWatchdog();
+            if (Hashrates.Sum() > MinHashrate) StopLHWatchdog();
         }
 
         private static Thread InternetWachdogThread;
@@ -517,6 +482,34 @@ namespace OMineManager
             try
             {
                 IdleWatchdogThread.Abort();
+            }
+            catch { }
+        }
+
+        private static Thread LowHashrateThread = new Thread(new ThreadStart(() => { }));
+        private static int LowHashrateTimeout = 30; //sec
+        private static ThreadStart LowHashrateTS = new ThreadStart(() =>
+        {
+            Thread.Sleep(1000 * LowHashrateTimeout);
+            MM.RestartMining($"Низкий хешрейт");
+            Thread.CurrentThread.Abort();
+        });
+        public static void StartLHWatchdog()
+        {
+            if (LowHashrateThread.IsAlive) return;
+            try
+            {
+                LowHashrateThread.Abort();
+            }
+            catch { }
+            LowHashrateThread = new Thread(LowHashrateTS);
+            LowHashrateThread.Start();
+        }
+        public static void StopLHWatchdog()
+        {
+            try
+            {
+                LowHashrateThread.Abort();
             }
             catch { }
         }
