@@ -140,8 +140,19 @@ namespace OMineManager
             catch { }
             try
             {
+                INFserver.Stop();
+            }
+            catch { }
+            try
+            {
                 MSGServerThread.Abort();
+
+            }
+            catch { }
+            try
+            {
                 INFServerThread.Abort();
+
             }
             catch { }
             foreach (Thread T in MSGClientServiceThreads)
