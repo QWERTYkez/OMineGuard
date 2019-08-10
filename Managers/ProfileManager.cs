@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using PM = OMineManager.ProfileManager;
 
 namespace OMineManager
 {
@@ -54,6 +55,29 @@ namespace OMineManager
         {
             profile = ReadProfile();
         }
+
+        public static Profile.Config GetConfig(long? id)
+        {
+            foreach (Profile.Config c in Profile.ConfigsList)
+            {
+                if (c.ID == id)
+                {
+                    return c;
+                }
+            }
+            return null;
+        }
+        public static Profile.Overclock GetClock(long? id)
+        {
+            foreach (Profile.Overclock c in Profile.ClocksList)
+            {
+                if (c.ID == id)
+                {
+                    return c;
+                }
+            }
+            return null;
+        }
     }
 
     public class Profile
@@ -70,8 +94,7 @@ namespace OMineManager
 
         public string RigName;
         public bool Autostart;
-        public string StartedConfig;
-        public string StartedClock;
+        public long? StartedID;
         public string StartedProcess;
         public int Digits;
         public bool[] GPUsSwitch;
@@ -86,12 +109,11 @@ namespace OMineManager
             {
                 Name = "Новый конфиг";
                 Algoritm = "";
-                Miner = null;
                 Pool = "";
                 Wallet = "";
                 Params = "";
-                Overclock = "";
                 MinHashrate = 0;
+                ID = DateTime.UtcNow.ToBinary();
             }
 
             public string Name;
@@ -101,14 +123,16 @@ namespace OMineManager
             public string Port;
             public string Wallet;
             public string Params;
-            public string Overclock;
+            public long? ClockID;
             public double MinHashrate;
+            public long ID;
         }
         public class Overclock
         {
             public Overclock()
             {
                 Name = "Новый разгон";
+                ID = DateTime.UtcNow.ToBinary();
             }
 
             public string Name;
@@ -116,6 +140,7 @@ namespace OMineManager
             public int[] CoreClock;
             public int[] MemoryClock;
             public uint[] FanSpeed;
+            public long ID;
         }
         public class InformManager
         {

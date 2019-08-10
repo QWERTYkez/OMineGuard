@@ -56,9 +56,17 @@ namespace OMineManager
             if (PM.Profile.ConfigsList == null)
             { PM.Profile.ConfigsList = new List<Profile.Config>(); }
             ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
-            ConfigsList.SelectedItem = PM.Profile.StartedConfig;
             ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
-            ClocksList.SelectedItem = PM.Profile.StartedClock;
+            Profile.Config Conf = PM.GetConfig(PM.Profile.StartedID);
+            if (Conf != null)
+            {
+                ClocksList.SelectedItem = Conf.Name;
+                Profile.Overclock clock = PM.GetClock(PM.GetConfig(PM.Profile.StartedID).ID);
+                if (clock != null)
+                {
+                    ClocksList.SelectedItem = clock.Name;
+                }
+            }
             if (PM.Profile.LogTextSize != 0)
             {
                 MinerLog.FontSize = PM.Profile.LogTextSize;
@@ -92,7 +100,6 @@ namespace OMineManager
         }
         public static void UpdateProfile()
         {
-            
             This.Algotitm.ItemsSource = SM.MinersD.Keys;
             This.AutoStart.Checked -= This.AutoStart_Checked;
             This.AutoStart.Unchecked -= This.AutoStart_Checked;
@@ -108,9 +115,17 @@ namespace OMineManager
             if (PM.Profile.ConfigsList == null)
             { PM.Profile.ConfigsList = new List<Profile.Config>(); }
             This.ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
-            This.ConfigsList.SelectedItem = PM.Profile.StartedConfig;
             This.ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
-            This.ClocksList.SelectedItem = PM.Profile.StartedClock;
+            Profile.Config Conf = PM.GetConfig(PM.Profile.StartedID);
+            if (Conf != null)
+            {
+                This.ClocksList.SelectedItem = Conf.Name;
+                Profile.Overclock clock = PM.GetClock(PM.GetConfig(PM.Profile.StartedID).ID);
+                if (clock != null)
+                {
+                    This.ClocksList.SelectedItem = clock.Name;
+                }
+            }
             if (PM.Profile.LogTextSize != 0)
             {
                 This.MinerLog.FontSize = PM.Profile.LogTextSize;
@@ -252,9 +267,9 @@ namespace OMineManager
             int n = ConfigsList.SelectedIndex;
             if (n != -1)
             {
-                if ((string)ConfigsList.SelectedItem == PM.Profile.StartedConfig)
+                if ((string)ConfigsList.SelectedItem == PM.GetConfig(PM.Profile.StartedID).Name)
                 {
-                    PM.Profile.StartedConfig = null;
+                    PM.Profile.StartedID = null;
                 }
                 PM.Profile.ConfigsList.RemoveAt(n);
                 ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
@@ -271,69 +286,36 @@ namespace OMineManager
         private void ApplyConfig_Click(object sender, RoutedEventArgs e)
         {
             ApplyConfigM();
-        }
+        } 
         private bool ApplyConfigM()
         {
             int n = ConfigsList.SelectedIndex;
 
             if (n != -1)
             {
-                if (PM.Profile.ConfigsList[n].Name == MiningConfigName.Text ||
-                    !PM.Profile.ConfigsList.Select(W => W.Name).Contains(MiningConfigName.Text))
+                PM.Profile.ConfigsList[n].Name = MiningConfigName.Text;
+                PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
+                PM.Profile.ConfigsList[n].Miner = (SM.Miners?)Miner.SelectedItem;
+                PM.Profile.ConfigsList[n].Pool = Pool.Text;
+                PM.Profile.ConfigsList[n].Port = Port.Text;
+                PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
+                PM.Profile.ConfigsList[n].Params = Params.Text;
+                PM.Profile.ConfigsList[n].ClockID = PM.Profile.ClocksList.Where(w => w.Name == Overclock.Text).ToList()[0].ID;
+                try
                 {
-                    if (PM.Profile.StartedConfig == PM.Profile.ConfigsList[n].Name)
-                    {
-                        PM.Profile.StartedConfig = MiningConfigName.Text;
-                    }
-                    PM.Profile.ConfigsList[n].Name = MiningConfigName.Text;
-                    PM.Profile.ConfigsList[n].Algoritm = Algotitm.Text;
-                    PM.Profile.ConfigsList[n].Miner = (SM.Miners?)Miner.SelectedItem;
-                    PM.Profile.ConfigsList[n].Pool = Pool.Text;
-                    PM.Profile.ConfigsList[n].Port = Port.Text;
-                    PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
-                    PM.Profile.ConfigsList[n].Params = Params.Text;
-                    PM.Profile.ConfigsList[n].Overclock = Overclock.Text;
-                    try
-                    {
-                        PM.Profile.ConfigsList[n].MinHashrate = Convert.ToDouble(MinHashrate.Text);
-                    }
-                    catch
-                    {
-                        PM.Profile.ConfigsList[n].MinHashrate = 0;
-                    }
-                    
-                    PM.SaveProfile();
-                    ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
-                    ConfigsList.SelectedIndex = n;
-                    return true;
+                    PM.Profile.ConfigsList[n].MinHashrate = Convert.ToDouble(MinHashrate.Text);
                 }
-                else
+                catch
                 {
-                    try
-                    {
-                        MSGThread.Abort();
-                    }
-                    catch { }
-                    DopParam.Text = "Конфиг с таким именем уже существует";
-                    DopParam.FontWeight = FontWeights.Bold;
-                    DopParam.FontSize = 26;
-                    Task.Run(() =>
-                    {
-                        MSGThread = Thread.CurrentThread;
-                        Thread.Sleep(2000);
-                        context.Send(msgmethod, null);
-                    });
-                    return false;
+                    PM.Profile.ConfigsList[n].MinHashrate = 0;
                 }
+
+                PM.SaveProfile();
+                ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+                ConfigsList.SelectedIndex = n;
+                return true;
             }
             else { return false; }
-        }
-        Thread MSGThread;
-        private void msgmethod(object o)
-        {
-            DopParam.Text = "Дополнительные парамаетры:";
-            DopParam.FontWeight = FontWeights.Normal;
-            DopParam.FontSize = 18;
         }
         private void StartConfig_Click(object sender, RoutedEventArgs e)
         {
@@ -365,26 +347,20 @@ namespace OMineManager
                 {
                     Algotitm.SelectedItem = PM.Profile.ConfigsList[n].Algoritm;
                 }
-                else
-                {
-                    Algotitm.SelectedIndex = -1;
-                }
+                else Algotitm.SelectedIndex = -1;
+
                 if (PM.Profile.ConfigsList[n].Miner != null)
                 {
                     Miner.SelectedItem = PM.Profile.ConfigsList[n].Miner;
                 }
-                else
+                else Miner.SelectedIndex = -1;
+
+                if (PM.Profile.ConfigsList[n].ClockID != null)
                 {
-                    Miner.SelectedIndex = -1;
+                    Overclock.SelectedItem = PM.GetClock(PM.Profile.ConfigsList[n].ClockID).Name;
                 }
-                if (PM.Profile.ConfigsList[n].Overclock != "")
-                {
-                    Overclock.SelectedItem = PM.Profile.ConfigsList[n].Overclock;
-                }
-                else
-                {
-                    Overclock.SelectedIndex = -1;
-                }
+                else Overclock.SelectedIndex = -1;
+
                 MiningConfigName.Text = PM.Profile.ConfigsList[n].Name;
                 Pool.Text = PM.Profile.ConfigsList[n].Pool;
                 Port.Text = PM.Profile.ConfigsList[n].Port;
@@ -430,7 +406,7 @@ namespace OMineManager
             }
             if (str == "Запустить процесс")
             {
-                MinersManager.StartMiner(PM.Profile.ConfigsList.Single(p => p.Name == PM.profile.StartedConfig));
+                MM.StartMiner(PM.GetConfig(PM.Profile.StartedID));
             }
         }
         #endregion
@@ -438,31 +414,23 @@ namespace OMineManager
         private void MinuClock_Click(object sender, RoutedEventArgs e)
         {
             int n = ClocksList.SelectedIndex;
+
             if (n != -1)
             {
-                if ((string)ClocksList.SelectedItem == PM.Profile.StartedClock)
+                long id = PM.Profile.ClocksList[n].ID;
+                foreach (Profile.Config c in PM.Profile.ConfigsList)
                 {
-                    PM.Profile.StartedClock = null;
+                    if (c.ClockID == id)
+                    {
+                        c.ClockID = null;
+                    }
                 }
+
                 PM.Profile.ClocksList.RemoveAt(n);
                 ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
                 ClocksList.SelectedIndex = -1;
                 PM.SaveProfile();
                 Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
-
-                string OC = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
-                if(PM.Profile.ConfigsList.Select(w => w.Overclock).Contains(OC))
-                {
-                    foreach (Profile.Config PC in PM.Profile.ConfigsList)
-                    {
-                        if(PC.Overclock == OC)
-                        {
-                            PC.Overclock = "";
-                            PM.SaveProfile();
-                        }
-                    }
-                    Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
-                }
             }
         }
         private void PlusClock_Click(object sender, RoutedEventArgs e)
@@ -482,93 +450,87 @@ namespace OMineManager
             int n = ClocksList.SelectedIndex;
             if (n != -1)
             {
-                if (PM.Profile.ClocksList[n].Name == ClockName.Text ||
-                    !(new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name)).Contains(ClockName.Text))
+                PM.Profile.ClocksList[n].Name = ClockName.Text;
+                try
                 {
-                    if (PM.Profile.StartedClock == PM.Profile.ClocksList[n].Name)
+                    if (PowLim.Text != "" && !(bool)SwitcherPL.IsChecked)
                     {
-                        PM.Profile.StartedClock = ClockName.Text;
+                        PM.Profile.ClocksList[n].PowLim =
+                            JsonConvert.DeserializeObject<int[]>($"[{PowLim.Text}]");
                     }
-                    PM.Profile.ClocksList[n].Name = ClockName.Text;
-                    try
+                    else
                     {
-                        if(PowLim.Text != "" && !(bool)SwitcherPL.IsChecked)
-                        {
-                            PM.Profile.ClocksList[n].PowLim = 
-                                JsonConvert.DeserializeObject<int[]>($"[{PowLim.Text}]");
-                        }
-                        else
-                        {
-                            PM.Profile.ClocksList[n].PowLim = null;
-                        }
+                        PM.Profile.ClocksList[n].PowLim = null;
                     }
-                    catch
-                    {
-                        PowLim.Text = "Неправильный формат";
-                        return false;
-                    }
-                    try
-                    {
-                        if (CoreClock.Text != "" && !(bool)SwitcherCC.IsChecked)
-                        {
-                            PM.Profile.ClocksList[n].CoreClock =
-                                JsonConvert.DeserializeObject<int[]>($"[{CoreClock.Text}]");
-                        }
-                        else
-                        {
-                            PM.Profile.ClocksList[n].CoreClock = null;
-                        }
-                    }
-                    catch
-                    {
-                        CoreClock.Text = "Неправильный формат";
-                        return false;
-                    }
-                    try
-                    {
-                        if (MemoryClock.Text != "" && !(bool)SwitcherMC.IsChecked)
-                        {
-                            PM.Profile.ClocksList[n].MemoryClock =
-                                JsonConvert.DeserializeObject<int[]>($"[{MemoryClock.Text}]");
-                        }
-                        else
-                        {
-                            PM.Profile.ClocksList[n].MemoryClock = null;
-                        }
-                    }
-                    catch
-                    {
-                        MemoryClock.Text = "Неправильный формат";
-                        return false;
-                    }
-                    try
-                    {
-                        if (FanSpeed.Text != "" && !(bool)SwitcherFS.IsChecked)
-                        {
-                            PM.Profile.ClocksList[n].FanSpeed =
-                                JsonConvert.DeserializeObject<uint[]>($"[{FanSpeed.Text}]");
-                        }
-                        else
-                        {
-                            PM.Profile.ClocksList[n].FanSpeed = null;
-                        }
-                    }
-                    catch
-                    {
-                        FanSpeed.Text = "Неправильный формат";
-                        return false;
-                    }
-                    PM.SaveProfile();
-                    ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
-                    ClocksList.SelectedIndex = n;
-                    Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
-                    if (ConfigsList.SelectedIndex != -1)
-                    {
-                        Overclock.SelectedItem = PM.Profile.ConfigsList[ConfigsList.SelectedIndex].Overclock;
-                    }
-                    return true;
                 }
-                else { return false; }
+                catch
+                {
+                    PowLim.Text = "Неправильный формат";
+                    return false;
+                }
+                try
+                {
+                    if (CoreClock.Text != "" && !(bool)SwitcherCC.IsChecked)
+                    {
+                        PM.Profile.ClocksList[n].CoreClock =
+                            JsonConvert.DeserializeObject<int[]>($"[{CoreClock.Text}]");
+                    }
+                    else
+                    {
+                        PM.Profile.ClocksList[n].CoreClock = null;
+                    }
+                }
+                catch
+                {
+                    CoreClock.Text = "Неправильный формат";
+                    return false;
+                }
+                try
+                {
+                    if (MemoryClock.Text != "" && !(bool)SwitcherMC.IsChecked)
+                    {
+                        PM.Profile.ClocksList[n].MemoryClock =
+                            JsonConvert.DeserializeObject<int[]>($"[{MemoryClock.Text}]");
+                    }
+                    else
+                    {
+                        PM.Profile.ClocksList[n].MemoryClock = null;
+                    }
+                }
+                catch
+                {
+                    MemoryClock.Text = "Неправильный формат";
+                    return false;
+                }
+                try
+                {
+                    if (FanSpeed.Text != "" && !(bool)SwitcherFS.IsChecked)
+                    {
+                        PM.Profile.ClocksList[n].FanSpeed =
+                            JsonConvert.DeserializeObject<uint[]>($"[{FanSpeed.Text}]");
+                    }
+                    else
+                    {
+                        PM.Profile.ClocksList[n].FanSpeed = null;
+                    }
+                }
+                catch
+                {
+                    FanSpeed.Text = "Неправильный формат";
+                    return false;
+                }
+                PM.SaveProfile();
+                ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
+                ClocksList.SelectedIndex = n;
+                Overclock.ItemsSource = (new string[] { "" }).Concat(PM.Profile.ClocksList.Select(W => W.Name));
+
+                int k = ConfigsList.SelectedIndex;
+                if (k != -1)
+                {
+                    ConfigsList.SelectedIndex = -1;
+                    ConfigsList.SelectedIndex = k;
+                }
+                return true;
             }
             else { return false; }
         }

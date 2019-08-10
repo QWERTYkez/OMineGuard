@@ -63,11 +63,11 @@ namespace OMineManager
 
         public static void StartLastMiner(object o)
         {
-            StartMiner(PM.Profile.ConfigsList.Single(p => p.Name == PM.profile.StartedConfig));
+            StartMiner(PM.GetConfig(PM.Profile.StartedID));
         }
         public static void StartLastMiner()
         {
-            StartMiner(PM.Profile.ConfigsList.Single(p => p.Name == PM.profile.StartedConfig));
+            StartMiner(PM.GetConfig(PM.Profile.StartedID));
         }
         public static Thread StaartProcessThread;
         public static void StartMiner(Profile.Config Config)
@@ -81,9 +81,8 @@ namespace OMineManager
             catch { }
             StaartProcessThread = new Thread(new ThreadStart(() => 
             {
-                List<Profile.Overclock> LPO =
-                PM.Profile.ClocksList.Where(oc => oc.Name == Config.Overclock).ToList();
-                if (LPO.Count > 0)
+                Profile.Overclock Clock = PM.GetClock(Config.ClockID);
+                if (Clock != null)
                 {
                     if (!OCM.MSIconnecting)
                     {
@@ -95,7 +94,7 @@ namespace OMineManager
                         MW.SystemMessage("Соединение с MSI Afterburner установлено");
                     }
 
-                    OCM.ApplyOverclock(LPO[0]);
+                    OCM.ApplyOverclock(Clock);
                 }
                 StartedMiner = Config.Miner;
                 string DT = DateTime.Now.ToString("HH.mm.ss - dd.MM.yy");
@@ -310,7 +309,7 @@ namespace OMineManager
                 IM.MinHashrate = Config.MinHashrate;
                 RunIndication();
                 PM.Profile.StartedProcess = StartedProcessName;
-                PM.Profile.StartedConfig = Config.Name;
+                PM.Profile.StartedID = Config.ID;
                 PM.SaveProfile();
                 IM.StartWaching(Config.Miner);
                 IM.StartInternetWachdog();
