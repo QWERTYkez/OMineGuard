@@ -5,18 +5,18 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using SM = OMineManager.SettingsManager;
-using MW = OMineManager.MainWindow;
-using MM = OMineManager.MinersManager;
-using PM = OMineManager.ProfileManager;
-using TCP = OMineManager.TCPserver;
+using SM = OMineGuard.SettingsManager;
+using MW = OMineGuard.MainWindow;
+using MM = OMineGuard.MinersManager;
+using PM = OMineGuard.ProfileManager;
+using TCP = OMineGuard.TCPserver;
 using xNet;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Windows;
 using System.Net.NetworkInformation;
 
-namespace OMineManager
+namespace OMineGuard
 {
     public static class InformManager
     {

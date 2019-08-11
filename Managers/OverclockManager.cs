@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using MSI.Afterburner;
 using MSI.Afterburner.Exceptions;
 using OpenHardwareMonitor.Hardware;
-using PM = OMineManager.ProfileManager;
+using PM = OMineGuard.ProfileManager;
 
-namespace OMineManager
+namespace OMineGuard
 {
     public static class OverclockManager
     {

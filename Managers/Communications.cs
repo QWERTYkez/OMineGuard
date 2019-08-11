@@ -5,15 +5,15 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using PM = OMineManager.ProfileManager;
-using IM = OMineManager.InformManager;
-using MW = OMineManager.MainWindow;
-using MM = OMineManager.MinersManager;
+using PM = OMineGuard.ProfileManager;
+using IM = OMineGuard.InformManager;
+using MW = OMineGuard.MainWindow;
+using MM = OMineGuard.MinersManager;
 using System.Diagnostics;
 using System.Windows;
 using System;
 
-namespace OMineManager
+namespace OMineGuard
 {
     public static class TCPserver
     {

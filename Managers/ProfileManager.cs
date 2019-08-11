@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using PM = OMineManager.ProfileManager;
+using PM = OMineGuard.ProfileManager;
 
-namespace OMineManager
+namespace OMineGuard
 {
     public static class ProfileManager
     {

@@ -2,18 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using SM = OMineManager.SettingsManager;
-using PM = OMineManager.ProfileManager;
-using IM = OMineManager.InformManager;
-using OCM = OMineManager.OverclockManager;
-using MW = OMineManager.MainWindow;
+using SM = OMineGuard.SettingsManager;
+using PM = OMineGuard.ProfileManager;
+using IM = OMineGuard.InformManager;
+using OCM = OMineGuard.OverclockManager;
+using MW = OMineGuard.MainWindow;
 using System.Diagnostics;
 using System.Windows.Controls;
 using System.IO;
 using System.Threading;
 using System.Windows.Media;
 
-namespace OMineManager
+namespace OMineGuard
 {
     public static class SettingsManager
     {

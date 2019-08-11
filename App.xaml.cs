@@ -1,9 +1,9 @@
 ﻿using System.Threading;
 using System.Windows;
-using IM = OMineManager.InformManager;
-using MM = OMineManager.MinersManager;
+using IM = OMineGuard.InformManager;
+using MM = OMineGuard.MinersManager;
 
-namespace OMineManager
+namespace OMineGuard
 {
     public partial class App : Application
     {

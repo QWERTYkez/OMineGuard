@@ -5,23 +5,23 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using PM = OMineManager.ProfileManager;
-using SM = OMineManager.SettingsManager;
-using MM = OMineManager.MinersManager;
-using OCM = OMineManager.OverclockManager;
-using IM = OMineManager.InformManager;
-using TCP = OMineManager.TCPserver;
+using PM = OMineGuard.ProfileManager;
+using SM = OMineGuard.SettingsManager;
+using MM = OMineGuard.MinersManager;
+using OCM = OMineGuard.OverclockManager;
+using IM = OMineGuard.InformManager;
+using TCP = OMineGuard.TCPserver;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Windows.Documents;
 using System.IO;
 using System.Reflection;
 
-namespace OMineManager
+namespace OMineGuard
 {
     public partial class MainWindow : Window
     {
-        public const string Ver = "1.2";
+        public const string Ver = "1.3";
         public static string Version;
         public static MainWindow This;
         public static bool AutoScroll = true;
@@ -177,7 +177,7 @@ namespace OMineManager
             {
                 if (IM.InternetConnetction())
                 {
-                    IM.InformMessage("OMineManager запущен");
+                    IM.InformMessage("OMineGuard запущен");
                     MM.StartLastMiner(null);
                     TabConroller.SelectedIndex = 2;
                 }
@@ -189,7 +189,7 @@ namespace OMineManager
                         if (IM.InternetConnetction())
                         {
                             SystemMessage("Соединение с интернетом установлено");
-                            IM.InformMessage("OMineManager запущен, после установления интернет соединения");
+                            IM.InformMessage("OMineGuard запущен, после установления интернет соединения");
                             MM.StartLastMiner(null);
                             TabConroller.SelectedIndex = 2;
                         }
