@@ -60,7 +60,7 @@ namespace OMineGuard
             Profile.Config Conf = PM.GetConfig(PM.Profile.StartedID);
             if (Conf != null)
             {
-                ClocksList.SelectedItem = Conf.Name;
+                ConfigsList.SelectedItem = Conf.Name;
                 Profile.Overclock clock = PM.GetClock(PM.GetConfig(PM.Profile.StartedID).ID);
                 if (clock != null)
                 {
@@ -192,6 +192,7 @@ namespace OMineGuard
                             IM.InformMessage("OMineGuard запущен, после установления интернет соединения");
                             MM.StartLastMiner(null);
                             TabConroller.SelectedIndex = 2;
+                            break;
                         }
                         Thread.Sleep(1000);
                     }
