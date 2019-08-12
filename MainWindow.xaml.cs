@@ -173,7 +173,7 @@ namespace OMineGuard
         }
         private void Autostart()
         {
-            if (PM.Profile.Autostart)
+            if (PM.Profile.Autostart) // && PM.Profile.StartedID != null
             {
                 if (IM.InternetConnetction())
                 {

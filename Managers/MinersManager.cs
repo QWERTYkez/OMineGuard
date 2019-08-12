@@ -64,15 +64,36 @@ namespace OMineGuard
 
         public static void StartLastMiner(object o)
         {
-            StartMiner(PM.GetConfig(PM.Profile.StartedID));
+            StartLastMiner();
         }
         public static void StartLastMiner()
         {
-            StartMiner(PM.GetConfig(PM.Profile.StartedID));
+            if (PM.Profile.StartedID == null)
+            {
+                MW.SystemMessage("Для автозапуска нужно что-нибудь запустить вручную");
+                return;
+            }
+            else
+            {
+                if (PM.GetConfig(PM.Profile.StartedID) == null)
+                {
+                    MW.SystemMessage("Автозапускаемый профиль отсутствует");
+                    return;
+                }
+                else
+                {
+                    StartMiner(PM.GetConfig(PM.Profile.StartedID));
+                }
+            }
         }
         public static Thread StaartProcessThread;
         public static void StartMiner(Profile.Config Config)
         {
+            if (Config == null)
+            {
+                MW.SystemMessage("");
+                return;
+            }
             IM.StartIdleWatchdog();
             KillProcess();
             try
