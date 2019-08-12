@@ -306,24 +306,69 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Inform Manager">
-                <StackPanel HorizontalAlignment="Center">
-                    <Border Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
-                        <WrapPanel HorizontalAlignment="Center">
-                            <TextBlock Foreground="White">VK Informer:</TextBlock>
-                            <CheckBox x:Name="VKInformerToggle" VerticalAlignment="Center" Margin="10,0,0,0"></CheckBox>
-                            <TextBlock Foreground="White" Margin="20,0,0,0">user id:</TextBlock>
-                            <TextBox x:Name="VKuserID" Width="200" Margin="10,0,0,0"></TextBox>
-                        </WrapPanel>
-                    </Border>
-                    <Border Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
-                        <WrapPanel HorizontalAlignment="Center">
-                            <TextBlock Foreground="White">Telegram Informer:</TextBlock>
-                            <CheckBox x:Name="TelegramInformerToggle" VerticalAlignment="Center" Margin="10,0,0,0" IsEnabled="False"></CheckBox>
-                            <TextBlock Foreground="White" Margin="20,0,0,0">user id:</TextBlock>
-                            <TextBox Width="200" Margin="10,0,0,0" IsEnabled="False"></TextBox>
-                        </WrapPanel>
-                    </Border>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <GroupBox  Grid.Column="0" Width="400" Header=" Временные допуски: " Padding="3" BorderThickness="1" BorderBrush="White" Foreground="White">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="40"/>
+                                        <ColumnDefinition Width="40"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Foreground="White" HorizontalAlignment="Right">Задержка вачдога:</TextBlock>
+                                    <Slider Grid.Row="0" Grid.Column="1" x:Name="WachdogTimerSlider" Margin="5,0" Minimum="30" Maximum="120" 
+                                        IsSnapToTickEnabled="True" TickFrequency="1"></Slider>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" x:Name="WachdogTimerSec">120</TextBlock>
+                                    <TextBlock Grid.Row="0" Grid.Column="3" Margin="5,0">сек</TextBlock>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Foreground="White" HorizontalAlignment="Right">Бездействие:</TextBlock>
+                                    <Slider Grid.Row="1" Grid.Column="1" x:Name="IdleTimeoutSlider" Margin="5,0" Minimum="30" Maximum="300" 
+                                        IsSnapToTickEnabled="True" TickFrequency="1"></Slider>
+                                    <TextBlock Grid.Row="1" Grid.Column="2" x:Name="IdleTimeoutSec">120</TextBlock>
+                                    <TextBlock Grid.Row="1" Grid.Column="3" Margin="5,0">сек</TextBlock>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Foreground="White" HorizontalAlignment="Right">Низкий хешрейт:</TextBlock>
+                                    <Slider Grid.Row="2" Grid.Column="1" x:Name="LHTimeoutSlider" Margin="5,0" Minimum="30" Maximum="300" 
+                                        IsSnapToTickEnabled="True" TickFrequency="1"></Slider>
+                                    <TextBlock Grid.Row="2" Grid.Column="2" x:Name="LHTimeoutSec">120</TextBlock>
+                                    <TextBlock Grid.Row="2" Grid.Column="3" Margin="5,0">сек</TextBlock>
+
+                                </Grid>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                        <Border Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
+                            <WrapPanel HorizontalAlignment="Center">
+                                <TextBlock Foreground="White">VK Informer:</TextBlock>
+                                <CheckBox x:Name="VKInformerToggle" VerticalAlignment="Center" Margin="10,0,0,0"></CheckBox>
+                                <TextBlock Foreground="White" Margin="20,0,0,0">user id:</TextBlock>
+                                <TextBox x:Name="VKuserID" Width="200" Margin="10,0,0,0"></TextBox>
+                            </WrapPanel>
+                        </Border>
+                        <Border Padding="3" BorderThickness="3" BorderBrush="White" Margin="-1">
+                            <WrapPanel HorizontalAlignment="Center">
+                                <TextBlock Foreground="White">Telegram Informer:</TextBlock>
+                                <CheckBox x:Name="TelegramInformerToggle" VerticalAlignment="Center" Margin="10,0,0,0" IsEnabled="False"></CheckBox>
+                                <TextBlock Foreground="White" Margin="20,0,0,0">user id:</TextBlock>
+                                <TextBox Width="200" Margin="10,0,0,0" IsEnabled="False"></TextBox>
+                            </WrapPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

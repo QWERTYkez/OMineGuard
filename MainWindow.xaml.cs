@@ -93,6 +93,24 @@ namespace OMineGuard
             VKInformerToggle.Unchecked += VKInformerToggle_Click;
             VKuserID.TextChanged += VKuserID_TextChanged;
 
+            {// timeout sliders
+                WachdogTimerSlider.Value = PM.Profile.TimeoutWachdog;
+                WachdogTimerSec.Text = PM.Profile.TimeoutWachdog.ToString();
+
+                IdleTimeoutSlider.Minimum = PM.Profile.TimeoutWachdog;
+                IdleTimeoutSlider.Value = PM.Profile.TimeoutIdle;
+                IdleTimeoutSec.Text = PM.Profile.TimeoutIdle.ToString();
+
+                LHTimeoutSlider.Value = PM.Profile.TimeoutLH;
+                LHTimeoutSec.Text = PM.Profile.TimeoutLH.ToString();
+
+                WachdogTimerSlider.ValueChanged += WachdogTimerSlider_ValueChanged;
+                IdleTimeoutSlider.ValueChanged += IdleTimeoutSlider_ValueChanged;
+                LHTimeoutSlider.ValueChanged += LHTimeoutSlider_ValueChanged;
+            }
+            
+
+
             Autostart();
 
             TCP.ServerStart();
@@ -157,6 +175,26 @@ namespace OMineGuard
             This.VKInformerToggle.Checked += This.VKInformerToggle_Click;
             This.VKInformerToggle.Unchecked += This.VKInformerToggle_Click;
             This.VKuserID.TextChanged += This.VKuserID_TextChanged;
+
+            {// timeout sliders
+                This.WachdogTimerSlider.ValueChanged -= This.WachdogTimerSlider_ValueChanged;
+                This.IdleTimeoutSlider.ValueChanged -= This.IdleTimeoutSlider_ValueChanged;
+                This.LHTimeoutSlider.ValueChanged -= This.LHTimeoutSlider_ValueChanged;
+
+                This.WachdogTimerSlider.Value = PM.Profile.TimeoutWachdog;
+                This.WachdogTimerSec.Text = PM.Profile.TimeoutWachdog.ToString();
+
+                This.IdleTimeoutSlider.Minimum = PM.Profile.TimeoutWachdog;
+                This.IdleTimeoutSlider.Value = PM.Profile.TimeoutIdle;
+                This.IdleTimeoutSec.Text = PM.Profile.TimeoutIdle.ToString();
+
+                This.LHTimeoutSlider.Value = PM.Profile.TimeoutLH;
+                This.LHTimeoutSec.Text = PM.Profile.TimeoutLH.ToString();
+
+                This.WachdogTimerSlider.ValueChanged += This.WachdogTimerSlider_ValueChanged;
+                This.IdleTimeoutSlider.ValueChanged += This.IdleTimeoutSlider_ValueChanged;
+                This.LHTimeoutSlider.ValueChanged += This.LHTimeoutSlider_ValueChanged;
+            }
         }
         private void CreateDirectories()
         {
@@ -731,6 +769,37 @@ namespace OMineGuard
             This.GPUsMemoryClocksAbs.Text = " " + MS[2].TrimStart(',');
         }
         #endregion
+        #region WachdogTimers
+        private void WachdogTimerSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            PM.Profile.TimeoutWachdog = Convert.ToInt32(WachdogTimerSlider.Value);
+            int x = Convert.ToInt32(WachdogTimerSlider.Value);
+            if (IdleTimeoutSlider.Value < x)
+            {
+                IdleTimeoutSlider.Value = x;
+                IdleTimeoutSlider.Minimum = x;
+            }
+            else
+            {
+                IdleTimeoutSlider.Minimum = x;
+            }
+            WachdogTimerSec.Text = WachdogTimerSlider.Value.ToString();
+            PM.SaveProfile();
+        }
+        private void IdleTimeoutSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            PM.Profile.TimeoutIdle = Convert.ToInt32(IdleTimeoutSlider.Value);
+            IdleTimeoutSec.Text = IdleTimeoutSlider.Value.ToString();
+            PM.SaveProfile();
+        }
+        private void LHTimeoutSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            PM.Profile.TimeoutLH = Convert.ToInt32(LHTimeoutSlider.Value);
+            LHTimeoutSec.Text = LHTimeoutSlider.Value.ToString();
+            PM.SaveProfile();
+        }
+        #endregion
+
         private static int Dig;
         public static string ToNChar(string s)
         {

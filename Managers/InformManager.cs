@@ -359,15 +359,14 @@ namespace OMineGuard
         public static double MinHashrate;
         private static DateTime? SWT;
         private static string GPUs = "";
-        private static int StartingInterval = 60;
         private static int CardsCount;
         private static bool wachdog;
         public static void HashrateWachdog(double[] Hashrates)
         {
             double TS = (DateTime.Now - (DateTime)SWT).TotalSeconds;
-            if (TS < StartingInterval)
+            if (TS < PM.Profile.TimeoutWachdog)
             {
-                int ts = Convert.ToInt32(StartingInterval - TS);
+                int ts = Convert.ToInt32(PM.Profile.TimeoutWachdog - TS);
                 MW.WachdogMSG($" Полное включение вачдога через {ts} ");
                 wachdog = false;
             }
@@ -479,10 +478,9 @@ namespace OMineGuard
         }
 
         private static Thread IdleWatchdogThread = new Thread(new ThreadStart(() => { }));
-        private static int IdleWatchdogTimeout = 3 * 60; //sec
         private static ThreadStart IdleWatchdogTS = new ThreadStart(() =>
         {
-            for (int i = IdleWatchdogTimeout; i > 0; i--)
+            for (int i = PM.Profile.TimeoutIdle; i > 0; i--)
             {
                 MW.IdlewachdogMSG($" Бездействие, перезагрузка через {i} ");
                 Thread.Sleep(1000);
@@ -516,10 +514,9 @@ namespace OMineGuard
         }
 
         private static Thread LowHashrateThread = new Thread(new ThreadStart(() => { }));
-        private static int LowHashrateTimeout = 30; //sec
         private static ThreadStart LowHashrateTS = new ThreadStart(() =>
         {
-            for (int i = LowHashrateTimeout; i > 0; i--)
+            for (int i = PM.Profile.TimeoutLH; i > 0; i--)
             {
                 MW.LowHwachdogMSG($" Низкий хешрейт, перезапуск через {i} ");
                 Thread.Sleep(1000);

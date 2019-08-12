@@ -90,6 +90,10 @@ namespace OMineGuard
             Informer = new InformManager();
             Digits = 4;
             Autostart = false;
+
+            TimeoutWachdog = 60;
+            TimeoutIdle = 3 * 60;
+            TimeoutLH = 30;
         }
 
         public string RigName;
@@ -102,6 +106,10 @@ namespace OMineGuard
         public List<Overclock> ClocksList;
         public InformManager Informer;
         public double LogTextSize;
+
+        public int TimeoutWachdog;
+        public int TimeoutIdle;
+        public int TimeoutLH;
 
         public class Config
         {
