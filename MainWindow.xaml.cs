@@ -31,7 +31,7 @@ namespace OMineGuard
         {
             Version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             InitializeComponent();
-            Title += $" v.{Ver}"; 
+            Title += $" v.{Ver}";
             This = this;
             IniProfile();
             OCM.Initialize();
@@ -198,7 +198,7 @@ namespace OMineGuard
                     }
                 }
             }
-        } 
+        }
         #endregion
         #region RigName
         private void RigName_TextChanged(object sender, TextChangedEventArgs e)
@@ -287,7 +287,7 @@ namespace OMineGuard
         private void ApplyConfig_Click(object sender, RoutedEventArgs e)
         {
             ApplyConfigM();
-        } 
+        }
         private bool ApplyConfigM()
         {
             int n = ConfigsList.SelectedIndex;
@@ -403,6 +403,8 @@ namespace OMineGuard
             if (str == "Завершить процесс")
             {
                 IM.StopWachdog();
+                IM.StopLHWatchdog();
+                IM.StopIdleWatchdog();
                 MM.KillProcess();
             }
             if (str == "Запустить процесс")
@@ -641,7 +643,7 @@ namespace OMineGuard
         #region ContextSends
         public static void Sethashrate(object o)
         {
-            if(o != null)
+            if (o != null)
             {
                 string str = "";
                 if ((double[])((object[])o)[0] != null)
@@ -774,7 +776,7 @@ namespace OMineGuard
         }
         public static void WriteGeneralLog(string str)
         {
-            Task.Run(() => 
+            Task.Run(() =>
             {
                 using (FileStream fstream = new FileStream("GeneralLogfile.txt", FileMode.Append))
                 {
@@ -801,6 +803,85 @@ namespace OMineGuard
         {
             PM.Profile.Informer.VKuserID = VKuserID.Text;
             PM.SaveProfile();
+        }
+        public static void LowHwachdogMSG(string msg) { context.Send(LowHwachdogmsg, msg); }
+        private static void LowHwachdogmsg(object o)
+        {
+            string msg = (string)o;
+            if (msg != "")
+            {
+                This.LowHWachdog.Text = msg;
+                This.LowHWachdog.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                This.LowHWachdog.Visibility = Visibility.Collapsed;
+            }
+        }
+        public static void IdlewachdogMSG(string msg) { context.Send(Idlewachdogmsg, msg); }
+        private static void Idlewachdogmsg(object o)
+        {
+            string msg = (string)o;
+            if(msg != "")
+            {
+                This.IdleWachdog.Text = msg;
+                This.IdleWachdog.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                This.IdleWachdog.Visibility = Visibility.Collapsed;
+            }
+        }
+        public static void WachdogMSG(string msg) { context.Send(Wachdogmsg, msg); }
+        private static void Wachdogmsg(object o)
+        {
+            string msg = (string)o;
+            if (msg != "")
+            {
+                This.WachdogINFO.Text = msg;
+                This.WachdogINFO.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                This.WachdogINFO.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        public static Thread ShowMinerLogThread;
+        private static ThreadStart ShowMinerLogTS = new ThreadStart(() => 
+        {
+            MM.ShowMinerLog = true;
+            for (int i = 30; i > 0; i--)
+            {
+                ShowMinerLogMSG($"Просмотр сообщений майнера {i}");
+                Thread.Sleep(1000);
+            }
+            ShowMinerLogMSG("");
+            MM.ShowMinerLog = false;
+        });
+        private void ShowMinerLog_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ShowMinerLogThread.Abort();
+            }
+            catch { }
+            ShowMinerLogThread = new Thread(ShowMinerLogTS);
+            ShowMinerLogThread.Start();
+        }
+        public static void ShowMinerLogMSG(string msg) { context.Send(ShowMinerLogmsg, msg); }
+        private static void ShowMinerLogmsg(object o)
+        {
+            string msg = (string)o;
+            if (msg != "")
+            {
+                This.ShowMLogTB.Text = msg;
+                This.ShowMLogTB.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                This.ShowMLogTB.Visibility = Visibility.Collapsed;
+            }
         }
     }
 }

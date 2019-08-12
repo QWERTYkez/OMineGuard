@@ -126,7 +126,7 @@ namespace OMineGuard
                 Info = new MinerInfo(null, null, null, null, null, null);
                 derr = null;
             }
-            if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(derr);
+            HashrateWachdog(derr);
         }
         public static Thread WachingThread;
         private static ThreadStart WachingClaymore = new ThreadStart(() =>
@@ -181,7 +181,7 @@ namespace OMineGuard
                             Info = MI;
 
                             MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
-                            if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(MI.Hashrates);
+                            HashrateWachdog(MI.Hashrates);
                         }
                         catch
                         {
@@ -232,7 +232,7 @@ namespace OMineGuard
                         Info = MI;
 
                         MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
-                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(MI.Hashrates);
+                        HashrateWachdog(MI.Hashrates);
                     }
                     catch
                     {
@@ -288,7 +288,7 @@ namespace OMineGuard
                         Info = MI;
 
                         MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
-                        if ((DateTime.Now - (DateTime)SWT).TotalSeconds > StartingInterval) HashrateWachdog(MI.Hashrates);
+                        HashrateWachdog(MI.Hashrates);
                     }
                     catch
                     {
@@ -361,9 +361,23 @@ namespace OMineGuard
         private static string GPUs = "";
         private static int StartingInterval = 60;
         private static int CardsCount;
+        private static bool wachdog;
         public static void HashrateWachdog(double[] Hashrates)
         {
-            if(Hashrates == null)
+            double TS = (DateTime.Now - (DateTime)SWT).TotalSeconds;
+            if (TS < StartingInterval)
+            {
+                int ts = Convert.ToInt32(StartingInterval - TS);
+                MW.WachdogMSG($" Полное включение вачдога через {ts} ");
+                wachdog = false;
+            }
+            else
+            {
+                MW.WachdogMSG("");
+                wachdog = true;
+            }
+
+            if (Hashrates == null)
             {
                 StartIdleWatchdog();
                 return;
@@ -374,16 +388,20 @@ namespace OMineGuard
                 RebootPC("Ошибка количества GPUs");
                 return;
             }
+            
             if (Hashrates.Sum() < 0)  //блок бездействия
             {
                 StartIdleWatchdog();
                 return;
             }
-            if (Hashrates.Sum() == 0)  //блок нулевого хешрейта
-            {
-                MM.RestartMining($"Нулевой хешрейт");
-                return;
-            }
+
+            // блок отключения вачдогов
+            if (Hashrates.Sum() > 0) StopIdleWatchdog();
+            if (Hashrates.Sum() > MinHashrate) StopLHWatchdog();
+
+            // Полное включение вачдога
+            if (!wachdog) return;
+
             {// блок падения карт
                 for (int i = 0; i < CardsCount; i++)
                 {
@@ -394,21 +412,21 @@ namespace OMineGuard
                 }
                 if (GPUs != "")
                 {
-                    GPUs.TrimStart(',');
+                    GPUs = GPUs.TrimStart(',');
                     MM.RestartMining($"Отвал GPUs:{GPUs}");
                     return;
                 }
             }
-            
+            if (Hashrates.Sum() == 0)  //блок нулевого хешрейта
+            {
+                MM.RestartMining($"Нулевой хешрейт");
+                return;
+            }
             if (Hashrates.Sum() < MinHashrate)  //блок низкого хешрейта
             {
                 StartLHWatchdog();
                 return;
             }
-
-            // блок отключения вачдогов
-            if (Hashrates.Sum() > 0) StopIdleWatchdog();
-            if (Hashrates.Sum() > MinHashrate) StopLHWatchdog();
         }
 
         private static Thread InternetWachdogThread;
@@ -425,6 +443,8 @@ namespace OMineGuard
                     {
                         MW.WriteGeneralLog($"Интернет потерян, остановка работы");
                         MW.context.Send(MM.KillProcess, null);
+                        StopIdleWatchdog();
+                        StopLHWatchdog();
                     }
                     else
                     {
@@ -462,7 +482,11 @@ namespace OMineGuard
         private static int IdleWatchdogTimeout = 3 * 60; //sec
         private static ThreadStart IdleWatchdogTS = new ThreadStart(() =>
         {
-            Thread.Sleep(1000 * IdleWatchdogTimeout);
+            for (int i = IdleWatchdogTimeout; i > 0; i--)
+            {
+                MW.IdlewachdogMSG($" Бездействие, перезагрузка через {i} ");
+                Thread.Sleep(1000);
+            }
             RebootPC("Бездействие");
             Thread.CurrentThread.Abort();
         });
@@ -479,19 +503,29 @@ namespace OMineGuard
         }
         public static void StopIdleWatchdog()
         {
-            try
+            while (true)
             {
-                IdleWatchdogThread.Abort();
+                try
+                {
+                    IdleWatchdogThread.Abort();
+                    MW.IdlewachdogMSG("");
+                    break;
+                }
+                catch { }
             }
-            catch { }
         }
 
         private static Thread LowHashrateThread = new Thread(new ThreadStart(() => { }));
         private static int LowHashrateTimeout = 30; //sec
         private static ThreadStart LowHashrateTS = new ThreadStart(() =>
         {
-            Thread.Sleep(1000 * LowHashrateTimeout);
+            for (int i = LowHashrateTimeout; i > 0; i--)
+            {
+                MW.LowHwachdogMSG($" Низкий хешрейт, перезапуск через {i} ");
+                Thread.Sleep(1000);
+            }
             MM.RestartMining($"Низкий хешрейт");
+            MW.LowHwachdogMSG("");
             Thread.CurrentThread.Abort();
         });
         public static void StartLHWatchdog()
@@ -507,11 +541,16 @@ namespace OMineGuard
         }
         public static void StopLHWatchdog()
         {
-            try
+            while (true)
             {
-                LowHashrateThread.Abort();
+                try
+                {
+                    LowHashrateThread.Abort();
+                    MW.LowHwachdogMSG("");
+                    break;
+                }
+                catch { }
             }
-            catch { }
         }
 
         public static void RebootPC(string cause)
@@ -637,7 +676,11 @@ namespace OMineGuard
             {
                 for (byte i = 0; i < 4; i++)
                 {
-                    pingReply = ping.Send("8.8.8.8");
+                    try
+                    {
+                        pingReply = ping.Send("8.8.8.8");
+                    }
+                    catch { }
                     if (pingReply.Status == IPStatus.Success) return true;
                 }
             }

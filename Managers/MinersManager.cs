@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.IO;
 using System.Threading;
 using System.Windows.Media;
+using System.Windows.Documents;
 
 namespace OMineGuard
 {
@@ -303,9 +304,9 @@ namespace OMineGuard
                     });
 
                 }
-                MainWindow.SystemMessage($"{dir} запущен");
+                MW.SystemMessage($"{dir} запущен");
                 IM.InformMessage($"{dir} запущен");
-                MainWindow.context.Send(ButtonSetTitleToStop, null);
+                MW.context.Send(ButtonSetTitleToStop, null);
                 IM.MinHashrate = Config.MinHashrate;
                 RunIndication();
                 PM.Profile.StartedProcess = StartedProcessName;
@@ -332,7 +333,7 @@ namespace OMineGuard
                 }
                 catch { }
             }
-            if (b) MainWindow.SystemMessage("Процесс завершен");
+            if (b) MW.SystemMessage("Процесс завершен");
             try
             {
                 IndicationThread.Abort();
@@ -344,19 +345,21 @@ namespace OMineGuard
                 File.Delete("MinersLogs/buflog.txt");
             }
             catch { }
-            MainWindow.context.Send(MainWindow.Sethashrate, null);
-            MainWindow.context.Send(SetIndicationColor, Brushes.Red);
-            MainWindow.context.Send(ButtonSetTitleToStart, null);
+            MW.WachdogMSG("");
+            IM.StopLHWatchdog();
+            MW.context.Send(MW.Sethashrate, null);
+            MW.context.Send(SetIndicationColor, Brushes.Red);
+            MW.context.Send(ButtonSetTitleToStart, null);
         }
         private static void ButtonSetTitleToStart(object o)
         {
-            MainWindow.This.KillProcess.Content = "Запустить процесс";
-            MainWindow.This.KillProcess2.Content = "Запустить процесс";
+            MW.This.KillProcess.Content = "Запустить процесс";
+            MW.This.KillProcess2.Content = "Запустить процесс";
         }
         private static void ButtonSetTitleToStop(object o)
         {
-            MainWindow.This.KillProcess.Content = "Завершить процесс";
-            MainWindow.This.KillProcess2.Content = "Завершить процесс";
+            MW.This.KillProcess.Content = "Завершить процесс";
+            MW.This.KillProcess2.Content = "Завершить процесс";
         }
         private static Thread RestartMiningThread;
         private static ThreadStart RestartMiningTS = new ThreadStart(() => 
@@ -402,16 +405,16 @@ namespace OMineGuard
                  }
                  while (Process.GetProcessesByName(StartedProcessName).Length != 0)
                  {
-                     MainWindow.context.Send(SetIndicationColor, Brushes.Lime);
+                     MW.context.Send(SetIndicationColor, Brushes.Lime);
                      Thread.Sleep(700);
-                     MainWindow.context.Send(SetIndicationColor, null);
+                     MW.context.Send(SetIndicationColor, null);
                      Thread.Sleep(300);
                  }
-                 MainWindow.context.Send(SetIndicationColor, Brushes.Red);
-                 MainWindow.context.Send((object o) =>
+                 MW.context.Send(SetIndicationColor, Brushes.Red);
+                 MW.context.Send((object o) =>
                  {
-                     MainWindow.This.KillProcess.Content = "Запустить процесс";
-                     MainWindow.This.KillProcess2.Content = "Запустить процесс";
+                     MW.This.KillProcess.Content = "Запустить процесс";
+                     MW.This.KillProcess2.Content = "Запустить процесс";
                  }, null);
              }));
             IndicationThread.Start();
@@ -420,8 +423,8 @@ namespace OMineGuard
         }
         private static void SetIndicationColor(object o)
         {
-            MainWindow.This.IndicatorEl.Fill = (Brush)o;
-            MainWindow.This.IndicatorEl2.Fill = (Brush)o;
+            MW.This.IndicatorEl.Fill = (Brush)o;
+            MW.This.IndicatorEl2.Fill = (Brush)o;
         }
         #endregion
         #region Logfile
@@ -429,7 +432,7 @@ namespace OMineGuard
         {
             if(e.Data != "")
             {
-                MainWindow.context.Send(WriteToRichTextBox, e.Data);
+                MW.context.Send(WriteToRichTextBox, e.Data);
             }
         }
         private static void ReadLog(string lf, string logfile)
@@ -460,7 +463,7 @@ namespace OMineGuard
                                   str.Contains("recv") || 
                                   str.Contains("sent")))
                             {
-                                MainWindow.context.Send(WriteToRichTextBox, str);
+                                MW.context.Send(WriteToRichTextBox, str);
                                 Task.Run(() =>
                                 {
                                     using (StreamWriter fstr = new StreamWriter(logfile, true))
@@ -517,27 +520,35 @@ namespace OMineGuard
                     WriteLog(str);
                 }
 
-                if (MainWindow.AutoScroll)
+                if (MW.AutoScroll)
                 {
-                    MainWindow.This.LogScroller.ScrollToEnd();
+                    MW.This.LogScroller.ScrollToEnd();
                 }
             }
         }
+        public static bool ShowMinerLog = false;
         public static void WriteLog(string str, Brush brush)
         {
-            //TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
-            //    MainWindow.This.MinerLog.Document.ContentEnd);
-            //tr.Text = str;
-            //tr.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
-            //MainWindow.This.MinerLog.AppendText(Environment.NewLine);
+            if (ShowMinerLog)
+            {
+                TextRange tr = new TextRange(MW.This.MinerLog.Document.ContentEnd,
+                    MW.This.MinerLog.Document.ContentEnd);
+                tr.Text = str;
+                tr.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
+                MW.This.MinerLog.AppendText(Environment.NewLine);
+            }
+
         }
         public static void WriteLog(string str)
         {
-            //TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
-            //    MainWindow.This.MinerLog.Document.ContentEnd);
-            //tr.Text = str;
-            //tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.White);
-            //MainWindow.This.MinerLog.AppendText(Environment.NewLine);
+            if (ShowMinerLog)
+            {
+                TextRange tr = new TextRange(MW.This.MinerLog.Document.ContentEnd,
+                    MW.This.MinerLog.Document.ContentEnd);
+                tr.Text = str;
+                tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.White);
+                MW.This.MinerLog.AppendText(Environment.NewLine);
+            }
         }
         #endregion
     }
