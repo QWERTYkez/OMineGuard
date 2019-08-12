@@ -301,7 +301,7 @@ namespace OMineGuard
                 PM.Profile.ConfigsList[n].Port = Port.Text;
                 PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
                 PM.Profile.ConfigsList[n].Params = Params.Text;
-                if (Overclock.Text != "")
+                if (Overclock.SelectedIndex > 0)
                 {
                     PM.Profile.ConfigsList[n].ClockID = PM.Profile.ClocksList.Where(w => w.Name == Overclock.Text).ToList()[0].ID;
                 }
