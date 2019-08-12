@@ -301,7 +301,15 @@ namespace OMineGuard
                 PM.Profile.ConfigsList[n].Port = Port.Text;
                 PM.Profile.ConfigsList[n].Wallet = Wallet.Text;
                 PM.Profile.ConfigsList[n].Params = Params.Text;
-                PM.Profile.ConfigsList[n].ClockID = PM.Profile.ClocksList.Where(w => w.Name == Overclock.Text).ToList()[0].ID;
+                if (Overclock.Text != "")
+                {
+                    PM.Profile.ConfigsList[n].ClockID = PM.Profile.ClocksList.Where(w => w.Name == Overclock.Text).ToList()[0].ID;
+                }
+                else
+                {
+                    PM.Profile.ConfigsList[n].ClockID = null;
+                }
+                
                 try
                 {
                     PM.Profile.ConfigsList[n].MinHashrate = Convert.ToDouble(MinHashrate.Text);
