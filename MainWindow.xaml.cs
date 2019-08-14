@@ -21,7 +21,7 @@ namespace OMineGuard
 {
     public partial class MainWindow : Window
     {
-        public const string Ver = "1.4";
+        public const string Ver = "1.5";
         public static string Version;
         public static MainWindow This;
         public static bool AutoScroll = true;
@@ -744,6 +744,12 @@ namespace OMineGuard
                 }
             }
         }
+        public static void Setoverclock(object o)
+        {
+            OCM.Overclock Clock = (OCM.Overclock)o;
+
+        }
+
         public static void SetMS1(object o)
         {
             string[] MS = (string[])o;

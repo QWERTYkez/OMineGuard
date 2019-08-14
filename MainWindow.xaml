@@ -305,7 +305,7 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem Header="Inform Manager">
+            <TabItem Header="Общие настройки">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>

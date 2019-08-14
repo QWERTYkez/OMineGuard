@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MSI.Afterburner;
 using MSI.Afterburner.Exceptions;
+using Newtonsoft.Json;
 using OpenHardwareMonitor.Hardware;
 using PM = OMineGuard.ProfileManager;
 
@@ -40,10 +42,10 @@ namespace OMineGuard
                 {
                     CM = new ControlMemory();
                     MSIconnecting = true;
-                    ConnectToOHM();
                 }
                 catch { }
             }
+            ConnectToOHM();
             if (CM.GpuEntries[CM.GpuEntries.Length - 1].PowerLimitCur == 0)
             { GPUsCount = CM.GpuEntries.Length - 1; }
         }
@@ -75,18 +77,25 @@ namespace OMineGuard
 
             StartMonitoring();
         }
+        
         private static void StartMonitoring()
         {
             Task.Run(() =>
             {
                 while (true)
                 {
+                    Overclock OC = new Overclock(GPUsCount);
                     try
                     {
                         CM.ReloadAll();
                         string[] MS = new string[4];
                         for (int i = 0; i < GPUsCount; i++)
                         {
+                            OC.MSI_PowerLimits[i] = CM.GpuEntries[i].PowerLimitCur;
+                            OC.MSI_CoreClocks[i] = CM.GpuEntries[i].CoreClockBoostCur / 1000;
+                            OC.MSI_MemoryClocks[i] = CM.GpuEntries[i].MemoryClockBoostCur / 1000;
+                            OC.MSI_FanSpeeds[i] = CM.GpuEntries[i].FanSpeedCur;
+
                             MS[0] += MainWindow.ToNChar(CM.GpuEntries[i].PowerLimitCur.ToString() + "%");
                             MS[1] += MainWindow.ToNChar((CM.GpuEntries[i].CoreClockBoostCur / 1000).ToString());
                             MS[2] += MainWindow.ToNChar((CM.GpuEntries[i].MemoryClockBoostCur / 1000).ToString());
@@ -95,29 +104,56 @@ namespace OMineGuard
                         MainWindow.context.Send(MainWindow.SetMS1, MS);
                     }
                     catch { }
-                    try
-                    {
-                        for (int i = 0; i < GPUsCount; i++)
-                        {
-                            GPUs[i].Update();
-                        }
-                        string[] MS = new string[3];
-                        for (int i = 0; i < GPUsCount; i++)
-                        {
-                            MS[0] += MainWindow.ToNChar(gpuTempSensors[i].Value.GetValueOrDefault().ToString() + "°C");
-                            MS[1] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuCoreClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
-                            MS[2] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuMemoryClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
-                        }
-                        if (MS[0] != null)
-                        {
-                            MainWindow.context.Send(MainWindow.SetMS2, MS);
-                        }
-                    }
-                    catch { }
+                    //   ////////////////////   OPEN HARDWARE MONITOR
+                    //try
+                    //{
+                    //    for (int i = 0; i < GPUsCount; i++)
+                    //    {
+                    //        GPUs[i].Update();
+                    //    }
+                    //    string[] MS = new string[3];
+                    //    for (int i = 0; i < GPUsCount; i++)
+                    //    {
+                    //        OC.OHM_Temperatures[i] = gpuTempSensors[i].Value;
+                    //        OC.OHM_CoreClocks[i] = gpuCoreClockSensors[i].Value;
+                    //        OC.OHM_MemoryClocks[i] = gpuMemoryClockSensors[i].Value;
+
+                    //        MS[0] += MainWindow.ToNChar(gpuTempSensors[i].Value.GetValueOrDefault().ToString() + "°C");
+                    //        MS[1] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuCoreClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
+                    //        MS[2] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuMemoryClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
+                    //    }
+                    //    if (MS[0] != null)
+                    //    {
+                    //        MainWindow.context.Send(MainWindow.SetMS2, MS);
+                    //    }
+                    //}
+                    //catch { }
+
                     Thread.Sleep(1000);
                 }
             });
         }
+
+        public struct Overclock
+        {
+            public Overclock(int i)
+            {
+                MSI_PowerLimits = new int[i];
+                MSI_CoreClocks = new int[i];
+                MSI_MemoryClocks = new int[i];
+                MSI_FanSpeeds = new uint[i];
+            }
+
+            public int[] MSI_PowerLimits;
+            public int[] MSI_CoreClocks;
+            public int[] MSI_MemoryClocks;
+            public uint[] MSI_FanSpeeds;
+
+            //public float?[] OHM_Temperatures;
+            //public float?[] OHM_CoreClocks;
+            //public float?[] OHM_MemoryClocks;
+        }
+
         private static int SetParam(int i, int multiply, int[] param, int max, int min, int def)
         {
             if (param != null)

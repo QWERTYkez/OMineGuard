@@ -1,20 +1,20 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using SM = OMineGuard.SettingsManager;
-using MW = OMineGuard.MainWindow;
-using MM = OMineGuard.MinersManager;
-using PM = OMineGuard.ProfileManager;
-using TCP = OMineGuard.TCPserver;
-using xNet;
-using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System.Windows;
-using System.Net.NetworkInformation;
+using xNet;
+using MM = OMineGuard.MinersManager;
+using MW = OMineGuard.MainWindow;
+using PM = OMineGuard.ProfileManager;
+using SM = OMineGuard.SettingsManager;
+using TCP = OMineGuard.TCPserver;
 
 namespace OMineGuard
 {
@@ -315,7 +315,7 @@ namespace OMineGuard
                 WachingThread.Abort();
             }
             catch { }
-            
+
             switch (Miner)
             {
                 case SM.Miners.Claymore:
@@ -381,13 +381,13 @@ namespace OMineGuard
                 StartIdleWatchdog();
                 return;
             }
-            
+
             if (Hashrates.Length < CardsCount)  //блок неправильного количества карт
             {
                 RebootPC("Ошибка количества GPUs");
                 return;
             }
-            
+
             if (Hashrates.Sum() < 0)  //блок бездействия
             {
                 StartIdleWatchdog();
@@ -400,6 +400,18 @@ namespace OMineGuard
 
             // Полное включение вачдога
             if (!wachdog) return;
+
+            if (Hashrates.Sum() == 0)  //блок нулевого хешрейта
+            {
+                MM.RestartMining($"Нулевой хешрейт");
+                return;
+            }
+
+            if (Hashrates.Sum() < MinHashrate)  //блок низкого хешрейта
+            {
+                StartLHWatchdog();
+                return;
+            }
 
             {// блок падения карт
                 for (int i = 0; i < CardsCount; i++)
@@ -415,16 +427,6 @@ namespace OMineGuard
                     MM.RestartMining($"Отвал GPUs:{GPUs}");
                     return;
                 }
-            }
-            if (Hashrates.Sum() == 0)  //блок нулевого хешрейта
-            {
-                MM.RestartMining($"Нулевой хешрейт");
-                return;
-            }
-            if (Hashrates.Sum() < MinHashrate)  //блок низкого хешрейта
-            {
-                StartLHWatchdog();
-                return;
             }
         }
 
@@ -663,7 +665,7 @@ namespace OMineGuard
             InternetConnectionState_e cs = new InternetConnectionState_e();
             InternetGetConnectedState(ref cs, 0);
 
-            IC = new bool[] 
+            IC = new bool[]
             {
                 (cs & InternetConnectionState_e.INTERNET_CONNECTION_LAN) == InternetConnectionState_e.INTERNET_CONNECTION_LAN,
                 (cs & InternetConnectionState_e.INTERNET_CONNECTION_MODEM) == InternetConnectionState_e.INTERNET_CONNECTION_MODEM,
@@ -702,4 +704,4 @@ namespace OMineGuard
         }
         #endregion
     }
-} 
+}

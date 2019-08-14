@@ -24,31 +24,38 @@ namespace OMineGuard
                 SaveProfile();
             }
         }
+        private static object profileKey = new object();
         public static void SaveProfile()
         {
-            string JSON = JsonConvert.SerializeObject(profile);
-
-            using (FileStream fstream = new FileStream("Profile.json", FileMode.Create))
+            lock (profileKey)
             {
-                byte[] array = System.Text.Encoding.Default.GetBytes(JSON);
-                fstream.Write(array, 0, array.Length);
+                string JSON = JsonConvert.SerializeObject(profile);
+
+                using (FileStream fstream = new FileStream("Profile.json", FileMode.Create))
+                {
+                    byte[] array = System.Text.Encoding.Default.GetBytes(JSON);
+                    fstream.Write(array, 0, array.Length);
+                }
             }
         }
         public static Profile ReadProfile()
         {
-            try
+            lock (profileKey)
             {
-                using (FileStream fstream = File.OpenRead("Profile.json"))
+                try
                 {
-                    byte[] array = new byte[fstream.Length];
-                    fstream.Read(array, 0, array.Length);
-                    string json = System.Text.Encoding.Default.GetString(array);
-                    return JsonConvert.DeserializeObject<Profile>(json);
+                    using (FileStream fstream = File.OpenRead("Profile.json"))
+                    {
+                        byte[] array = new byte[fstream.Length];
+                        fstream.Read(array, 0, array.Length);
+                        string json = System.Text.Encoding.Default.GetString(array);
+                        return JsonConvert.DeserializeObject<Profile>(json);
+                    }
                 }
-            }
-            catch
-            {
-                return new Profile();
+                catch
+                {
+                    return new Profile();
+                }
             }
         }
         public static void Initialize()

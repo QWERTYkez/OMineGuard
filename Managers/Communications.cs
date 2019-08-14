@@ -9,6 +9,7 @@ using PM = OMineGuard.ProfileManager;
 using IM = OMineGuard.InformManager;
 using MW = OMineGuard.MainWindow;
 using MM = OMineGuard.MinersManager;
+using OCM = OMineGuard.OverclockManager;
 using System.Diagnostics;
 using System.Windows;
 using System;
@@ -217,6 +218,7 @@ namespace OMineGuard
             string JSI;
             byte[] arrayJSI;
             string Info;
+            string OClock;
 
             Info = JsonConvert.SerializeObject(inf);
 
