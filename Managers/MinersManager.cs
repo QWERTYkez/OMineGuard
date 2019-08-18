@@ -21,6 +21,8 @@ namespace OMineGuard
         public static Dictionary<string, Miners[]>
          MinersD = new Dictionary<string, Miners[]>
          {
+             { "BeamHash II",
+                 new Miners[] { Miners.Gminer } },
              { "Ethash",
                  new Miners[] { Miners.Claymore, Miners.Bminer } },
              { "Equihash(96.5)",
@@ -169,6 +171,9 @@ namespace OMineGuard
 
                     switch (Config.Algoritm)
                     {
+                        case "BeamHash II":
+                            algo = "beamhash";
+                            break;
                         case "Equihash(96.5)":
                             algo = "equihash96_5";
                             break;
@@ -325,8 +330,8 @@ namespace OMineGuard
                     });
 
                 }
-                MW.SystemMessage($"{dir} запущен");
-                IM.InformMessage($"{dir} запущен");
+                MW.SystemMessage($"{Config.Name} запущен");
+                IM.InformMessage($"{Config.Name} запущен");
                 MW.context.Send(ButtonSetTitleToStop, null);
                 IM.MinHashrate = Config.MinHashrate;
                 RunIndication();
