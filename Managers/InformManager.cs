@@ -407,13 +407,8 @@ namespace OMineGuard
                 return;
             }
 
-            if (Hashrates.Sum() < MinHashrate)  //блок низкого хешрейта
-            {
-                StartLHWatchdog();
-                return;
-            }
-
             {// блок падения карт
+                GPUs = "";
                 for (int i = 0; i < CardsCount; i++)
                 {
                     if (Hashrates[i] == 0)
@@ -427,6 +422,12 @@ namespace OMineGuard
                     MM.RestartMining($"Отвал GPUs:{GPUs}");
                     return;
                 }
+            }
+
+            if (Hashrates.Sum() < MinHashrate)  //блок низкого хешрейта
+            {
+                StartLHWatchdog();
+                return;
             }
         }
 

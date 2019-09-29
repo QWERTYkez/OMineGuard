@@ -21,7 +21,7 @@ namespace OMineGuard
 {
     public partial class MainWindow : Window
     {
-        public const string Ver = "1.5";
+        public const string Ver = "1.6";
         public static string Version;
         public static MainWindow This;
         public static bool AutoScroll = true;
