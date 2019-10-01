@@ -9,24 +9,24 @@
 
 #### меню "Настройки майнинга"
 
-![Image alt](https://github.com/QWERTYkez/OMineGuard/raw/master/images/1.png)
+![Image alt](https://raw.githubusercontent.com/QWERTYkez/OMineGuard/master/images/1.PNG)
 
 Окно с базовыми настройками компьютера и конфигурациями майнинга.
 
 #### меню "Настройки майнинга"
 
-![Image alt](https://github.com/QWERTYkez/OMineGuard/raw/master/images/2.png)
+![Image alt](https://raw.githubusercontent.com/QWERTYkez/OMineGuard/master/images/2.PNG)
 
 Окно с профилями "Разгона" видеокарт. После соаздания профилей они будут доступны для применения в конфигурациях майнинга. Профиль разгона применяется каждый раз при запуске и перезапусках майнинга. Так же в этом окне можно наблюдать температуру и хешрейт видеокарт для удобства подбора значений.
 
 #### меню "Лог"
 
-![Image alt](https://github.com/QWERTYkez/OMineGuard/raw/master/images/3.png)
+![Image alt](https://raw.githubusercontent.com/QWERTYkez/OMineGuard/master/images/3.PNG)
 
 В этом окне выводится информация о событиях и таймерах. Так же выводится информация о работе карт. Дополнительно, при нажатии кнопки "Показать лог майнера", на 30 секунд будет дополнительно выводится лог майнера.
 
 #### меню "Общие настройки"
 
-![Image alt](https://github.com/QWERTYkez/OMineGuard/raw/master/images/4.png)
+![Image alt](https://raw.githubusercontent.com/QWERTYkez/OMineGuard/master/images/4.PNG)
 
 Окно с настройками задержек и параметров информирования о событиях.
