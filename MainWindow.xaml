@@ -258,7 +258,7 @@
                     </Border>
                 </Grid>
             </TabItem>
-            <TabItem Header="| - Лог - |">
+            <TabItem Header="Лог работы">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition />
