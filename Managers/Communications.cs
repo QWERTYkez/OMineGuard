@@ -13,168 +13,221 @@ using OCM = OMineGuard.OverclockManager;
 using System.Diagnostics;
 using System.Windows;
 using System;
+using System.Windows.Documents;
 
 namespace OMineGuard
 {
     public static class TCPserver
     {
+        public static bool ServerAlive = true;
+        
         #region MSG
-        private static TcpListener MSGserver = new TcpListener(IPAddress.Any, 2111);
-        public static Thread MSGServerThread;
-        public static ThreadStart MSGServerTS = new ThreadStart(() =>
-        {
-            while (true)
-            {
-                try
-                {
-                    MSGserver.Start();
-                    break;
-                }
-                catch { }
-            }
-            while (true)
-            {
-                try
-                {
-                    MSGClientService(MSGserver.AcceptTcpClient());
-                }
-                catch { }
-            }
-        });
         public static void ServerStart()
         {
-            try
+            Task.Run(() =>
             {
-                MSGServerThread.Abort();
-            }
-            catch { }
-            MSGServerThread = new Thread(MSGServerTS);
-            MSGServerThread.Start();
+                TcpListener server = new TcpListener(IPAddress.Any, 2112);
+                while (ServerAlive)
+                {
+                    try
+                    {
+                        server.Start();
+                        break;
+                    }
+                    catch { }
+                    Thread.Sleep(100);
+                }
+                while (ServerAlive)
+                {
+                    try
+                    {
+                        OMWcontrol(server.AcceptTcpClient());
+                    }
+                    catch { }
+                    Thread.Sleep(100);
+                }
+            });
         }
-        static List<Thread> MSGClientServiceThreads = new List<Thread>();
-        static void MSGClientService(TcpClient client)
+        
+        private static TcpClient OMWcontrolClient;
+        private static NetworkStream OMWcontrolStream;
+        static void OMWcontrol(TcpClient client)
         {
-            Thread ClientThread = new Thread(new ThreadStart(() =>
+            Task.Run(() => 
             {
-                int MessageLength = 100;
-                string JSON;
-                byte[] array;
                 using (NetworkStream stream = client.GetStream())
                 {
-                    stream.Write(new byte[] { 1, 2, 3 }, 0, 3);
-                    DateTime DT = DateTime.Now;
-                    while ((DateTime.Now - DT).TotalSeconds < 60 * 3)  // пока клиент подключен, ждем приходящие сообщения
+                    try
                     {
-                        byte[] msg = new byte[MessageLength];     // готовим место для принятия сообщения
-                        int count = stream.Read(msg, 0, msg.Length);   // читаем сообщение от клиента
-                        if (count > 0)
+                        Sendcontrol(client, stream, PM.Profile, OMWcontrolType.Profile);
+                        Sendcontrol(client, stream, (new TextRange(MW.This.MinerLog.Document.ContentStart, MW.This.MinerLog.Document.ContentEnd)).Text, OMWcontrolType.Log);
+
+                        // Отправление статистики
+                        Task.Run(() =>
                         {
-                            DT = DateTime.Now;
-                            string request = Encoding.Default.GetString(msg, 0, count);
-                            ClientRequest CR = JsonConvert.DeserializeObject<ClientRequest>(request);
-                            switch (CR.header)
+                            TcpListener server = new TcpListener(IPAddress.Any, 2113);
+                            while (ServerAlive)
                             {
-                                case "set message length":
-                                    {
-                                        MessageLength = JsonConvert.DeserializeObject<int>(CR.body);
-                                    }
+                                try
+                                {
+                                    server.Start();
                                     break;
-                                case "get profile":
-                                    {
-                                        JSON = JsonConvert.SerializeObject(PM.Profile);
-                                        array = Encoding.Default.GetBytes(JSON);
-                                        stream.Write(array, 0, array.Length);
-                                    }
-                                    break;
-                                case "set profile":
-                                    {
-                                        PM.Profile = JsonConvert.DeserializeObject<Profile>(CR.body);
-                                        PM.SaveProfile();
-                                        MW.UpdateProfile();
-                                        MessageLength = 100;
-                                    }
-                                    break;
-                                case "get info":
-                                    {
-                                        JSON = JsonConvert.SerializeObject(IM.Info);
-                                        array = Encoding.Default.GetBytes(JSON);
-                                        stream.Write(array, 0, array.Length);
-                                    }
-                                    break;
-                                case "restart pc":
-                                    {
-                                        MW.WriteGeneralLog("Перезагрузка, запрошенная по API");
-                                        IM.InformMessage("Перезагрузка, запрошенная по API");
-                                        Task.Run(() =>
-                                        {
-                                            MW.context.Send(MM.KillProcess, null);
-                                            Thread.Sleep(5000);
-                                            Process.Start("shutdown", "/r /t 0");
-                                            Application.Current.Shutdown();
-                                        });
-                                    }
-                                    break;
-                                case "close stream":
-                                    {
-                                        DT -= new TimeSpan(0, 5, 0);
-                                    }
-                                    break;
+                                }
+                                catch { }
+                                Thread.Sleep(100);
                             }
-                        }
-                        Thread.Sleep(100);
+                            while (ServerAlive)
+                            {
+                                try
+                                {
+                                    OMWstate(server.AcceptTcpClient());
+                                }
+                                catch { }
+                                Thread.Sleep(100);
+                            }
+                        });
                     }
-                    stream.Write(new byte[] { 4, 5, 6 }, 0, 3);
-                }  //dispose stream
-                MSGClientServiceThreads.Remove(Thread.CurrentThread);
-                Thread.CurrentThread.Abort();
-            }));
-            MSGClientServiceThreads.Add(ClientThread);
-            ClientThread.Start();
-        }
+                    catch { }
 
-        public static void AbortTCP()
-        {
-            try
-            {
-                MSGserver.Stop();
-            }
-            catch { }
-            try
-            {
-                INFserver.Stop();
-            }
-            catch { }
-            try
-            {
-                MSGServerThread.Abort();
+                    // получение изменений
+                    while (client.Connected)
+                    {
+                        try
+                        {
+                            OMWreadMSG(stream);
 
-            }
-            catch { }
-            try
-            {
-                INFServerThread.Abort();
 
-            }
-            catch { }
-            foreach (Thread T in MSGClientServiceThreads)
-            {
-                try
-                {
-                    T.Abort();
+                        }
+                        catch { }
+                        Thread.Sleep(50);
+                    }
                 }
-                catch { }
+            });
+        }
+        #region send msg
+        private static object key1 = new object();
+        public static void Sendcontrol(TcpClient client, NetworkStream stream, object body, OMWcontrolType type)
+        {
+            if (client != null)
+            {
+                if (client.Connected)
+                {
+                    lock (key1)
+                    {
+                        string header = "";
+                        switch (type)
+                        {
+                            case OMWcontrolType.Profile: header = "Profile"; break;
+                            case OMWcontrolType.Log: header = "Log"; break;
+                        }
+
+                        string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
+
+                        byte[] Message = Encoding.Default.GetBytes(msg);
+                        byte[] Header = BitConverter.GetBytes(Message.Length);
+
+                        stream.Write(Header, 0, Header.Length);
+
+                        byte[] b = new byte[1];
+                        stream.Read(b, 0, b.Length);
+
+                        stream.Write(Message, 0, Message.Length);
+                    }
+                }
             }
         }
-
-        public class ClientRequest
+        public enum OMWcontrolType
         {
-            public string header;
-            public string body;
+            Profile,
+            Log
+        }
+        #endregion
+        #region read msg
+        private static string OMWreadMSG(NetworkStream stream)
+        {
+            byte[] msg = new byte[4];
+            stream.Read(msg, 0, msg.Length);
+            int MSGlength = BitConverter.ToInt32(msg, 0);
+
+            stream.Write(new byte[] { 1 }, 0, 1);
+
+            msg = new byte[MSGlength];
+            int count = stream.Read(msg, 0, msg.Length);
+            return Encoding.Default.GetString(msg, 0, count);
         }
         #endregion
 
+        private static TcpClient OMWstateClient;
+        private static NetworkStream OMWstateStream;
+        static void OMWstate(TcpClient client)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    OMWstateClient.Close();
+                    OMWstateClient.Dispose();
+                }
+                catch { }
+                OMWstateClient = client;
+                OMWstateStream = OMWstateClient.GetStream();
+
+                
+            });
+        }
+        #region send state
+        private static object key2 = new object();
+        public static void OMWsendState(object body, OMWstateType type)
+        {
+            if (OMWstateClient != null)
+            {
+                if (OMWstateClient.Connected)
+                {
+                    lock (key2)
+                    {
+                        try
+                        {
+                            string header = "";
+                            switch (type)
+                            {
+                                case OMWstateType.Hasrates:    header = "Hasrates";   break;
+                                case OMWstateType.Overclock:   header = "Overclock";  break;
+                                case OMWstateType.Indication:  header = "Indication"; break;
+                                case OMWstateType.Logging:     header = "Logging";    break;
+                                case OMWstateType.SaveProfile: header = "Profile";    break;
+                            }
+
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
+
+                            byte[] Message = Encoding.Default.GetBytes(msg);
+                            byte[] Header = BitConverter.GetBytes(Message.Length);
+
+                            OMWstateStream.Write(Header, 0, Header.Length);
+
+                            byte[] b = new byte[1];
+                            OMWstateStream.Read(b, 0, b.Length);
+
+                            OMWstateStream.Write(Message, 0, Message.Length);
+                        }
+                        catch { }
+                    }
+                }
+            }
+        }
+        public enum OMWstateType
+        {
+            Hasrates,
+            Overclock,
+            Indication,
+            Logging,
+            SaveProfile
+        }
+        #endregion
+
+        #endregion
+
         #region INF
-        private static TcpListener INFserver = new TcpListener(IPAddress.Any, 2112);
+        private static TcpListener INFserver = new TcpListener(IPAddress.Any, 2111);
         public static Thread INFServerThread;
         public static void INFServerStart()
         {

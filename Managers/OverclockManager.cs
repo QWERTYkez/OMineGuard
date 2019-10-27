@@ -10,7 +10,9 @@ using MSI.Afterburner;
 using MSI.Afterburner.Exceptions;
 using Newtonsoft.Json;
 using OpenHardwareMonitor.Hardware;
+using OpenHardwareMonitor.Hardware.ATI;
 using PM = OMineGuard.ProfileManager;
+using TCP = OMineGuard.TCPserver;
 
 namespace OMineGuard
 {
@@ -55,6 +57,12 @@ namespace OMineGuard
             c.Open();
             GPUs = c.Hardware;
 
+            try
+            {
+                GPUs = (from g in GPUs orderby (g as ATIGPU).BusNumber select g).ToArray();
+            }
+            catch { }
+
             foreach (IHardware h in GPUs)
             {
                 foreach (ISensor s in h.Sensors)
@@ -84,11 +92,11 @@ namespace OMineGuard
             {
                 while (true)
                 {
+                    string[] MS = new string[5];
                     Overclock OC = new Overclock(GPUsCount);
                     try
                     {
                         CM.ReloadAll();
-                        string[] MS = new string[4];
                         for (int i = 0; i < GPUsCount; i++)
                         {
                             int core = 0;
@@ -112,34 +120,25 @@ namespace OMineGuard
                             MS[2] += MainWindow.ToNChar((memory).ToString());
                             MS[3] += MainWindow.ToNChar((CM.GpuEntries[i].FanSpeedCur).ToString() + "%");
                         }
-                        MainWindow.context.Send(MainWindow.SetMS1, MS);
                     }
                     catch { }
-                    //   ////////////////////   OPEN HARDWARE MONITOR
-                    //try
-                    //{
-                    //    for (int i = 0; i < GPUsCount; i++)
-                    //    {
-                    //        GPUs[i].Update();
-                    //    }
-                    //    string[] MS = new string[3];
-                    //    for (int i = 0; i < GPUsCount; i++)
-                    //    {
-                    //        OC.OHM_Temperatures[i] = gpuTempSensors[i].Value;
-                    //        OC.OHM_CoreClocks[i] = gpuCoreClockSensors[i].Value;
-                    //        OC.OHM_MemoryClocks[i] = gpuMemoryClockSensors[i].Value;
+                    ////////////////////   OPEN HARDWARE MONITOR
+                    try
+                    {
+                        for (int i = 0; i < GPUsCount; i++)
+                        {
+                            GPUs[i].Update();
+                        }
+                        for (int i = 0; i < GPUsCount; i++)
+                        {
+                            OC.OHM_Temperatures[i] = gpuTempSensors[i].Value;
 
-                    //        MS[0] += MainWindow.ToNChar(gpuTempSensors[i].Value.GetValueOrDefault().ToString() + "°C");
-                    //        MS[1] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuCoreClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
-                    //        MS[2] += MainWindow.ToNChar(Math.Round(Convert.ToDouble(gpuMemoryClockSensors[i].Value), MidpointRounding.AwayFromZero).ToString());
-                    //    }
-                    //    if (MS[0] != null)
-                    //    {
-                    //        MainWindow.context.Send(MainWindow.SetMS2, MS);
-                    //    }
-                    //}
-                    //catch { }
-
+                            MS[4] += MainWindow.ToNChar(gpuTempSensors[i].Value.GetValueOrDefault().ToString() + "°C");
+                        }
+                    }
+                    catch { }
+                    TCP.OMWsendState(OC, TCP.OMWstateType.Overclock);
+                    MainWindow.context.Send(MainWindow.SetMS, MS);
                     Thread.Sleep(1000);
                 }
             });
@@ -153,6 +152,8 @@ namespace OMineGuard
                 MSI_CoreClocks = new int[i];
                 MSI_MemoryClocks = new int[i];
                 MSI_FanSpeeds = new uint[i];
+
+                OHM_Temperatures = new float?[i];
             }
 
             public int[] MSI_PowerLimits;
@@ -160,9 +161,7 @@ namespace OMineGuard
             public int[] MSI_MemoryClocks;
             public uint[] MSI_FanSpeeds;
 
-            //public float?[] OHM_Temperatures;
-            //public float?[] OHM_CoreClocks;
-            //public float?[] OHM_MemoryClocks;
+            public float?[] OHM_Temperatures;
         }
 
         private static int SetParam(int i, int multiply, int[] param, int max, int min, int def)

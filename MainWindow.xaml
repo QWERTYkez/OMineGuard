@@ -185,7 +185,6 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" FontSize="12" Grid.RowSpan="3" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">CoreClock:</TextBlock>
                             <TextBox Grid.Row="0" Grid.Column="1" FontSize="12" x:Name="CoreClock" Margin="3" FontWeight="Bold" FontFamily="Consolas" IsEnabled="False"></TextBox>
                             <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" x:Name="GPUsCoreClock" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
-                            <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" x:Name="GPUsCoreClockAbs" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
                             <TextBlock Grid.Row="0" Grid.Column="2" FontSize="12" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
                             <CheckBox Grid.Row="1" Grid.Column="2" x:Name="SwitcherCC" IsChecked="True" VerticalAlignment="Top" HorizontalAlignment="Center" IsEnabled="False" Checked="OCswitch_Checked" Unchecked="OCswitch_Checked"></CheckBox>
                         </Grid>
@@ -205,7 +204,6 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" FontSize="12" VerticalAlignment="Center" Margin="5" Foreground="White" HorizontalAlignment="Right">MemoryClock:</TextBlock>
                             <TextBox Grid.Row="0" Grid.Column="1" FontSize="12" x:Name="MemoryClock" Margin="3" FontWeight="Bold" FontFamily="Consolas" IsEnabled="False"></TextBox>
                             <TextBlock Grid.Row="1" Grid.Column="1" FontSize="12" x:Name="GPUsMemoryClocks" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
-                            <TextBlock Grid.Row="2" Grid.Column="1" FontSize="12" x:Name="GPUsMemoryClocksAbs" Foreground="White" Margin="5,0,0,0" FontFamily="Consolas"></TextBlock>
                             <TextBlock Grid.Row="0" Grid.Column="2" FontSize="12" Foreground="White" VerticalAlignment="Bottom" Margin="5">Auto</TextBlock>
                             <CheckBox Grid.Row="1" Grid.Column="2" x:Name="SwitcherMC" IsChecked="True" VerticalAlignment="Top" HorizontalAlignment="Center" IsEnabled="False" Checked="OCswitch_Checked" Unchecked="OCswitch_Checked"></CheckBox>
                         </Grid>

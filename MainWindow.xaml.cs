@@ -703,6 +703,7 @@ namespace OMineGuard
                     This.GPUsHashrate2.Text = " " + str.TrimStart(',');
                     This.TotalHashrate.Text = x.Sum().ToString().Replace(',', '.');
                     This.TotalHashrate2.Text = x.Sum().ToString().Replace(',', '.');
+                    TCP.OMWsendState(x, TCP.OMWstateType.Hasrates);
                 }
                 else
                 {
@@ -710,25 +711,7 @@ namespace OMineGuard
                     This.GPUsHashrate2.Text = "";
                     This.TotalHashrate.Text = "";
                     This.TotalHashrate2.Text = "";
-                }
-                if (!OCM.OHMisEnabled)
-                {
-                    if ((int[])((object[])o)[1] != null)
-                    {
-                        str = "";
-                        int[] y = (int[])((object[])o)[1];
-                        foreach (double d in y)
-                        {
-                            str += ToNChar(d.ToString());
-                        }
-                        This.GPUsTemps.Text = " " + str.TrimStart(',');
-                        This.GPUsTemps2.Text = " " + str.TrimStart(',');
-                    }
-                    else
-                    {
-                        This.GPUsTemps.Text = "";
-                        This.GPUsTemps2.Text = "";
-                    }
+                    TCP.OMWsendState(null, TCP.OMWstateType.Hasrates);
                 }
             }
             else
@@ -737,11 +720,7 @@ namespace OMineGuard
                 This.GPUsHashrate2.Text = "";
                 This.TotalHashrate.Text = "";
                 This.TotalHashrate2.Text = "";
-                if (!OCM.OHMisEnabled)
-                {
-                    This.GPUsTemps.Text = "";
-                    This.GPUsTemps2.Text = "";
-                }
+                TCP.OMWsendState(null, TCP.OMWstateType.Hasrates);
             }
         }
         public static void Setoverclock(object o)
@@ -750,29 +729,19 @@ namespace OMineGuard
 
         }
 
-        public static void SetMS1(object o)
+        public static void SetMS(object o)
         {
             string[] MS = (string[])o;
             for (int i = 0; i < MS.Length; i++)
             {
-                MS[i] = MS[i] ?? "error";
+                MS[i] = MS[i] ?? "null";
             }
             This.GPUsPowerLimit.Text = " " + MS[0].TrimStart(',');
             This.GPUsCoreClock.Text = " " + MS[1].TrimStart(',');
             This.GPUsMemoryClocks.Text = " " + MS[2].TrimStart(',');
             This.GPUsFans.Text = " " + MS[3].TrimStart(',');
-        }
-        public static void SetMS2(object o)
-        {
-            string[] MS = (string[])o;
-            for (int i = 0; i < MS.Length; i++)
-            {
-                MS[i] = MS[i] ?? "error";
-            }
-            This.GPUsTemps.Text = " " + MS[0].TrimStart(',');
-            This.GPUsTemps2.Text = " " + MS[0].TrimStart(',');
-            This.GPUsCoreClockAbs.Text = " " + MS[1].TrimStart(',');
-            This.GPUsMemoryClocksAbs.Text = " " + MS[2].TrimStart(',');
+            This.GPUsTemps.Text = " " + MS[4].TrimStart(',');
+            This.GPUsTemps2.Text = " " + MS[4].TrimStart(',');
         }
         #endregion
         #region WachdogTimers
@@ -837,6 +806,8 @@ namespace OMineGuard
         {
             string str = (string)o;
             Brush br = Brushes.Yellow;
+
+            TCP.OMWsendState(str, TCP.OMWstateType.Logging);
 
             TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
                 MainWindow.This.MinerLog.Document.ContentEnd);

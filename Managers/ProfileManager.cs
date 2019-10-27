@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using PM = OMineGuard.ProfileManager;
+using TCP = OMineGuard.TCPserver;
 
 namespace OMineGuard
 {
@@ -26,6 +27,15 @@ namespace OMineGuard
         }
         private static object profileKey = new object();
         public static void SaveProfile()
+        {
+            SP();
+            TCP.OMWsendState(profile, TCP.OMWstateType.SaveProfile);
+        }
+        public static void SaveProfile(bool b)
+        {
+            SP();
+        }
+        public static void SP()
         {
             lock (profileKey)
             {

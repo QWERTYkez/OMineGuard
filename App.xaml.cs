@@ -16,7 +16,7 @@ namespace OMineGuard
             MM.StopRMT();
             AbortThread(MM.IndicationThread);
             AbortThread(MM.StaartProcessThread);
-            TCPserver.AbortTCP();
+            TCPserver.ServerAlive = false;
             AbortThread(MW.ShowMinerLogThread);
             IM.StopIdleWatchdog();
             IM.StopLHWatchdog();

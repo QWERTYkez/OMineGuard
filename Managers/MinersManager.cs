@@ -7,6 +7,7 @@ using PM = OMineGuard.ProfileManager;
 using IM = OMineGuard.InformManager;
 using OCM = OMineGuard.OverclockManager;
 using MW = OMineGuard.MainWindow;
+using TCP = OMineGuard.TCPserver;
 using System.Diagnostics;
 using System.Windows.Controls;
 using System.IO;
@@ -429,6 +430,8 @@ namespace OMineGuard
                          Thread.Sleep(50);
                      }
                  }
+                 // начало индикации
+                 TCP.OMWsendState(true,TCP.OMWstateType.Indication);
                  while (Process.GetProcessesByName(StartedProcessName).Length != 0)
                  {
                      MW.context.Send(SetIndicationColor, Brushes.Lime);
@@ -436,6 +439,8 @@ namespace OMineGuard
                      MW.context.Send(SetIndicationColor, null);
                      Thread.Sleep(300);
                  }
+                 // завершение индикации
+                 TCP.OMWsendState(false, TCP.OMWstateType.Indication);
                  MW.context.Send(SetIndicationColor, Brushes.Red);
                  MW.context.Send((object o) =>
                  {
@@ -562,8 +567,9 @@ namespace OMineGuard
                 tr.Text = str;
                 tr.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
                 MW.This.MinerLog.AppendText(Environment.NewLine);
-            }
 
+                TCP.OMWsendState(str, TCP.OMWstateType.Logging);
+            }
         }
         public static void WriteLog(string str)
         {
@@ -574,6 +580,8 @@ namespace OMineGuard
                 tr.Text = str;
                 tr.ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.White);
                 MW.This.MinerLog.AppendText(Environment.NewLine);
+
+                TCP.OMWsendState(str, TCP.OMWstateType.Logging);
             }
         }
         #endregion
