@@ -807,11 +807,12 @@ namespace OMineGuard
             string str = (string)o;
             Brush br = Brushes.Yellow;
 
-            TCP.OMWsendState(str, TCP.OMWstateType.Logging);
-
             TextRange tr = new TextRange(MainWindow.This.MinerLog.Document.ContentEnd,
                 MainWindow.This.MinerLog.Document.ContentEnd);
             tr.Text = $"{DateTime.Now.ToString("dd MMMM - HH.mm.ss")} >> {str}";
+
+            TCP.OMWsendState(tr.Text + Environment.NewLine, TCP.OMWstateType.Logging);
+
             tr.ApplyPropertyValue(TextElement.ForegroundProperty, br);
             This.MinerLog.AppendText(Environment.NewLine);
         }

@@ -26,6 +26,7 @@ namespace OMineGuard
         private static List<ISensor> gpuMemoryClockSensors = new List<ISensor>();
         public static bool OHMisEnabled = false;
         public static bool MSIconnecting = false;
+        public static bool GPUsMonitoring = false;
 
         public static void Initialize()
         {
@@ -86,11 +87,13 @@ namespace OMineGuard
             StartMonitoring();
         }
         
+
         private static void StartMonitoring()
         {
             Task.Run(() =>
             {
-                while (true)
+                GPUsMonitoring = true;
+                while (GPUsMonitoring)
                 {
                     string[] MS = new string[5];
                     Overclock OC = new Overclock(GPUsCount);

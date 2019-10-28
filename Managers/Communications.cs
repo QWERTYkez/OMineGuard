@@ -19,19 +19,28 @@ namespace OMineGuard
 {
     public static class TCPserver
     {
-        public static bool ServerAlive = true;
-        
+        private static bool ServerAlive = true;
+        private static TcpListener Server1 = new TcpListener(IPAddress.Any, 2111);
+        private static TcpListener Server2 = new TcpListener(IPAddress.Any, 2112);
+        private static TcpListener Server3 = new TcpListener(IPAddress.Any, 2113);
+        public static void ServersStop()
+        {
+            ServerAlive = false;
+            //Server1.Stop();
+            Server2.Stop();
+            Server3.Stop();
+        }
+
         #region MSG
         public static void ServerStart()
         {
             Task.Run(() =>
             {
-                TcpListener server = new TcpListener(IPAddress.Any, 2112);
                 while (ServerAlive)
                 {
                     try
                     {
-                        server.Start();
+                        Server2.Start();
                         break;
                     }
                     catch { }
@@ -41,7 +50,7 @@ namespace OMineGuard
                 {
                     try
                     {
-                        OMWcontrol(server.AcceptTcpClient());
+                        OMWcontrol(Server2.AcceptTcpClient());
                     }
                     catch { }
                     Thread.Sleep(100);
@@ -49,8 +58,6 @@ namespace OMineGuard
             });
         }
         
-        private static TcpClient OMWcontrolClient;
-        private static NetworkStream OMWcontrolStream;
         static void OMWcontrol(TcpClient client)
         {
             Task.Run(() => 
@@ -65,12 +72,11 @@ namespace OMineGuard
                         // Отправление статистики
                         Task.Run(() =>
                         {
-                            TcpListener server = new TcpListener(IPAddress.Any, 2113);
                             while (ServerAlive)
                             {
                                 try
                                 {
-                                    server.Start();
+                                    Server3.Start();
                                     break;
                                 }
                                 catch { }
@@ -80,17 +86,18 @@ namespace OMineGuard
                             {
                                 try
                                 {
-                                    OMWstate(server.AcceptTcpClient());
+                                    OMWstate(Server3.AcceptTcpClient());
                                 }
                                 catch { }
                                 Thread.Sleep(100);
                             }
+
                         });
                     }
                     catch { }
 
                     // получение изменений
-                    while (client.Connected)
+                    while (client.Connected && ServerAlive)
                     {
                         try
                         {
@@ -118,7 +125,7 @@ namespace OMineGuard
                         switch (type)
                         {
                             case OMWcontrolType.Profile: header = "Profile"; break;
-                            case OMWcontrolType.Log: header = "Log"; break;
+                            case OMWcontrolType.Log: header = "Logging"; break;
                         }
 
                         string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
@@ -171,8 +178,6 @@ namespace OMineGuard
                 catch { }
                 OMWstateClient = client;
                 OMWstateStream = OMWstateClient.GetStream();
-
-                
             });
         }
         #region send state
@@ -227,7 +232,6 @@ namespace OMineGuard
         #endregion
 
         #region INF
-        private static TcpListener INFserver = new TcpListener(IPAddress.Any, 2111);
         public static Thread INFServerThread;
         public static void INFServerStart()
         {
@@ -238,7 +242,7 @@ namespace OMineGuard
             }
             catch { }
             INFServerThread = new Thread(INFServerTS);
-            INFServerThread.Start();
+            //INFServerThread.Start();
         }
         public static ThreadStart INFServerTS = new ThreadStart(() =>
         {
@@ -246,7 +250,7 @@ namespace OMineGuard
             {
                 try
                 {
-                    INFserver.Start();
+                    Server1.Start();
                     break;
                 }
                 catch { }
@@ -255,7 +259,7 @@ namespace OMineGuard
             {
                 try
                 {
-                    INFstreams.Add(INFserver.AcceptTcpClient().GetStream());
+                    INFstreams.Add(Server1.AcceptTcpClient().GetStream());
                 }
                 catch { }
             }

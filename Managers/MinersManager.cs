@@ -364,6 +364,7 @@ namespace OMineGuard
             try
             {
                 IndicationThread.Abort();
+                TCP.OMWsendState(false, TCP.OMWstateType.Indication);
                 IM.WachingThread.Abort();
             }
             catch { }

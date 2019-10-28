@@ -3,6 +3,7 @@ using System.Windows;
 using IM = OMineGuard.InformManager;
 using MM = OMineGuard.MinersManager;
 using MW = OMineGuard.MainWindow;
+using OCM = OMineGuard.OverclockManager;
 
 namespace OMineGuard
 {
@@ -16,7 +17,8 @@ namespace OMineGuard
             MM.StopRMT();
             AbortThread(MM.IndicationThread);
             AbortThread(MM.StaartProcessThread);
-            TCPserver.ServerAlive = false;
+            TCPserver.ServersStop();
+            OCM.GPUsMonitoring = false;
             AbortThread(MW.ShowMinerLogThread);
             IM.StopIdleWatchdog();
             IM.StopLHWatchdog();
