@@ -10,6 +10,7 @@ using IM = OMineGuard.InformManager;
 using MW = OMineGuard.MainWindow;
 using MM = OMineGuard.MinersManager;
 using OCM = OMineGuard.OverclockManager;
+using SM = OMineGuard.SettingsManager;
 using System.Diagnostics;
 using System.Windows;
 using System;
@@ -19,6 +20,8 @@ namespace OMineGuard
 {
     public static class TCPserver
     {
+        public static event Action<RootObject> OMWsent;
+
         private static bool ServerAlive = true;
         private static TcpListener Server1 = new TcpListener(IPAddress.Any, 2111);
         private static TcpListener Server2 = new TcpListener(IPAddress.Any, 2112);
@@ -57,7 +60,7 @@ namespace OMineGuard
                 }
             });
         }
-        
+
         static void OMWcontrol(TcpClient client)
         {
             Task.Run(() => 
@@ -66,8 +69,21 @@ namespace OMineGuard
                 {
                     try
                     {
-                        Sendcontrol(client, stream, PM.Profile, OMWcontrolType.Profile);
-                        Sendcontrol(client, stream, (new TextRange(MW.This.MinerLog.Document.ContentStart, MW.This.MinerLog.Document.ContentEnd)).Text, OMWcontrolType.Log);
+                        Sendcontrol(client, stream, 
+                            PM.Profile, 
+                            OMWcontrolType.Profile);
+
+                        Sendcontrol(client, stream, 
+                            SM.MinersD, 
+                            OMWcontrolType.Algoritms);
+
+                        Sendcontrol(client, stream, 
+                            new string[] { SM.Miners.Bminer.ToString(), SM.Miners.Claymore.ToString(), SM.Miners.Gminer.ToString() }, 
+                            OMWcontrolType.Miners);
+
+                        Sendcontrol(client, stream, 
+                            (new TextRange(MW.This.MinerLog.Document.ContentStart, MW.This.MinerLog.Document.ContentEnd)).Text, 
+                            OMWcontrolType.Log);
 
                         // Отправление статистики
                         Task.Run(() =>
@@ -96,14 +112,13 @@ namespace OMineGuard
                     }
                     catch { }
 
-                    // получение изменений
                     while (client.Connected && ServerAlive)
                     {
+                        RootObject RO;
                         try
                         {
-                            OMWreadMSG(stream);
-
-
+                            RO = JsonConvert.DeserializeObject<RootObject>(OMWreadMSG(stream));
+                            OMWsent?.Invoke(RO);
                         }
                         catch { }
                         Thread.Sleep(50);
@@ -122,14 +137,24 @@ namespace OMineGuard
                     lock (key1)
                     {
                         string header = "";
+                        string msg = "";
                         switch (type)
                         {
                             case OMWcontrolType.Profile: header = "Profile"; break;
+                            case OMWcontrolType.Miners: header = "Miners"; break;
+                            case OMWcontrolType.Algoritms: header = "Algoritms"; break;
                             case OMWcontrolType.Log: header = "Logging"; break;
                         }
 
-                        string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
-
+                        if (header == "Algoritms")
+                        {
+                            msg = JsonConvert.SerializeObject(body);
+                        }
+                        else
+                        {
+                            msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
+                        }
+                        
                         byte[] Message = Encoding.Default.GetBytes(msg);
                         byte[] Header = BitConverter.GetBytes(Message.Length);
 
@@ -146,6 +171,8 @@ namespace OMineGuard
         public enum OMWcontrolType
         {
             Profile,
+            Miners,
+            Algoritms,
             Log
         }
         #endregion
@@ -162,8 +189,17 @@ namespace OMineGuard
             int count = stream.Read(msg, 0, msg.Length);
             return Encoding.Default.GetString(msg, 0, count);
         }
+        public class RootObject
+        {
+            public Profile Profile { get; set; }
+            public long? RunConfig { get; set; }
+            public long? ApplyClock { get; set; }
+            public bool? StartProcess { get; set; }
+            public bool? KillProcess { get; set; }
+            public bool? ShowMinerLog { get; set; }
+        }
         #endregion
-
+        #region send state
         private static TcpClient OMWstateClient;
         private static NetworkStream OMWstateStream;
         static void OMWstate(TcpClient client)
@@ -180,7 +216,6 @@ namespace OMineGuard
                 OMWstateStream = OMWstateClient.GetStream();
             });
         }
-        #region send state
         private static object key2 = new object();
         public static void OMWsendState(object body, OMWstateType type)
         {
@@ -199,7 +234,10 @@ namespace OMineGuard
                                 case OMWstateType.Overclock:   header = "Overclock";  break;
                                 case OMWstateType.Indication:  header = "Indication"; break;
                                 case OMWstateType.Logging:     header = "Logging";    break;
-                                case OMWstateType.SaveProfile: header = "Profile";    break;
+                                case OMWstateType.WachdogInfo: header = "WachdogInfo"; break;
+                                case OMWstateType.LowHWachdog: header = "LowHWachdog"; break;
+                                case OMWstateType.IdleWachdog: header = "IdleWachdog"; break;
+                                case OMWstateType.ShowMLogTB: header = "ShowMLogTB"; break;
                             }
 
                             string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
@@ -225,10 +263,12 @@ namespace OMineGuard
             Overclock,
             Indication,
             Logging,
-            SaveProfile
+            WachdogInfo,
+            LowHWachdog,
+            IdleWachdog,
+            ShowMLogTB
         }
         #endregion
-
         #endregion
 
         #region INF

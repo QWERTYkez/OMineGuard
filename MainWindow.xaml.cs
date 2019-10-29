@@ -21,7 +21,7 @@ namespace OMineGuard
 {
     public partial class MainWindow : Window
     {
-        public const string Ver = "1.6";
+        public const string Ver = "1.7";
         public static string Version;
         public static MainWindow This;
         public static bool AutoScroll = true;
@@ -35,6 +35,7 @@ namespace OMineGuard
             This = this;
             IniProfile();
             OCM.Initialize();
+            TCP.OMWsent += TCP_OMWsent;
         }
 
         #region InitializeProfile
@@ -133,7 +134,9 @@ namespace OMineGuard
             if (PM.Profile.ConfigsList == null)
             { PM.Profile.ConfigsList = new List<Profile.Config>(); }
             This.ConfigsList.ItemsSource = PM.Profile.ConfigsList.Select(W => W.Name);
+            This.ConfigsList_Selected(null, null);
             This.ClocksList.ItemsSource = PM.Profile.ClocksList.Select(W => W.Name);
+            This.ClocksList_SelectionChanged(null, null);
             Profile.Config Conf = PM.GetConfig(PM.Profile.StartedID);
             if (Conf != null)
             {
@@ -368,52 +371,57 @@ namespace OMineGuard
         {
             if (ApplyConfigM())
             {
-                Profile.Config PC = PM.Profile.ConfigsList[ConfigsList.SelectedIndex];
-                MM.StartMiner(PC);
-                TabConroller.SelectedIndex = 2;
+                StartConfig(PM.Profile.ConfigsList[ConfigsList.SelectedIndex].ID);
             }
         }
+        public static void StartConfig(long ConfigId)
+        {
+            Profile.Config PC = PM.GetConfig(ConfigId);
+            MM.StartMiner(PC);
+            This.TabConroller.SelectedIndex = 2;
+        }
+
         private void ConfigsList_Selected(object sender, RoutedEventArgs e)
         {
-            int n = ConfigsList.SelectedIndex;
+            int n = This.ConfigsList.SelectedIndex;
             if (n == -1)
             {
-                MiningConfigName.Text = "";
-                Algotitm.SelectedIndex = -1;
-                Miner.SelectedIndex = -1;
-                Overclock.SelectedIndex = -1;
-                Pool.Text = "";
-                Port.Text = "";
-                Wallet.Text = "";
-                Params.Text = "";
-                MinHashrate.Text = "";
+                This.MiningConfigName.Text = "";
+                This.Algotitm.SelectedIndex = -1;
+                This.Miner.SelectedIndex = -1;
+                This.Overclock.SelectedIndex = -1;
+                This.Pool.Text = "";
+                This.Port.Text = "";
+                This.Wallet.Text = "";
+                This.Params.Text = "";
+                This.MinHashrate.Text = "";
             }
             else
             {
                 if (PM.Profile.ConfigsList[n].Algoritm != "")
                 {
-                    Algotitm.SelectedItem = PM.Profile.ConfigsList[n].Algoritm;
+                    This.Algotitm.SelectedItem = PM.Profile.ConfigsList[n].Algoritm;
                 }
-                else Algotitm.SelectedIndex = -1;
+                else This.Algotitm.SelectedIndex = -1;
 
                 if (PM.Profile.ConfigsList[n].Miner != null)
                 {
-                    Miner.SelectedItem = PM.Profile.ConfigsList[n].Miner;
+                    This.Miner.SelectedItem = PM.Profile.ConfigsList[n].Miner;
                 }
-                else Miner.SelectedIndex = -1;
+                else This.Miner.SelectedIndex = -1;
 
                 if (PM.Profile.ConfigsList[n].ClockID != null)
                 {
-                    Overclock.SelectedItem = PM.GetClock(PM.Profile.ConfigsList[n].ClockID).Name;
+                    This.Overclock.SelectedItem = PM.GetClock(PM.Profile.ConfigsList[n].ClockID).Name;
                 }
-                else Overclock.SelectedIndex = -1;
+                else This.Overclock.SelectedIndex = -1;
 
-                MiningConfigName.Text = PM.Profile.ConfigsList[n].Name;
-                Pool.Text = PM.Profile.ConfigsList[n].Pool;
-                Port.Text = PM.Profile.ConfigsList[n].Port;
-                Wallet.Text = PM.Profile.ConfigsList[n].Wallet;
-                Params.Text = PM.Profile.ConfigsList[n].Params;
-                MinHashrate.Text = PM.Profile.ConfigsList[n].MinHashrate.ToString();
+                This.MiningConfigName.Text = PM.Profile.ConfigsList[n].Name;
+                This.Pool.Text = PM.Profile.ConfigsList[n].Pool;
+                This.Port.Text = PM.Profile.ConfigsList[n].Port;
+                This.Wallet.Text = PM.Profile.ConfigsList[n].Wallet;
+                This.Params.Text = PM.Profile.ConfigsList[n].Params;
+                This.MinHashrate.Text = PM.Profile.ConfigsList[n].MinHashrate.ToString();
             }
         }
         private void Algotitm_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -596,35 +604,35 @@ namespace OMineGuard
         }
         private void ClocksList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            int n = ClocksList.SelectedIndex;
+            int n = This.ClocksList.SelectedIndex;
             if (n == -1)
             {
-                ClockName.IsEnabled = false;
-                SwitcherPL.IsEnabled = false;
-                SwitcherCC.IsEnabled = false;
-                SwitcherMC.IsEnabled = false;
-                SwitcherFS.IsEnabled = false;
-                SetParam(SwitcherPL, PowLim);
-                SetParam(SwitcherCC, CoreClock);
-                SetParam(SwitcherMC, MemoryClock);
-                SetParam(SwitcherFS, FanSpeed);
-                ClockName.Text = "";
+                This.ClockName.IsEnabled = false;
+                This.SwitcherPL.IsEnabled = false;
+                This.SwitcherCC.IsEnabled = false;
+                This.SwitcherMC.IsEnabled = false;
+                This.SwitcherFS.IsEnabled = false;
+                SetParam(This.SwitcherPL, This.PowLim);
+                SetParam(This.SwitcherCC, This.CoreClock);
+                SetParam(This.SwitcherMC, This.MemoryClock);
+                SetParam(This.SwitcherFS, This.FanSpeed);
+                This.ClockName.Text = "";
             }
             else
             {
-                ClockName.Text = PM.Profile.ClocksList[n].Name;
-                ClockName.IsEnabled = true;
-                SwitcherPL.IsEnabled = true;
-                SwitcherCC.IsEnabled = true;
-                SwitcherMC.IsEnabled = true;
-                SwitcherFS.IsEnabled = true;
-                SetParam(SwitcherPL, PowLim, PM.Profile.ClocksList[n].PowLim);
-                SetParam(SwitcherCC, CoreClock, PM.Profile.ClocksList[n].CoreClock);
-                SetParam(SwitcherMC, MemoryClock, PM.Profile.ClocksList[n].MemoryClock);
-                SetParam(SwitcherFS, FanSpeed, PM.Profile.ClocksList[n].FanSpeed);
+                This.ClockName.Text = PM.Profile.ClocksList[n].Name;
+                This.ClockName.IsEnabled = true;
+                This.SwitcherPL.IsEnabled = true;
+                This.SwitcherCC.IsEnabled = true;
+                This.SwitcherMC.IsEnabled = true;
+                This.SwitcherFS.IsEnabled = true;
+                SetParam(This.SwitcherPL, This.PowLim, PM.Profile.ClocksList[n].PowLim);
+                SetParam(This.SwitcherCC, This.CoreClock, PM.Profile.ClocksList[n].CoreClock);
+                SetParam(This.SwitcherMC, This.MemoryClock, PM.Profile.ClocksList[n].MemoryClock);
+                SetParam(This.SwitcherFS, This.FanSpeed, PM.Profile.ClocksList[n].FanSpeed);
             }
         }
-        private void SetParam(CheckBox CB, TextBox TB, int[] prams)
+        private static void SetParam(CheckBox CB, TextBox TB, int[] prams)
         {
             string str = "";
             if (prams == null)
@@ -642,7 +650,7 @@ namespace OMineGuard
                 TB.Text = " " + str.TrimStart(',');
             }
         }
-        private void SetParam(CheckBox CB, TextBox TB, uint[] prams)
+        private static void SetParam(CheckBox CB, TextBox TB, uint[] prams)
         {
             string str = "";
             if (prams == null)
@@ -660,7 +668,7 @@ namespace OMineGuard
                 TB.Text = " " + str.TrimStart(',');
             }
         }
-        private void SetParam(CheckBox CB, TextBox TB)
+        private static void SetParam(CheckBox CB, TextBox TB)
         {
             CB.IsChecked = true;
             TB.Text = "";
@@ -872,6 +880,7 @@ namespace OMineGuard
             {
                 This.LowHWachdog.Visibility = Visibility.Collapsed;
             }
+            TCP.OMWsendState(msg, TCP.OMWstateType.LowHWachdog);
         }
         public static void IdlewachdogMSG(string msg) { context.Send(Idlewachdogmsg, msg); }
         private static void Idlewachdogmsg(object o)
@@ -886,6 +895,7 @@ namespace OMineGuard
             {
                 This.IdleWachdog.Visibility = Visibility.Collapsed;
             }
+            TCP.OMWsendState(msg, TCP.OMWstateType.IdleWachdog);
         }
         public static void WachdogMSG(string msg) { context.Send(Wachdogmsg, msg); }
         private static void Wachdogmsg(object o)
@@ -900,6 +910,7 @@ namespace OMineGuard
             {
                 This.WachdogINFO.Visibility = Visibility.Collapsed;
             }
+            TCP.OMWsendState(msg, TCP.OMWstateType.WachdogInfo);
         }
 
         public static Thread ShowMinerLogThread;
@@ -937,6 +948,35 @@ namespace OMineGuard
             {
                 This.ShowMLogTB.Visibility = Visibility.Collapsed;
             }
+            TCP.OMWsendState(msg, TCP.OMWstateType.ShowMLogTB);
+        }
+
+
+        private void TCP_OMWsent(TCP.RootObject RO)
+        {
+            Task.Run(() => 
+            {
+                if (RO.Profile != null)
+                {
+                    PM.Profile = RO.Profile;
+                    PM.SaveProfile();
+                    context.Send((object o) => UpdateProfile(), null);
+                }
+                if (RO.ApplyClock != null)
+                    OCM.ApplyOverclock(PM.GetClock(RO.ApplyClock));
+                if (RO.RunConfig != null)
+                    context.Send((object o) => StartConfig((long)RO.RunConfig), null);
+                if (RO.StartProcess != null)
+                    context.Send((object o) => MM.StartMiner(PM.GetConfig(PM.Profile.StartedID)), null);
+                if (RO.KillProcess != null)
+                {
+                    IM.StopWachdog();
+                    IM.StopLHWatchdog();
+                    IM.StopIdleWatchdog();
+                    MM.KillProcess();
+                }
+                if (RO.ShowMinerLog != null) ShowMinerLog_Click(null, null);
+            });
         }
     }
 }

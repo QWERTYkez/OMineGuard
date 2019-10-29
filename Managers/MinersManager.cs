@@ -26,17 +26,17 @@ namespace OMineGuard
                  new Miners[] { Miners.Gminer } },
              { "Ethash",
                  new Miners[] { Miners.Claymore, Miners.Bminer } },
-             { "Equihash(96.5)",
+             { "Equihash 96.5",
                  new Miners[] { Miners.Gminer } },
-             { "Equihash(144.5)",
+             { "Equihash 144.5",
                  new Miners[] { Miners.Gminer, Miners.Bminer } },
-             { "Equihash(150.5)",
+             { "Equihash 150.5",
                  new Miners[] { Miners.Gminer, Miners.Bminer } },
-             { "Equihash(192.7)",
+             { "Equihash 192.7",
                  new Miners[] { Miners.Gminer } },
-             { "Equihash(200.9)",
+             { "Equihash 200.9",
                  new Miners[] { Miners.Bminer } },
-             { "Equihash(210.9)",
+             { "Equihash 210.9",
                  new Miners[] { Miners.Gminer } },
              { "cuckARoo29",
                  new Miners[] { Miners.Gminer, Miners.Bminer } },
@@ -50,11 +50,11 @@ namespace OMineGuard
                  new Miners[] { Miners.Bminer } }
          };
 
-        public enum Miners
+        public enum Miners // должно быть по алфавиту
         {
+            Bminer,
             Claymore,
-            Gminer,
-            Bminer
+            Gminer
         }
     }
     public static class MinersManager
@@ -175,19 +175,19 @@ namespace OMineGuard
                         case "BeamHash II":
                             algo = "beamhash";
                             break;
-                        case "Equihash(96.5)":
+                        case "Equihash 96.5":
                             algo = "equihash96_5";
                             break;
-                        case "Equihash(144.5)":
+                        case "Equihash 144.5":
                             algo = "equihash144_5";
                             break;
-                        case "Equihash(150.5)":
+                        case "Equihash 150.5":
                             algo = "equihash150_5";
                             break;
-                        case "Equihash(192.7)":
+                        case "Equihash 192.7":
                             algo = "equihash192_7";
                             break;
-                        case "Equihash(210.9)":
+                        case "Equihash 210.9":
                             algo = "equihash210_9";
                             break;
                         case "cuckARoo29":
@@ -254,13 +254,13 @@ namespace OMineGuard
 
                     switch (Config.Algoritm)
                     {
-                        case "Equihash(144.5)":
+                        case "Equihash 144.5":
                             algo = "equihash1445";
                             break;
-                        case "Equihash(150.5)":
+                        case "Equihash 150.5":
                             algo = "beam";
                             break;
-                        case "Equihash(200.9)":
+                        case "Equihash 200.9":
                             algo = "stratum";
                             break;
                         case "Ethash":

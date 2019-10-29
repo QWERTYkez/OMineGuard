@@ -450,8 +450,8 @@ namespace OMineGuard
                     }
                     else
                     {
-                        MW.WriteGeneralLog($"Интернет воостановлен, возобновление работы");
-                        InformMessage($"Интернет воостановлен, возобновление работы");
+                        MW.WriteGeneralLog($"Интернет восстановлен, возобновление работы");
+                        InformMessage($"Интернет восстановлен, возобновление работы");
                         MW.context.Send(MM.StartLastMiner, null);
                     }
                     InternetConnectionState = ICS;

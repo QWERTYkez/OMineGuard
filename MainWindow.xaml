@@ -71,7 +71,7 @@
                                     <Button x:Name="MinusConfig" Grid.Column="0" Margin="2,0,0,2" Content="-" Click="MinusConfig_Click"/>
                                     <Button x:Name="PlusConfig" Grid.Column="1" Margin="0,0,0,2" Content="+" Click="PlusConfig_Click"/>
                                     <Button x:Name="ApplyConfig" Grid.Column="2" Margin="0,0,0,2" Content="save" Click="ApplyConfig_Click"/>
-                                    <Button x:Name="StartConfig" Grid.Column="3" Margin="0,0,2,2" Content="start" Click="StartConfig_Click"/>
+                                    <Button x:Name="StarConfig" Grid.Column="3" Margin="0,0,2,2" Content="start" Click="StartConfig_Click"/>
                                 </Grid>
                             </Grid>
                         </GroupBox>
@@ -246,7 +246,7 @@
                             <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TotalHashrate" FontSize="12" Foreground="White" Margin="15,3,3,3" FontFamily="Consolas" Padding="0"></TextBlock>
                             <WrapPanel Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right">
                                 <TextBlock FontSize="12" VerticalAlignment="Center" Foreground="White">количество цифр:</TextBlock>
-                                <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="4" Maximum="10" IsSnapToTickEnabled="True" TickFrequency="1"/>
+                                <Slider x:Name="DigitsSlider" Width="80" VerticalAlignment="Center" Margin="3" Minimum="5" Maximum="10" IsSnapToTickEnabled="True" TickFrequency="1"/>
                                 <TextBlock x:Name="Digits" FontSize="12" VerticalAlignment="Center" Foreground="White" Text="50" Margin="0,0,15,0"/>
                                 <TextBlock Foreground="White" Margin="5" FontSize="12">Тест:</TextBlock>
                                 <Button x:Name="KillProcess2" Click="KillProcess_Click" FontSize="12">Запустить процесс</Button>

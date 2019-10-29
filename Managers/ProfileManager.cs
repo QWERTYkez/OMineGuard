@@ -28,15 +28,6 @@ namespace OMineGuard
         private static object profileKey = new object();
         public static void SaveProfile()
         {
-            SP();
-            TCP.OMWsendState(profile, TCP.OMWstateType.SaveProfile);
-        }
-        public static void SaveProfile(bool b)
-        {
-            SP();
-        }
-        public static void SP()
-        {
             lock (profileKey)
             {
                 string JSON = JsonConvert.SerializeObject(profile);
@@ -105,7 +96,7 @@ namespace OMineGuard
             ConfigsList = new List<Config>();
             ClocksList = new List<Overclock>();
             Informer = new InformManager();
-            Digits = 4;
+            Digits = 5;
             Autostart = false;
 
             TimeoutWachdog = 60;
