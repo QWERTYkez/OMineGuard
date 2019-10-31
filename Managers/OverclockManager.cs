@@ -10,7 +10,6 @@ using MSI.Afterburner;
 using MSI.Afterburner.Exceptions;
 using Newtonsoft.Json;
 using OpenHardwareMonitor.Hardware;
-using OpenHardwareMonitor.Hardware.ATI;
 using PM = OMineGuard.ProfileManager;
 using TCP = OMineGuard.TCPserver;
 
@@ -57,12 +56,6 @@ namespace OMineGuard
             Computer c = new Computer { GPUEnabled = true };
             c.Open();
             GPUs = c.Hardware;
-
-            try
-            {
-                GPUs = (from g in GPUs orderby (g as ATIGPU).BusNumber select g).ToArray();
-            }
-            catch { }
 
             foreach (IHardware h in GPUs)
             {
