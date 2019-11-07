@@ -97,6 +97,7 @@ namespace OMineGuard
                 MW.SystemMessage("");
                 return;
             }
+            IM.ProcessСompleted = false;
             IM.StartIdleWatchdog();
             KillProcess();
             try
@@ -413,6 +414,7 @@ namespace OMineGuard
             catch { }
         }
         #region Indicator
+        public static bool Indication = false;
         public static Thread IndicationThread;
         private static void RunIndication()
         {
@@ -433,7 +435,8 @@ namespace OMineGuard
                  }
                  // начало индикации
                  TCP.OMWsendState(true,TCP.OMWstateType.Indication);
-                 while (Process.GetProcessesByName(StartedProcessName).Length != 0)
+                 Indication = true;
+                 while (Process.GetProcessesByName(StartedProcessName).Length != 0 && !IM.ProcessСompleted)
                  {
                      MW.context.Send(SetIndicationColor, Brushes.Lime);
                      Thread.Sleep(700);
@@ -442,6 +445,7 @@ namespace OMineGuard
                  }
                  // завершение индикации
                  TCP.OMWsendState(false, TCP.OMWstateType.Indication);
+                 Indication = false;
                  MW.context.Send(SetIndicationColor, Brushes.Red);
                  MW.context.Send((object o) =>
                  {

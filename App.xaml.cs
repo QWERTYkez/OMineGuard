@@ -11,6 +11,7 @@ namespace OMineGuard
     {
         private void Application_Exit(object sender, ExitEventArgs e)
         {
+            IM.ProcessСompleted = true;
             MM.KillProcess();
             AbortThread(IM.WachingThread);
             IM.StopWachdog();

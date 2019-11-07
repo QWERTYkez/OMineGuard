@@ -456,7 +456,6 @@ namespace OMineGuard
                     }
                     InternetConnectionState = ICS;
                 }
-
                 Thread.Sleep(1000);
             }
         });
@@ -485,6 +484,7 @@ namespace OMineGuard
         {
             for (int i = PM.Profile.TimeoutIdle; i > 0; i--)
             {
+                if (ProcessСompleted) return;
                 MW.IdlewachdogMSG($" Бездействие, перезагрузка через {i} ");
                 Thread.Sleep(1000);
             }
@@ -517,10 +517,12 @@ namespace OMineGuard
         }
 
         private static Thread LowHashrateThread = new Thread(new ThreadStart(() => { }));
+        public static bool ProcessСompleted = false;
         private static ThreadStart LowHashrateTS = new ThreadStart(() =>
         {
             for (int i = PM.Profile.TimeoutLH; i > 0; i--)
             {
+                if (ProcessСompleted) return;
                 MW.LowHwachdogMSG($" Низкий хешрейт, перезапуск через {i} ");
                 Thread.Sleep(1000);
             }

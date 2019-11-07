@@ -48,9 +48,47 @@ namespace OMineGuard
                 catch { }
             }
             ConnectToOHM();
-            if (CM.GpuEntries[CM.GpuEntries.Length - 1].PowerLimitCur == 0)
+            GPUsCount = CM.GpuEntries.Length;
+            while (CM.GpuEntries[GPUsCount - 1].PowerLimitMax - CM.GpuEntries[GPUsCount - 1].PowerLimitMin == 0)
             { GPUsCount = CM.GpuEntries.Length - 1; }
+            DC = new DefClock(GPUsCount);
+            for (int i = 0; i < GPUsCount; i++)
+            {
+                int core = 0;
+                if (CM.GpuEntries[i].CoreClockBoostMax - CM.GpuEntries[i].CoreClockBoostMin != 0)
+                { core = CM.GpuEntries[i].CoreClockBoostDef / 1000; }
+                else if (CM.GpuEntries[i].CoreClockMax - CM.GpuEntries[i].CoreClockMin != 0)
+                { core = Convert.ToInt32(CM.GpuEntries[i].CoreClockDef) / 1000; }
+                int memory = 0;
+                if (CM.GpuEntries[i].MemoryClockBoostMax - CM.GpuEntries[i].MemoryClockBoostMin != 0)
+                { memory = CM.GpuEntries[i].MemoryClockBoostDef / 1000; }
+                else if (CM.GpuEntries[i].MemoryClockMax - CM.GpuEntries[i].MemoryClockMin != 0)
+                { memory = Convert.ToInt32(CM.GpuEntries[i].MemoryClockDef) / 1000; }
+
+                ((DefClock)DC).PowerLimits[i] = CM.GpuEntries[i].PowerLimitDef;
+                ((DefClock)DC).CoreClocks[i] = core;
+                ((DefClock)DC).MemoryClocks[i] = memory;
+                ((DefClock)DC).FanSpeeds[i] = CM.GpuEntries[i].FanSpeedDef;
+            }
+            TCP.OMWsendState(DC, TCP.OMWstateType.DefClock);
         }
+        public static DefClock? DC;
+        public struct DefClock
+        {
+            public DefClock(int i)
+            {
+                PowerLimits = new int[i];
+                CoreClocks = new int[i];
+                MemoryClocks = new int[i];
+                FanSpeeds = new uint[i];
+            }
+
+            public int[] PowerLimits;
+            public int[] CoreClocks;
+            public int[] MemoryClocks;
+            public uint[] FanSpeeds;
+        }
+
         private static void ConnectToOHM()
         {
             Computer c = new Computer { GPUEnabled = true };
@@ -118,22 +156,27 @@ namespace OMineGuard
                         }
                     }
                     catch { }
-                    ////////////////////   OPEN HARDWARE MONITOR
-                    try
-                    {
-                        for (int i = 0; i < GPUsCount; i++)
-                        {
-                            GPUs[i].Update();
-                        }
-                        for (int i = 0; i < GPUsCount; i++)
-                        {
-                            OC.OHM_Temperatures[i] = gpuTempSensors[i].Value;
-
-                            MS[4] += MainWindow.ToNChar(gpuTempSensors[i].Value.GetValueOrDefault().ToString() + "°C");
-                        }
-                    }
-                    catch { }
                     TCP.OMWsendState(OC, TCP.OMWstateType.Overclock);
+                    ////////////////////   OPEN HARDWARE MONITOR
+                    if (OHMisEnabled)
+                    {
+                        int[] x = new int[GPUsCount];
+                        try
+                        {
+                            for (int i = 0; i < GPUsCount; i++)
+                            {
+                                GPUs[i].Update();
+                            }
+                            for (int i = 0; i < GPUsCount; i++)
+                            {
+                                x[i] = Convert.ToInt32(gpuTempSensors[i].Value);
+
+                                MS[4] += MainWindow.ToNChar(gpuTempSensors[i].Value.GetValueOrDefault().ToString() + "°C");
+                            }
+                        }
+                        catch { }
+                        TCP.OMWsendState(x, TCP.OMWstateType.Temperatures);
+                    }
                     MainWindow.context.Send(MainWindow.SetMS, MS);
                     Thread.Sleep(1000);
                 }
@@ -148,16 +191,12 @@ namespace OMineGuard
                 MSI_CoreClocks = new int[i];
                 MSI_MemoryClocks = new int[i];
                 MSI_FanSpeeds = new uint[i];
-
-                OHM_Temperatures = new float?[i];
             }
 
             public int[] MSI_PowerLimits;
             public int[] MSI_CoreClocks;
             public int[] MSI_MemoryClocks;
             public uint[] MSI_FanSpeeds;
-
-            public float?[] OHM_Temperatures;
         }
 
         private static int SetParam(int i, int multiply, int[] param, int max, int min, int def)

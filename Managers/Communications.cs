@@ -81,6 +81,14 @@ namespace OMineGuard
                             new string[] { SM.Miners.Bminer.ToString(), SM.Miners.Claymore.ToString(), SM.Miners.Gminer.ToString() }, 
                             OMWcontrolType.Miners);
 
+                        Sendcontrol(client, stream,
+                            OCM.DC,
+                            OMWcontrolType.DefClock);
+
+                        Sendcontrol(client, stream,
+                            MM.Indication,
+                            OMWcontrolType.Indication);
+
                         Sendcontrol(client, stream, 
                             (new TextRange(MW.This.MinerLog.Document.ContentStart, MW.This.MinerLog.Document.ContentEnd)).Text, 
                             OMWcontrolType.Log);
@@ -144,6 +152,8 @@ namespace OMineGuard
                             case OMWcontrolType.Miners: header = "Miners"; break;
                             case OMWcontrolType.Algoritms: header = "Algoritms"; break;
                             case OMWcontrolType.Log: header = "Logging"; break;
+                            case OMWcontrolType.DefClock: header = "DefClock"; break;
+                            case OMWcontrolType.Indication: header = "Indication"; break;
                         }
 
                         if (header == "Algoritms")
@@ -173,7 +183,9 @@ namespace OMineGuard
             Profile,
             Miners,
             Algoritms,
-            Log
+            Log,
+            DefClock,
+            Indication
         }
         #endregion
         #region read msg
@@ -230,7 +242,7 @@ namespace OMineGuard
                             string header = "";
                             switch (type)
                             {
-                                case OMWstateType.Hasrates:    header = "Hasrates";   break;
+                                case OMWstateType.Hashrates:    header = "Hashrates";   break;
                                 case OMWstateType.Overclock:   header = "Overclock";  break;
                                 case OMWstateType.Indication:  header = "Indication"; break;
                                 case OMWstateType.Logging:     header = "Logging";    break;
@@ -238,6 +250,8 @@ namespace OMineGuard
                                 case OMWstateType.LowHWachdog: header = "LowHWachdog"; break;
                                 case OMWstateType.IdleWachdog: header = "IdleWachdog"; break;
                                 case OMWstateType.ShowMLogTB: header = "ShowMLogTB"; break;
+                                case OMWstateType.DefClock: header = "DefClock"; break;
+                                case OMWstateType.Temperatures: header = "Temperatures"; break;
                             }
 
                             string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
@@ -259,14 +273,16 @@ namespace OMineGuard
         }
         public enum OMWstateType
         {
-            Hasrates,
+            Hashrates,
             Overclock,
             Indication,
             Logging,
             WachdogInfo,
             LowHWachdog,
             IdleWachdog,
-            ShowMLogTB
+            ShowMLogTB,
+            DefClock,
+            Temperatures
         }
         #endregion
         #endregion

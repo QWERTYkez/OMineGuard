@@ -21,7 +21,7 @@ namespace OMineGuard
 {
     public partial class MainWindow : Window
     {
-        public const string Ver = "1.7";
+        public const string Ver = "1.8";
         public static string Version;
         public static MainWindow This;
         public static bool AutoScroll = true;
@@ -460,6 +460,12 @@ namespace OMineGuard
                 IM.StopLHWatchdog();
                 IM.StopIdleWatchdog();
                 MM.KillProcess();
+                IM.ProcessСompleted = true;
+                MM.Indication = false;
+                context.Send(LowHwachdogmsg, "");
+                context.Send(Idlewachdogmsg, "");
+                context.Send(Wachdogmsg, "");
+                context.Send(ShowMinerLogmsg, "");
             }
             if (str == "Запустить процесс")
             {
@@ -711,7 +717,7 @@ namespace OMineGuard
                     This.GPUsHashrate2.Text = " " + str.TrimStart(',');
                     This.TotalHashrate.Text = x.Sum().ToString().Replace(',', '.');
                     This.TotalHashrate2.Text = x.Sum().ToString().Replace(',', '.');
-                    TCP.OMWsendState(x, TCP.OMWstateType.Hasrates);
+                    TCP.OMWsendState(x, TCP.OMWstateType.Hashrates);
                 }
                 else
                 {
@@ -719,7 +725,13 @@ namespace OMineGuard
                     This.GPUsHashrate2.Text = "";
                     This.TotalHashrate.Text = "";
                     This.TotalHashrate2.Text = "";
-                    TCP.OMWsendState(null, TCP.OMWstateType.Hasrates);
+                    TCP.OMWsendState(null, TCP.OMWstateType.Hashrates);
+                }
+                if ((int[])((object[])o)[1] != null && !OCM.OHMisEnabled)
+                {
+                    int[] x = (int[])((object[])o)[1];
+
+                    TCP.OMWsendState(x, TCP.OMWstateType.Temperatures);
                 }
             }
             else
@@ -728,7 +740,7 @@ namespace OMineGuard
                 This.GPUsHashrate2.Text = "";
                 This.TotalHashrate.Text = "";
                 This.TotalHashrate2.Text = "";
-                TCP.OMWsendState(null, TCP.OMWstateType.Hasrates);
+                TCP.OMWsendState(null, TCP.OMWstateType.Hashrates);
             }
         }
         public static void Setoverclock(object o)
@@ -871,6 +883,7 @@ namespace OMineGuard
         private static void LowHwachdogmsg(object o)
         {
             string msg = (string)o;
+            if (IM.ProcessСompleted) return;
             if (msg != "")
             {
                 This.LowHWachdog.Text = msg;
