@@ -366,6 +366,7 @@ namespace OMineGuard
             {
                 IndicationThread.Abort();
                 TCP.OMWsendState(false, TCP.OMWstateType.Indication);
+                TCP.OMWsendInform(false, TCP.OMWinformType.Indication);
                 IM.WachingThread.Abort();
             }
             catch { }
@@ -435,6 +436,7 @@ namespace OMineGuard
                  }
                  // начало индикации
                  TCP.OMWsendState(true,TCP.OMWstateType.Indication);
+                 TCP.OMWsendInform(true, TCP.OMWinformType.Indication);
                  Indication = true;
                  while (Process.GetProcessesByName(StartedProcessName).Length != 0 && !IM.ProcessСompleted)
                  {
@@ -445,6 +447,7 @@ namespace OMineGuard
                  }
                  // завершение индикации
                  TCP.OMWsendState(false, TCP.OMWstateType.Indication);
+                 TCP.OMWsendInform(false, TCP.OMWinformType.Indication);
                  Indication = false;
                  MW.context.Send(SetIndicationColor, Brushes.Red);
                  MW.context.Send((object o) =>

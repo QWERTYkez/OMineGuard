@@ -23,27 +23,27 @@ namespace OMineGuard
         #region INFO
         private static MinerInfo currentInfo;
         private static object InfoKey = new object();
-        public static MinerInfo Info
-        {
-            get { lock (InfoKey) return currentInfo; }
-            set
-            {
-                AVGMinerInfo avg = null;
-                lock (InfoKey)
-                {
-                    currentInfo = value;
-                    if (value.Hashrates != null)
-                    {
-                        LInfo.Add(value);
-                        avg = AVGInfo;
-                    }
-                }
-                if (avg != null)
-                {
-                    TCP.INFsend(avg);
-                }
-            }
-        }
+        //public static MinerInfo Info
+        //{
+        //    get { lock (InfoKey) return currentInfo; }
+        //    set
+        //    {
+        //        AVGMinerInfo avg = null;
+        //        lock (InfoKey)
+        //        {
+        //            currentInfo = value;
+        //            if (value.Hashrates != null)
+        //            {
+        //                LInfo.Add(value);
+        //                avg = AVGInfo;
+        //            }
+        //        }
+        //        if (avg != null)
+        //        {
+        //            TCP.INFsend(avg);
+        //        }
+        //    }
+        //}
         public static AVGMinerInfo AVGInfo
         {
             get
@@ -106,27 +106,27 @@ namespace OMineGuard
         static double[] derr;
         private static void ErrorGethashrate()
         {
-            MW.context.Send(MW.Sethashrate, null);
-            if (Info != null)
-            {
-                if (Info.Hashrates != null)
-                {
-                    Info = new MinerInfo(Info.Hashrates.Length);
-                    derr = new double[Info.Hashrates.Length];
-                    for (int i = 0; i < Info.Hashrates.Length; i++) derr[i] = -1;
-                }
-                else
-                {
-                    Info = new MinerInfo(null, null, null, null, null, null);
-                    derr = null;
-                }
-            }
-            else
-            {
-                Info = new MinerInfo(null, null, null, null, null, null);
-                derr = null;
-            }
-            HashrateWachdog(derr);
+            //MW.context.Send(MW.Sethashrate, null);
+            //if (Info != null)
+            //{
+            //    if (Info.Hashrates != null)
+            //    {
+            //        Info = new MinerInfo(Info.Hashrates.Length);
+            //        derr = new double[Info.Hashrates.Length];
+            //        for (int i = 0; i < Info.Hashrates.Length; i++) derr[i] = -1;
+            //    }
+            //    else
+            //    {
+            //        Info = new MinerInfo(null, null, null, null, null, null);
+            //        derr = null;
+            //    }
+            //}
+            //else
+            //{
+            //    Info = new MinerInfo(null, null, null, null, null, null);
+            //    derr = null;
+            //}
+            //HashrateWachdog(derr);
         }
         public static Thread WachingThread;
         private static ThreadStart WachingClaymore = new ThreadStart(() =>
@@ -178,7 +178,7 @@ namespace OMineGuard
                             ShInvalid = JsonConvert.DeserializeObject<int[]>($"[{LS[11].Replace(";", ",")}]");
 
                             MI = new MinerInfo(Hashrates, Temperatures, Fanspeeds, ShAccepted, ShRejected, ShInvalid);
-                            Info = MI;
+                            //Info = MI;
 
                             MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
                             HashrateWachdog(MI.Hashrates);
@@ -229,7 +229,7 @@ namespace OMineGuard
                         ShRejected = GDs.Select(GD => GD.rejected_shares).ToArray();
 
                         MI = new MinerInfo(Hashrates, Temperatures, null, ShAccepted, ShRejected, null);
-                        Info = MI;
+                        //Info = MI;
 
                         MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
                         HashrateWachdog(MI.Hashrates);
@@ -285,7 +285,7 @@ namespace OMineGuard
                         ShRejected = new int[] { INF.stratum.rejected_shares };
 
                         MI = new MinerInfo(Hashrates, Temperatures, Fanspeeds, ShAccepted, ShRejected, null);
-                        Info = MI;
+                        //Info = MI;
 
                         MW.context.Send(MW.Sethashrate, new object[] { MI.Hashrates, MI.Temperatures });
                         HashrateWachdog(MI.Hashrates);

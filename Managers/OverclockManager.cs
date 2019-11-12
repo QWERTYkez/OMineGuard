@@ -176,6 +176,7 @@ namespace OMineGuard
                         }
                         catch { }
                         TCP.OMWsendState(x, TCP.OMWstateType.Temperatures);
+                        TCP.OMWsendInform(x, TCP.OMWinformType.Temperatures);
                     }
                     MainWindow.context.Send(MainWindow.SetMS, MS);
                     Thread.Sleep(1000);

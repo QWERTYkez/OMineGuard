@@ -11,8 +11,6 @@ using MW = OMineGuard.MainWindow;
 using MM = OMineGuard.MinersManager;
 using OCM = OMineGuard.OverclockManager;
 using SM = OMineGuard.SettingsManager;
-using System.Diagnostics;
-using System.Windows;
 using System;
 using System.Windows.Documents;
 
@@ -29,7 +27,7 @@ namespace OMineGuard
         public static void ServersStop()
         {
             ServerAlive = false;
-            //Server1.Stop();
+            Server1.Stop();
             Server2.Stop();
             Server3.Stop();
         }
@@ -59,6 +57,29 @@ namespace OMineGuard
                     Thread.Sleep(100);
                 }
             });
+
+            Task.Run(() =>
+            {
+                while (ServerAlive)
+                {
+                    try
+                    {
+                        Server1.Start();
+                        break;
+                    }
+                    catch { }
+                    Thread.Sleep(100);
+                }
+                while (ServerAlive)
+                {
+                    try
+                    {
+                        OMWinforming(Server1.AcceptTcpClient());
+                    }
+                    catch { }
+                    Thread.Sleep(100);
+                }
+            });
         }
 
         static void OMWcontrol(TcpClient client)
@@ -69,27 +90,27 @@ namespace OMineGuard
                 {
                     try
                     {
-                        Sendcontrol(client, stream, 
+                        BaseSendMSG(client, stream, 
                             PM.Profile, 
                             OMWcontrolType.Profile);
 
-                        Sendcontrol(client, stream, 
+                        BaseSendMSG(client, stream, 
                             SM.MinersD, 
                             OMWcontrolType.Algoritms);
 
-                        Sendcontrol(client, stream, 
+                        BaseSendMSG(client, stream, 
                             new string[] { SM.Miners.Bminer.ToString(), SM.Miners.Claymore.ToString(), SM.Miners.Gminer.ToString() }, 
                             OMWcontrolType.Miners);
 
-                        Sendcontrol(client, stream,
+                        BaseSendMSG(client, stream,
                             OCM.DC,
                             OMWcontrolType.DefClock);
 
-                        Sendcontrol(client, stream,
+                        BaseSendMSG(client, stream,
                             MM.Indication,
                             OMWcontrolType.Indication);
 
-                        Sendcontrol(client, stream, 
+                        BaseSendMSG(client, stream, 
                             (new TextRange(MW.This.MinerLog.Document.ContentStart, MW.This.MinerLog.Document.ContentEnd)).Text, 
                             OMWcontrolType.Log);
 
@@ -136,7 +157,7 @@ namespace OMineGuard
         }
         #region send msg
         private static object key1 = new object();
-        public static void Sendcontrol(TcpClient client, NetworkStream stream, object body, OMWcontrolType type)
+        public static void BaseSendMSG(TcpClient client, NetworkStream stream, object body, OMWcontrolType type)
         {
             if (client != null)
             {
@@ -287,87 +308,131 @@ namespace OMineGuard
         #endregion
         #endregion
 
-        #region INF
-        public static Thread INFServerThread;
-        public static void INFServerStart()
-        {
-            try
-            {
-                INFServerThread.Abort();
 
-            }
-            catch { }
-            INFServerThread = new Thread(INFServerTS);
-            //INFServerThread.Start();
+        private static TcpClient OMWinformingClient;
+        private static NetworkStream OMWinformingStream;
+        static void OMWinforming(TcpClient client)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    OMWinformingClient.Close();
+                    OMWinformingClient.Dispose();
+                }
+                catch { }
+
+                NetworkStream stream = client.GetStream();
+
+                //Стартовые сообщения
+                {
+                    OMWsendInform(client, stream,
+                            MM.Indication,
+                            OMWinformType.Indication);
+                }
+
+                OMWinformingClient = client;
+                OMWinformingStream = stream;
+            });
         }
-        public static ThreadStart INFServerTS = new ThreadStart(() =>
+        private static object key3 = new object();
+        public static void OMWsendInform(object body, OMWinformType type)
         {
-            while (true)
+            if (OMWinformingClient != null)
             {
-                try
+                if (OMWinformingClient.Connected)
                 {
-                    Server1.Start();
-                    break;
-                }
-                catch { }
-            }
-            while (true)
-            {
-                try
-                {
-                    INFstreams.Add(Server1.AcceptTcpClient().GetStream());
-                }
-                catch { }
-            }
-        });
-        static List<NetworkStream> INFstreams = new List<NetworkStream>();
-        private static List<NetworkStream> deleteList = new List<NetworkStream>();
-        private static IM.AVGMinerInfo inf;
-        private static object INFkey = new object();
-        private static ThreadStart INFsendTS = new ThreadStart(() =>
-        {
-            string JS;
-            byte[] arrayJS;
-            string JSI;
-            byte[] arrayJSI;
-            string Info;
-            string OClock;
-
-            Info = JsonConvert.SerializeObject(inf);
-
-            JSI = JsonConvert.SerializeObject(new object[] { "info", Info });
-            arrayJSI = Encoding.Default.GetBytes(JSI);
-
-            JS = JsonConvert.SerializeObject(new object[] { "js", $"{arrayJSI.Length}" });
-            arrayJS = Encoding.Default.GetBytes(JS);
-
-            lock (INFkey)
-            {
-                foreach (NetworkStream ns in INFstreams)
-                {
-                    try
+                    lock (key3)
                     {
-                        ns.Write(arrayJS, 0, arrayJS.Length);
-                        ns.Write(arrayJSI, 0, arrayJSI.Length);
+                        try
+                        {
+                            string header = "";
+                            switch (type)
+                            {
+                                case OMWinformType.Hashrates: header = "Hashrates"; break;
+                                //case OMWinformType.Overclock: header = "Overclock"; break;
+                                case OMWinformType.Indication: header = "Indication"; break;
+                                //case OMWinformType.Logging: header = "Logging"; break;
+                                //case OMWinformType.WachdogInfo: header = "WachdogInfo"; break;
+                                //case OMWinformType.LowHWachdog: header = "LowHWachdog"; break;
+                                //case OMWinformType.IdleWachdog: header = "IdleWachdog"; break;
+                                //case OMWinformType.ShowMLogTB: header = "ShowMLogTB"; break;
+                                //case OMWinformType.DefClock: header = "DefClock"; break;
+                                case OMWinformType.Temperatures: header = "Temperatures"; break;
+                            }
+
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
+
+                            byte[] Message = Encoding.Default.GetBytes(msg);
+                            byte[] Header = BitConverter.GetBytes(Message.Length);
+
+                            OMWinformingStream.Write(Header, 0, Header.Length);
+
+                            byte[] b = new byte[1];
+                            OMWinformingStream.Read(b, 0, b.Length);
+
+                            OMWinformingStream.Write(Message, 0, Message.Length);
+                        }
+                        catch { }
                     }
-                    catch (System.IO.IOException) { deleteList.Add(ns); }
-                }
-                while (deleteList.Count > 0)
-                {
-                    INFstreams.Remove(deleteList[0]);
-                    deleteList.Remove(deleteList[0]);
                 }
             }
-            
-            Thread.CurrentThread.Abort();
-        });
-
-        public static void INFsend(IM.AVGMinerInfo info)
-        {
-            inf = info;
-            Thread th = new Thread(INFsendTS);
-            th.Start();
         }
-        #endregion
+        public static void OMWsendInform(TcpClient client, NetworkStream stream, object body, OMWinformType type)
+        {
+            if (client != null)
+            {
+                if (client.Connected)
+                {
+                    lock (key3)
+                    {
+                        try
+                        {
+                            string header = "";
+                            switch (type)
+                            {
+                                case OMWinformType.Hashrates: header = "Hashrates"; break;
+                                //case OMWinformType.Overclock: header = "Overclock"; break;
+                                case OMWinformType.Indication: header = "Indication"; break;
+                                //case OMWinformType.Logging: header = "Logging"; break;
+                                //case OMWinformType.WachdogInfo: header = "WachdogInfo"; break;
+                                //case OMWinformType.LowHWachdog: header = "LowHWachdog"; break;
+                                //case OMWinformType.IdleWachdog: header = "IdleWachdog"; break;
+                                //case OMWinformType.ShowMLogTB: header = "ShowMLogTB"; break;
+                                //case OMWinformType.DefClock: header = "DefClock"; break;
+                                case OMWinformType.Temperatures: header = "Temperatures"; break;
+                            }
+
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
+
+                            byte[] Message = Encoding.Default.GetBytes(msg);
+                            byte[] Header = BitConverter.GetBytes(Message.Length);
+
+                            stream.Write(Header, 0, Header.Length);
+
+                            byte[] b = new byte[1];
+                            stream.Read(b, 0, b.Length);
+
+                            stream.Write(Message, 0, Message.Length);
+                        }
+                        catch { }
+                    }
+                }
+            }
+        }
+        public enum OMWinformType
+        {
+            Hashrates,
+            Temperatures,
+            Indication
+
+            //Overclock,
+            //Logging,
+            //WachdogInfo,
+            //LowHWachdog,
+            //IdleWachdog,
+            //ShowMLogTB,
+            //DefClock
+        }
     }
 }

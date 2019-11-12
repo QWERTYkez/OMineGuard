@@ -115,7 +115,6 @@ namespace OMineGuard
             Autostart();
 
             TCP.ServerStart();
-            TCP.INFServerStart();
         }
         public static void UpdateProfile()
         {
@@ -718,6 +717,7 @@ namespace OMineGuard
                     This.TotalHashrate.Text = x.Sum().ToString().Replace(',', '.');
                     This.TotalHashrate2.Text = x.Sum().ToString().Replace(',', '.');
                     TCP.OMWsendState(x, TCP.OMWstateType.Hashrates);
+                    TCP.OMWsendInform(x, TCP.OMWinformType.Hashrates);
                 }
                 else
                 {
@@ -726,12 +726,14 @@ namespace OMineGuard
                     This.TotalHashrate.Text = "";
                     This.TotalHashrate2.Text = "";
                     TCP.OMWsendState(null, TCP.OMWstateType.Hashrates);
+                    TCP.OMWsendInform(null, TCP.OMWinformType.Hashrates);
                 }
                 if ((int[])((object[])o)[1] != null && !OCM.OHMisEnabled)
                 {
                     int[] x = (int[])((object[])o)[1];
 
                     TCP.OMWsendState(x, TCP.OMWstateType.Temperatures);
+                    TCP.OMWsendInform(x, TCP.OMWinformType.Temperatures);
                 }
             }
             else
@@ -741,6 +743,7 @@ namespace OMineGuard
                 This.TotalHashrate.Text = "";
                 This.TotalHashrate2.Text = "";
                 TCP.OMWsendState(null, TCP.OMWstateType.Hashrates);
+                TCP.OMWsendInform(null, TCP.OMWinformType.Hashrates);
             }
         }
         public static void Setoverclock(object o)
