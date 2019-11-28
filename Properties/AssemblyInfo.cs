@@ -51,5 +51,5 @@ using System.Windows;
 // Можно задать все значения или принять номера сборки и редакции по умолчанию 
 // используя "*", как показано ниже:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion(OMineGuard.MainWindow.Ver + ".*")]
-[assembly: AssemblyFileVersion(OMineGuard.MainWindow.Ver + ".0.0")]
+[assembly: AssemblyVersion(OMineGuard.Views.MainWindow.Ver + ".*")]
+[assembly: AssemblyFileVersion(OMineGuard.Views.MainWindow.Ver + ".0.0")]

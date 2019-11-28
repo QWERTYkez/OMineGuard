@@ -1,22 +1,21 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using PM = OMineGuard.ProfileManager;
-using TCP = OMineGuard.TCPserver;
 
-namespace OMineGuard
+namespace OMineGuard.Managers
 {
-    public static class ProfileManager
+    public static class Settings
     {
         public static Profile profile;
         public static Profile Profile
         {
             get
             {
+                if(profile == null)
+                {
+                    profile = ReadProfile();
+                }
                 return profile;
             }
             set
@@ -32,7 +31,7 @@ namespace OMineGuard
             {
                 string JSON = JsonConvert.SerializeObject(profile);
 
-                using (FileStream fstream = new FileStream("Profile.json", FileMode.Create))
+                using (FileStream fstream = new FileStream("json", FileMode.Create))
                 {
                     byte[] array = System.Text.Encoding.Default.GetBytes(JSON);
                     fstream.Write(array, 0, array.Length);
@@ -45,7 +44,7 @@ namespace OMineGuard
             {
                 try
                 {
-                    using (FileStream fstream = File.OpenRead("Profile.json"))
+                    using (FileStream fstream = File.OpenRead("json"))
                     {
                         byte[] array = new byte[fstream.Length];
                         fstream.Read(array, 0, array.Length);
@@ -64,9 +63,9 @@ namespace OMineGuard
             profile = ReadProfile();
         }
 
-        public static Profile.Config GetConfig(long? id)
+        public static Config GetConfig(long? id)
         {
-            foreach (Profile.Config c in Profile.ConfigsList)
+            foreach (Config c in Profile.ConfigsList)
             {
                 if (c.ID == id)
                 {
@@ -75,9 +74,9 @@ namespace OMineGuard
             }
             return null;
         }
-        public static Profile.Overclock GetClock(long? id)
+        public static Overclock GetClock(long? id)
         {
-            foreach (Profile.Overclock c in Profile.ClocksList)
+            foreach (Overclock c in Profile.ClocksList)
             {
                 if (c.ID == id)
                 {
@@ -109,65 +108,74 @@ namespace OMineGuard
         public long? StartedID;
         public string StartedProcess;
         public int Digits;
-        public bool[] GPUsSwitch;
+        public List<bool> GPUsSwitch;
         public List<Config> ConfigsList;
         public List<Overclock> ClocksList;
         public InformManager Informer;
-        public double LogTextSize;
+        public int LogTextSize;
 
         public int TimeoutWachdog;
         public int TimeoutIdle;
         public int TimeoutLH;
 
-        public class Config
+        
+    }
+    public class Config
+    {
+        public Config()
         {
-            public Config()
-            {
-                Name = "Новый конфиг";
-                Algoritm = "";
-                Pool = "";
-                Wallet = "";
-                Params = "";
-                MinHashrate = 0;
-                ID = DateTime.UtcNow.ToBinary();
-            }
-
-            public string Name;
-            public string Algoritm;
-            public SettingsManager.Miners? Miner;
-            public string Pool;
-            public string Port;
-            public string Wallet;
-            public string Params;
-            public long? ClockID;
-            public double MinHashrate;
-            public long ID;
+            Name = "Новый конфиг";
+            Algoritm = "";
+            Pool = "";
+            Wallet = "";
+            Params = "";
+            MinHashrate = 0;
+            ID = DateTime.UtcNow.ToBinary();
         }
-        public class Overclock
+
+        public string Name;
+        public string Algoritm;
+        public int? Miner;
+        public string Pool;
+        public string Port;
+        public string Wallet;
+        public string Params;
+        public long? ClockID;
+        public double MinHashrate;
+        public long ID;
+    }
+    public class Overclock
+    {
+        public Overclock()
         {
-            public Overclock()
-            {
-                Name = "Новый разгон";
-                ID = DateTime.UtcNow.ToBinary();
-            }
-
-            public string Name;
-            public int[] PowLim;
-            public int[] CoreClock;
-            public int[] MemoryClock;
-            public uint[] FanSpeed;
-            public long ID;
+            Name = "Новый разгон";
+            ID = DateTime.UtcNow.ToBinary();
         }
-        public class InformManager
+
+        public string Name;
+        public int[] PowLim;
+        public int[] CoreClock;
+        public int[] MemoryClock;
+        public int[] FanSpeed;
+        public long ID;
+    }
+    public class InformManager
+    {
+        public InformManager()
         {
-            public InformManager()
-            {
-                VkInform = false;
-                VKuserID = "";
-            }
-
-            public bool VkInform;
-            public string VKuserID;
+            VkInform = false;
+            VKuserID = "";
         }
+
+        public bool VkInform;
+        public string VKuserID;
+    }
+
+    public struct DC
+    {
+        public int[] PowerLimits;
+        public int[] CoreClocks;
+        public int[] MemoryClocks;
+        public int[] FanSpeeds;
     }
 }

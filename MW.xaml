@@ -13,8 +13,8 @@
     MinHeight="600"
     Background="#FF686868"
     mc:Ignorable="d">
-    <!--  705  -->
-    <Grid Background="#FF686868">
+    <Grid/>
+    <!--<Grid Background="#FF686868">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -995,9 +995,7 @@
                                 x:Name="TextSizeTB"
                                 Width="40"
                                 FontSize="12"
-                                Foreground="White">
-                                --
-                            </TextBlock>
+                                Foreground="White" />
                             <TextBlock
                                 Margin="40,0,5,0"
                                 FontSize="12"
@@ -1197,5 +1195,5 @@
                 </Grid>
             </TabItem>
         </TabControl>
-    </Grid>
+    </Grid>-->
 </Window>
