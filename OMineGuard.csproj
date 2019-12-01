@@ -83,6 +83,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\RichTextBoxHelper.cs" />
+    <Compile Include="Miners\Bminer.cs" />
+    <Compile Include="Miners\Claymore.cs" />
+    <Compile Include="Miners\Gminer.cs" />
+    <Compile Include="Miners\_Miner.cs" />
     <Compile Include="Models\MainModel.cs" />
     <Compile Include="Styles\Converters.xaml.cs">
       <DependentUpon>Converters.xaml</DependentUpon>

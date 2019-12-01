@@ -52,6 +52,8 @@ namespace OMineGuard.ViewModels
                 case "Profile":
                     {
                         Profile = _model.Profile;
+
+                        LogFontSize = Profile.LogTextSize;
                         GPUsSwitch = Profile.GPUsSwitch;
                         if (Profile.GPUsSwitch != null)
                         {
@@ -88,24 +90,24 @@ namespace OMineGuard.ViewModels
                     break;
                 case "OC":
                     {
-                        //if (InfPowerLimits != _model.OC.MSI_PowerLimits)
-                        //{
-                        //    InfPowerLimits = _model.OC.MSI_PowerLimits;
-                        //}
-                        //if (InfCoreClocks != _model.OC.MSI_CoreClocks)
-                        //{
-                        //    InfCoreClocks = _model.OC.MSI_CoreClocks;
-                        //}
-                        //if (InfMemoryClocks != _model.OC.MSI_MemoryClocks)
-                        //{
-                        //    InfMemoryClocks = _model.OC.MSI_MemoryClocks;
-                        //}
-                        //if (InfFanSpeeds != _model.OC.MSI_FanSpeeds)
-                        //{
-                        //    InfFanSpeeds = _model.OC.MSI_FanSpeeds;
-                        //}
+                        if (InfPowerLimits != _model.OC.MSI_PowerLimits)
+                        {
+                            InfPowerLimits = _model.OC.MSI_PowerLimits;
+                        }
+                        if (InfCoreClocks != _model.OC.MSI_CoreClocks)
+                        {
+                            InfCoreClocks = _model.OC.MSI_CoreClocks;
+                        }
+                        if (InfMemoryClocks != _model.OC.MSI_MemoryClocks)
+                        {
+                            InfMemoryClocks = _model.OC.MSI_MemoryClocks;
+                        }
+                        if (InfFanSpeeds != _model.OC.MSI_FanSpeeds)
+                        {
+                            InfFanSpeeds = _model.OC.MSI_FanSpeeds;
+                        }
 
-                        //ResetGPUs();
+                        ResetGPUs();
                     }
                     break;
                 case "DefClock":
@@ -190,17 +192,17 @@ namespace OMineGuard.ViewModels
             SetRigName = new RelayCommand(obj =>
             {
                 Profile.RigName = RigName;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetAutoRun = new RelayCommand(obj =>
             {
                 Profile.Autostart = AutoRun;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetGPUsSwitch = new RelayCommand(obj =>
             {
                 Profile.GPUsSwitch = GPUsSwitch;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
         }
         private void SaveProfile()
@@ -331,7 +333,7 @@ namespace OMineGuard.ViewModels
             {
                 Profile.ConfigsList.Add(new Managers.Config());
                 ConfigsNames = from i in Profile.ConfigsList select i.Name;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
                 SelectedConfigIndex = ConfigsNames.Count() - 1;
             });
             MinusConfig = new RelayCommand(obj =>
@@ -341,7 +343,7 @@ namespace OMineGuard.ViewModels
                     Profile.ConfigsList.RemoveAt(SelectedConfigIndex);
                     ConfigsNames = from i in Profile.ConfigsList select i.Name;
                     SelectedConfigIndex = -1;
-                    //_model.cmd_SaveProfile(Profile);
+                    _model.cmd_SaveProfile(Profile);
                 }
             });
             SaveConfig = new RelayCommand(obj =>
@@ -349,7 +351,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedConfigIndex > -1)
                 {
                     SaveProfile();
-                    //_model.cmd_SaveProfile(Profile);
+                    _model.cmd_SaveProfile(Profile);
                 }
             });
             StartConfig = new RelayCommand(obj =>
@@ -357,7 +359,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedConfigIndex > -1)
                 {
                     SaveProfile();
-                    //_model.cmd_RunProfile(Profile, SelectedConfigIndex);
+                    _model.cmd_RunProfile(Profile, SelectedConfigIndex);
                 }
             });
         }
@@ -492,7 +494,7 @@ namespace OMineGuard.ViewModels
             {
                 Profile.ClocksList.Add(new Managers.Overclock());
                 OverclocksNames = from i in Profile.ClocksList select i.Name;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
                 SelectedOverclockIndex = OverclocksNames.Count() - 1;
                 
             });
@@ -502,7 +504,7 @@ namespace OMineGuard.ViewModels
                 {
                     Profile.ClocksList.RemoveAt(SelectedOverclockIndex);
                     OverclocksNames = from i in Profile.ClocksList select i.Name;
-                    //_model.cmd_SaveProfile(Profile);
+                    _model.cmd_SaveProfile(Profile);
                     SelectedOverclockIndex = -1;
                 }
             });
@@ -511,7 +513,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedOverclockIndex > -1)
                 {
                     SaveCLock();
-                    //_model.cmd_SaveProfile(Profile);
+                    _model.cmd_SaveProfile(Profile);
                 }
             });
             ApplyOverclock = new RelayCommand(obj =>
@@ -519,7 +521,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedOverclockIndex > -1)
                 {
                     SaveCLock();
-                    //_model.cmd_ApplyClock(Profile, SelectedOverclockIndex);
+                    _model.cmd_ApplyClock(Profile, SelectedOverclockIndex);
                 }
             });
         }
@@ -556,7 +558,7 @@ namespace OMineGuard.ViewModels
         public string LogHashrate { get; set; }
         public string LogTemperature { get; set; }
         public string LogTotalHash { get; set; }
-        public int LogFontSize { get; set; } = Managers.Settings.Profile.LogTextSize;
+        public int LogFontSize { get; set; }
         public RelayCommand SetLogFontSize { get; set; }
         public bool LogAutoscroll { get; set; } = true;
         public RelayCommand ShowMinerLog { get; set; }
@@ -584,16 +586,16 @@ namespace OMineGuard.ViewModels
         {
             SetLogFontSize = new RelayCommand(obj =>
             {
-                Managers.Settings.Profile.LogTextSize = LogFontSize;
-                Managers.Settings.SaveProfile();
+                Profile.LogTextSize = LogFontSize;
+                _model.cmd_SaveProfile(Profile);
             });
             ShowMinerLog = new RelayCommand(obj => 
             {
-                //_model.cmd_ShowMinerLog();
+                _model.cmd_ShowMinerLog();
             });
             SwitchProcess = new RelayCommand(obj =>
             {
-                //_model.cmd_SwitchProcess();
+                _model.cmd_SwitchProcess();
             });
         }
         #endregion
@@ -623,37 +625,37 @@ namespace OMineGuard.ViewModels
                 {
                     IdleTimeout = WachdogTimer;
                 }
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetIdleTimeout = new RelayCommand(obj =>
             {
                 Profile.TimeoutIdle = IdleTimeout;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetLHTimeout = new RelayCommand(obj =>
             {
                 Profile.TimeoutLH = LHTimeout;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetVKInformer = new RelayCommand(obj =>
             {
                 Profile.Informer.VkInform = VKInformer;
                 if (!VKInformer) Profile.Informer.VKuserID = "";
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetVKUserID = new RelayCommand(obj =>
             {
                 Profile.Informer.VKuserID = VKUserID;
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetTelegramInformer = new RelayCommand(obj =>
             {
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
             SetTelegramUserID = new RelayCommand(obj =>
             {
 
-                //_model.cmd_SaveProfile(Profile);
+                _model.cmd_SaveProfile(Profile);
             });
         }
         #endregion

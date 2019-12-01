@@ -7,25 +7,24 @@ namespace OMineGuard.Managers
 {
     public static class Settings
     {
-        public static Profile profile;
-        public static Profile Profile
+        static Settings()
         {
-            get
-            {
-                if(profile == null)
-                {
-                    profile = ReadProfile();
-                }
-                return profile;
-            }
-            set
-            {
-                profile = value;
-                SaveProfile();
-            }
+            profile = ReadProfile();
         }
+        private static Profile profile;
+
+        public static Profile GetProfile()
+        {
+            return profile;
+        }
+        public static void SetProfile(Profile prof)
+        {
+            profile = prof;
+            SaveProfile();
+        }
+
         private static object profileKey = new object();
-        public static void SaveProfile()
+        private static void SaveProfile()
         {
             lock (profileKey)
             {
@@ -38,7 +37,7 @@ namespace OMineGuard.Managers
                 }
             }
         }
-        public static Profile ReadProfile()
+        private static Profile ReadProfile()
         {
             lock (profileKey)
             {
@@ -57,33 +56,6 @@ namespace OMineGuard.Managers
                     return new Profile();
                 }
             }
-        }
-        public static void Initialize()
-        {
-            profile = ReadProfile();
-        }
-
-        public static Config GetConfig(long? id)
-        {
-            foreach (Config c in Profile.ConfigsList)
-            {
-                if (c.ID == id)
-                {
-                    return c;
-                }
-            }
-            return null;
-        }
-        public static Overclock GetClock(long? id)
-        {
-            foreach (Overclock c in Profile.ClocksList)
-            {
-                if (c.ID == id)
-                {
-                    return c;
-                }
-            }
-            return null;
         }
     }
 
@@ -117,8 +89,6 @@ namespace OMineGuard.Managers
         public int TimeoutWachdog;
         public int TimeoutIdle;
         public int TimeoutLH;
-
-        
     }
     public class Config
     {
@@ -170,7 +140,13 @@ namespace OMineGuard.Managers
         public bool VkInform;
         public string VKuserID;
     }
-
+    public struct OC
+    {
+        public int[] MSI_PowerLimits;
+        public int[] MSI_CoreClocks;
+        public int[] MSI_MemoryClocks;
+        public int[] MSI_FanSpeeds;
+    }
     public struct DC
     {
         public int[] PowerLimits;
