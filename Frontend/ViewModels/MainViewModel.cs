@@ -26,7 +26,7 @@ namespace OMineGuard.ViewModels
             IniBaseSettingsCommands();
         }
 
-        private Managers.Profile Profile;
+        private Backend.Profile Profile;
         private Dictionary<string, int[]> Algs;
         private List<string> MinersList;
         public int GPUs { get; set; }
@@ -44,7 +44,7 @@ namespace OMineGuard.ViewModels
             int m = l.Max();
             if (GPUs != m) GPUs = m;
         }
-        public Managers.DC DefClock { get; set; }
+        public Backend.DC DefClock { get; set; }
         private void ModelChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
@@ -277,7 +277,7 @@ namespace OMineGuard.ViewModels
                     Params = Profile.ConfigsList[SelectedConfigIndex].Params;
                     if (Profile.ConfigsList[SelectedConfigIndex].ClockID != null)
                     {
-                        foreach (Managers.Overclock c in Profile.ClocksList)
+                        foreach (Backend.Overclock c in Profile.ClocksList)
                         {
                             if (c.ID == Profile.ConfigsList[SelectedConfigIndex].ClockID)
                             {
@@ -331,7 +331,7 @@ namespace OMineGuard.ViewModels
             });
             PlusConfig = new RelayCommand(obj =>
             {
-                Profile.ConfigsList.Add(new Managers.Config());
+                Profile.ConfigsList.Add(new Backend.Config());
                 ConfigsNames = from i in Profile.ConfigsList select i.Name;
                 _model.cmd_SaveProfile(Profile);
                 SelectedConfigIndex = ConfigsNames.Count() - 1;
@@ -492,7 +492,7 @@ namespace OMineGuard.ViewModels
 
             PlusOverclock = new RelayCommand(obj =>
             {
-                Profile.ClocksList.Add(new Managers.Overclock());
+                Profile.ClocksList.Add(new Backend.Overclock());
                 OverclocksNames = from i in Profile.ClocksList select i.Name;
                 _model.cmd_SaveProfile(Profile);
                 SelectedOverclockIndex = OverclocksNames.Count() - 1;

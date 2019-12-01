@@ -13,7 +13,7 @@ namespace OMineGuard.Miners
         private protected abstract string Directory { get; set; }
         private protected abstract string ProcessName { get; set; }
         private protected abstract Process miner { get; set; }
-        private protected abstract void RunThisMiner(Managers.Config Config);
+        private protected abstract void RunThisMiner(Backend.Config Config);
 
         //common
         public Miner()
@@ -44,7 +44,7 @@ namespace OMineGuard.Miners
                 }
             });
         }
-        public Task StartMiner(Managers.Config Config)
+        public Task StartMiner(Backend.Config Config)
         {
             return Task.Run(async () =>
             {

@@ -1,4 +1,4 @@
-﻿using OMineGuard.Managers;
+﻿using OMineGuard.Backend;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;

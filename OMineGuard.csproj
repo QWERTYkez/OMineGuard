@@ -82,24 +82,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Classes\RichTextBoxHelper.cs" />
-    <Compile Include="Miners\Bminer.cs" />
-    <Compile Include="Miners\Claymore.cs" />
-    <Compile Include="Miners\Gminer.cs" />
-    <Compile Include="Miners\_Miner.cs" />
-    <Compile Include="Models\MainModel.cs" />
-    <Compile Include="Styles\Converters.xaml.cs">
+    <Compile Include="Frontend\Classes\RichTextBoxHelper.cs" />
+    <Compile Include="Backend\Miners\Bminer.cs" />
+    <Compile Include="Backend\Miners\Claymore.cs" />
+    <Compile Include="Backend\Miners\Gminer.cs" />
+    <Compile Include="Backend\Miners\_Miner.cs" />
+    <Compile Include="Backend\Models\MainModel.cs" />
+    <Compile Include="Frontend\Styles\Converters.xaml.cs">
       <DependentUpon>Converters.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Styles\Tumbler.xaml.cs">
+    <Compile Include="Frontend\Styles\Tumbler.xaml.cs">
       <DependentUpon>Tumbler.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ViewModels\MainViewModel.cs" />
-    <Compile Include="ViewModels\_RelayCommand.cs" />
-    <Compile Include="Views\MainWindow.xaml.cs">
+    <Compile Include="Frontend\ViewModels\MainViewModel.cs" />
+    <Compile Include="Frontend\ViewModels\_RelayCommand.cs" />
+    <Compile Include="Frontend\Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
-    <Page Include="MW.xaml">
+    <Page Include="-Del\MW.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -107,29 +107,29 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MW.xaml.cs">
+    <Compile Include="-Del\MW.xaml.cs">
       <DependentUpon>MW.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Styles\Converters.xaml">
+    <Page Include="Frontend\Styles\Converters.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Styles\Tumbler.xaml">
+    <Page Include="Frontend\Styles\Tumbler.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\MainWindow.xaml">
+    <Page Include="Frontend\Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Managers\---InformManager.cs" />
-    <Compile Include="Managers\---MinersManager.cs" />
-    <Compile Include="Managers\---OverclockManager.cs" />
-    <Compile Include="Managers\Settings.cs" />
-    <Compile Include="Managers\---Communications.cs" />
+    <Compile Include="-Del\---InformManager.cs" />
+    <Compile Include="-Del\---MinersManager.cs" />
+    <Compile Include="-Del\---OverclockManager.cs" />
+    <Compile Include="Backend\Settings.cs" />
+    <Compile Include="-Del\---Communications.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

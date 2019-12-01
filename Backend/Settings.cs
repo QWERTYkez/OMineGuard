@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace OMineGuard.Managers
+namespace OMineGuard.Backend
 {
     public static class Settings
     {
