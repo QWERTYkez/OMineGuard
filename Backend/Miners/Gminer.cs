@@ -58,7 +58,7 @@ namespace OMineGuard.Miners
                     break;
             }
             string param = $"--algo {algo} --server {Config.Pool} --port {Config.Port} " +
-                        $"--api 3333 --user {Config.Wallet}.{prof.RigName} " +
+                        $"--api {port} --user {Config.Wallet}.{prof.RigName} " +
                         $"{Config.Params} --logfile \"{logfile}\"";
             if (prof.GPUsSwitch != null)
             {

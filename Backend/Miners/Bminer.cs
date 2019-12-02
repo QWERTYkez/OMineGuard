@@ -60,7 +60,7 @@ namespace OMineGuard.Miners
             }
             string param = $"-uri {algo}://{Config.Wallet}.{prof.RigName}" +
                 $"@{Config.Pool}:{Config.Port} {Config.Params} " +
-                $"-logfile \"{logfile}\" -api 127.0.0.1:3333";
+                $"-logfile \"{logfile}\" -api 127.0.0.1:{port}";
             if (algo == "equihash1445")
             {
                 param += " -pers Auto";
