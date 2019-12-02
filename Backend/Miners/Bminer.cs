@@ -1,6 +1,11 @@
-﻿using OMineGuard.Backend;
+﻿using Newtonsoft.Json;
+using OMineGuard.Backend;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
@@ -10,6 +15,11 @@ namespace OMineGuard.Miners
         private protected override string Directory { get; set; } = "Bminer";
         private protected override string ProcessName { get; set; } = "bminer";
         private protected override Process miner { get; set; }
+
+        public override event Action<long> MinerStarted;
+        public override event Action MinerStoped;
+        public override event Action<string> LogDataReceived;
+
         private protected override void RunThisMiner(Config Config)
         {
             Profile prof = Settings.GetProfile();
@@ -88,6 +98,78 @@ namespace OMineGuard.Miners
             miner.Start();
             miner.BeginErrorReadLine();
             miner.BeginOutputReadLine();
+        }
+
+        private protected override MinerInfo? CurrentMinerGetInfo()
+        {
+            try
+            {
+                WebRequest request = WebRequest.Create($"http://localhost:{port}/api/status");
+                using (WebResponse response = request.GetResponse())
+                {
+                    using (Stream stream = response.GetResponseStream())
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            string content = reader.ReadToEnd();
+                            for (int i = 0; i < 20; i++)
+                            {
+                                content = content.Replace("{\"" + i + "\":", "[");
+                            }
+                            content = content.Replace("}}}}", "}}}]");
+
+                            BminerInfo INF = JsonConvert.DeserializeObject<BminerInfo>(content);
+
+                            List<double> Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToList();
+                            List<int> Temperatures = INF.miners.Select(m => m.device.temperature).ToList();
+                            List<int> Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToList();
+                            List<int> ShAccepted = new List<int> { INF.stratum.accepted_shares };
+                            List<int> ShRejected = new List<int> { INF.stratum.rejected_shares };
+
+                            if (GPUs != null)
+                            {
+                                for (int i = 0; i < GPUs.Count; i++)
+                                {
+                                    if (!GPUs[i])
+                                    {
+                                        Hashrates.Insert(i, -1);
+                                        Temperatures.Insert(i, -1);
+                                        Fanspeeds.Insert(i, -1);
+                                    }
+                                }
+                            }
+
+                            return new MinerInfo(Hashrates, Temperatures, Fanspeeds, 
+                                INF.stratum.accepted_shares, INF.stratum.rejected_shares, null);
+                        }
+                    }
+                }
+            }
+            catch { return null; }
+        }
+        private class BminerInfo
+        {
+            public BminerStratum stratum { get; set; }
+            public List<BminerMiner> miners { get; set; }
+        }
+        private class BminerStratum
+        {
+            public int accepted_shares { get; set; }
+            public int rejected_shares { get; set; }
+        }
+        private class BminerMiner
+        {
+            public BminerSolver solver { get; set; }
+            public BminerDevice device { get; set; }
+        }
+        private class BminerSolver
+        {
+            public double solution_rate { get; set; }
+        }
+        private class BminerDevice
+        {
+            public int temperature { get; set; }
+            public int fan_speed { get; set; }
         }
     }
 }

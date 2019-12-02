@@ -1,6 +1,11 @@
-﻿using OMineGuard.Backend;
+﻿using Newtonsoft.Json;
+using OMineGuard.Backend;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
@@ -10,6 +15,11 @@ namespace OMineGuard.Miners
         private protected override string Directory { get; set; } = "Gminer";
         private protected override string ProcessName { get; set; } = "miner";
         private protected override Process miner { get; set; }
+
+        public override event Action<long> MinerStarted;
+        public override event Action MinerStoped;
+        public override event Action<string> LogDataReceived;
+
         private protected override void RunThisMiner(Config Config)
         {
             Profile prof = Settings.GetProfile();
@@ -83,6 +93,59 @@ namespace OMineGuard.Miners
             miner.Start();
             miner.BeginErrorReadLine();
             miner.BeginOutputReadLine();
+        }
+
+        private protected override MinerInfo? CurrentMinerGetInfo()
+        {
+            try
+            {
+                WebRequest request = WebRequest.Create($"http://localhost:{port}/stat");
+                using (WebResponse response = request.GetResponse())
+                {
+                    using (Stream stream = response.GetResponseStream())
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            GminerDevice[] GDs = JsonConvert.DeserializeObject<GminerInfo>(reader.ReadToEnd()).
+                                devices.OrderBy(GD => GD.gpu_id).ToArray();
+
+                            List<double> Hashrates = GDs.Select(GD => GD.speed).ToList();
+                            List<int> Temperatures = GDs.Select(GD => GD.temperature).ToList();
+                            List<int> ShAccepted = GDs.Select(GD => GD.accepted_shares).ToList();
+                            List<int> ShRejected = GDs.Select(GD => GD.rejected_shares).ToList();
+
+                            if (GPUs != null)
+                            {
+                                for (int i = 0; i < GPUs.Count; i++)
+                                {
+                                    if (!GPUs[i])
+                                    {
+                                        Hashrates.Insert(i, -1);
+                                        Temperatures.Insert(i, -1);
+                                        ShAccepted.Insert(i, -1);
+                                        ShRejected.Insert(i, -1);
+                                    }
+                                }
+                            }
+
+                            return new MinerInfo(Hashrates, Temperatures, null, ShAccepted, ShRejected, null);
+                        }
+                    }
+                }
+            }
+            catch { return null; }
+        }
+        private class GminerInfo
+        {
+            public GminerDevice[] devices { get; set; }
+        }
+        private class GminerDevice
+        {
+            public int gpu_id { get; set; }
+            public double speed { get; set; }
+            public int accepted_shares { get; set; }
+            public int rejected_shares { get; set; }
+            public int temperature { get; set; }
         }
     }
 }

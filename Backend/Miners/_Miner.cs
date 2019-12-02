@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OMineGuard.Backend;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -9,27 +10,21 @@ namespace OMineGuard.Miners
 {
     public abstract class Miner
     {
-        //private protected abstract
+        //abstract
         private protected abstract string Directory { get; set; }
         private protected abstract string ProcessName { get; set; }
         private protected abstract Process miner { get; set; }
+
+        public abstract event Action<long> MinerStarted;
+        public abstract event Action MinerStoped;
+        public abstract event Action<string> LogDataReceived;
+
         private protected abstract void RunThisMiner(Backend.Config Config);
+        private protected abstract MinerInfo? CurrentMinerGetInfo();
 
         //common
-        public Miner()
-        {
-            MinerStarted += l => { Processed = true; };
-            MinerStoped += () => { Processed = false; };
-        }
-
-        private protected static string LogFolder = "MinersLogs";
-
-        public Action<long> MinerStarted;
-        public Action MinerStoped;
-        public Action<string> LogDataReceived;
-
-        public bool Processed = false;
-
+        public bool Processed { get { return miner != null ? true : false; } }
+        private protected List<bool> GPUs;
         private protected Task KillMiner()
         {
             return Task.Run(() =>
@@ -44,17 +39,15 @@ namespace OMineGuard.Miners
                 }
             });
         }
-        public Task StartMiner(Backend.Config Config)
+        public Task StartMiner(Config config)
         {
             return Task.Run(async () =>
             {
                 await KillMiner();
 
-                RunThisMiner(Config);
-                _ = Task.Run(() => MinerStarted?.Invoke(Config.ID));
-
-                //IM.StartWaching(Config.Miner);
-                //IM.StartInternetWachdog();
+                RunThisMiner(config);
+                GPUs = Settings.GetProfile().GPUsSwitch;
+                _ = Task.Run(() => MinerStarted?.Invoke(config.ID));
 
                 miner.WaitForExit();
                 miner = null;
@@ -69,8 +62,15 @@ namespace OMineGuard.Miners
                 _ = Task.Run(() => MinerStoped?.Invoke());
             });
         }
+        public MinerInfo? GetMinerInfo()
+        {
+            if (!Processed) return null;
+            return CurrentMinerGetInfo();
+        }
 
-        //static
+        //const
+        private protected const int port = 3330;
+        private protected const string LogFolder = "MinersLogs";
         public static readonly Dictionary<string, int[]> Algoritms =
             new Dictionary<string, int[]>
             {
@@ -107,5 +107,48 @@ namespace OMineGuard.Miners
             "Claymore",
             "Gminer"
         };
+    }
+
+    public struct MinerInfo
+    {
+        public MinerInfo(List<double> Hashrates, List<int> Temperatures, 
+            List<int> Fanspeeds, List<int> ShAccepted, List<int> ShRejected, List<int> ShInvalid)
+        {
+            this.Hashrates = Hashrates.ToArray();
+            this.Temperatures = Temperatures.ToArray();
+            this.Fanspeeds = Fanspeeds.ToArray();
+            this.ShAccepted = ShAccepted.ToArray();
+            this.ShRejected = ShRejected.ToArray();
+            this.ShInvalid = ShInvalid.ToArray();
+            this.ShTotalAccepted = null;
+            this.ShTotalRejected = null;
+            this.ShTotalInvalid = null;
+            TimeStamp = DateTime.Now;
+        }
+        public MinerInfo(List<double> Hashrates, List<int> Temperatures,
+            List<int> Fanspeeds, int? ShTotalAccepted, int? ShTotalRejected, int? ShTotalInvalid)
+        {
+            this.Hashrates = Hashrates.ToArray();
+            this.Temperatures = Temperatures.ToArray();
+            this.Fanspeeds = Fanspeeds.ToArray();
+            this.ShTotalAccepted = ShTotalAccepted;
+            this.ShTotalRejected = ShTotalRejected;
+            this.ShTotalInvalid = ShTotalInvalid;
+            this.ShAccepted = null;
+            this.ShRejected = null;
+            this.ShInvalid = null;
+            TimeStamp = DateTime.Now;
+        }
+
+        public DateTime TimeStamp { get; private set; }
+        public double[] Hashrates;
+        public int[] Temperatures;
+        public int[] Fanspeeds;
+        public int[] ShAccepted;
+        public int? ShTotalAccepted;
+        public int[] ShRejected;
+        public int? ShTotalRejected;
+        public int[] ShInvalid;
+        public int? ShTotalInvalid;
     }
 }
