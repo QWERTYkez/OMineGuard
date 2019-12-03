@@ -16,11 +16,6 @@ namespace OMineGuard.Miners
         private protected override string Directory { get; set; } = "Claymore's Dual Miner";
         private protected override string ProcessName { get; set; } = "EthDcrMiner64";
         private protected override Process miner { get; set; }
-
-        public override event Action<long> MinerStarted;
-        public override event Action MinerStoped;
-        public override event Action<string> LogDataReceived;
-
         private protected override void RunThisMiner(Config Config)
         {
             Profile prof = Settings.GetProfile();
@@ -87,7 +82,7 @@ namespace OMineGuard.Miners
                                   str.Contains("recv") ||
                                   str.Contains("sent")))
                             {
-                                Task.Run(() => LogDataReceived?.Invoke(str));
+                                MinerStartedInvoke(str);
                                 Task.Run(() =>
                                 {
                                     using (StreamWriter fstr = new StreamWriter(logfile, true))

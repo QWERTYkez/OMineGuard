@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
@@ -15,12 +13,18 @@ namespace OMineGuard.Miners
         private protected abstract string ProcessName { get; set; }
         private protected abstract Process miner { get; set; }
 
-        public abstract event Action<long> MinerStarted;
-        public abstract event Action MinerStoped;
-        public abstract event Action<string> LogDataReceived;
-
         private protected abstract void RunThisMiner(Backend.Config Config);
         private protected abstract MinerInfo? CurrentMinerGetInfo();
+
+        //events
+        public event Action<long> MinerStarted;
+        public event Action MinerStoped;
+        public event Action<string> LogDataReceived;
+
+        private protected Task MinerStartedInvoke(string log)
+        {
+            return Task.Run(() => LogDataReceived?.Invoke(log));
+        }
 
         //common
         public bool Processed { get { return miner != null ? true : false; } }

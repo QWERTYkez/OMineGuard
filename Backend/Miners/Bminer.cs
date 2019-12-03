@@ -16,10 +16,6 @@ namespace OMineGuard.Miners
         private protected override string ProcessName { get; set; } = "bminer";
         private protected override Process miner { get; set; }
 
-        public override event Action<long> MinerStarted;
-        public override event Action MinerStoped;
-        public override event Action<string> LogDataReceived;
-
         private protected override void RunThisMiner(Config Config)
         {
             Profile prof = Settings.GetProfile();
@@ -92,8 +88,8 @@ namespace OMineGuard.Miners
             miner.EnableRaisingEvents = true;
             miner.StartInfo.CreateNoWindow = true;
             // see below for output handler
-            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
-            miner.OutputDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
+            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
+            miner.OutputDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
 
             miner.Start();
             miner.BeginErrorReadLine();
