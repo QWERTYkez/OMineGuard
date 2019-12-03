@@ -16,7 +16,7 @@ namespace OMineGuard.Backend
         public static event Action InternetConnectionRestored;
         public static bool InternetConnectedState { get; private set; } = true;
 
-        private static int WachDelay = 3; //sec
+        private static readonly int WachDelay = 3; //sec
         private static void StartWachInternetConnection()
         {
             Task.Run(async () => 
@@ -56,13 +56,15 @@ namespace OMineGuard.Backend
             IPStatus? status = null;
             if (IC[0] || IC[1] || IC[2])
             {
-                Ping ping = new Ping();
-                for (byte i = 0; i < 4; i++)
+                using (Ping ping = new Ping())
                 {
-                    try { status = ping.Send("8.8.8.8").Status; }
-                    catch { }
-                    if (status == IPStatus.Success) return true;
-                }
+                    for (byte i = 0; i < 4; i++)
+                    {
+                        try { status = ping.Send("8.8.8.8").Status; }
+                        catch { }
+                        if (status == IPStatus.Success) return true;
+                    }
+                } 
             }
             return false;
         }

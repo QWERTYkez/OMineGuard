@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
 {
@@ -18,7 +17,6 @@ namespace OMineGuard.Miners
 
         private protected override void RunThisMiner(Config Config)
         {
-            Profile prof = Settings.GetProfile();
             string DT = DateTime.Now.ToString("HH.mm.ss - dd.MM.yy");
             string logfile = $"MinersLogs/log {DT} {Config.Name}.txt";
 
@@ -54,15 +52,15 @@ namespace OMineGuard.Miners
                     break;
             }
             string param = $"--algo {algo} --server {Config.Pool} --port {Config.Port} " +
-                        $"--api {port} --user {Config.Wallet}.{prof.RigName} " +
+                        $"--api {port} --user {Config.Wallet}.{Settings.Profile.RigName} " +
                         $"{Config.Params} --logfile \"{logfile}\"";
-            if (prof.GPUsSwitch != null)
+            if (Settings.Profile.GPUsSwitch != null)
             {
                 string di = "";
-                int n = prof.GPUsSwitch.Count;
+                int n = Settings.Profile.GPUsSwitch.Count;
                 for (int i = 0; i < n; i++)
                 {
-                    if (prof.GPUsSwitch[i])
+                    if (Settings.Profile.GPUsSwitch[i])
                     {
                         di += " " + i;
                     }
@@ -74,15 +72,17 @@ namespace OMineGuard.Miners
                 }
             }
 
-            miner = new Process();
-            miner.StartInfo = new ProcessStartInfo($"{Directory}/{ProcessName}", param);
-            miner.StartInfo.UseShellExecute = false;
-            // set up output redirection
-            miner.StartInfo.RedirectStandardOutput = true;
-            miner.StartInfo.RedirectStandardError = true;
-            miner.EnableRaisingEvents = true;
-            miner.StartInfo.CreateNoWindow = true;
-            // see below for output handler
+            miner = new Process
+            {
+                EnableRaisingEvents = true,
+                StartInfo = new ProcessStartInfo($"{Directory}/{ProcessName}", param)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
             miner.ErrorDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
             miner.OutputDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
 
@@ -91,7 +91,7 @@ namespace OMineGuard.Miners
             miner.BeginOutputReadLine();
         }
 
-        private protected override MinerInfo? CurrentMinerGetInfo()
+        private protected override MinerInfo CurrentMinerGetInfo()
         {
             try
             {
@@ -114,6 +114,13 @@ namespace OMineGuard.Miners
                             {
                                 for (int i = 0; i < GPUs.Count; i++)
                                 {
+                                    if (i < Hashrates.Count)
+                                    {
+                                        Hashrates.Add(-2);
+                                        Temperatures.Add(-2);
+                                        ShAccepted.Add(-2);
+                                        ShRejected.Add(-2);
+                                    }
                                     if (!GPUs[i])
                                     {
                                         Hashrates.Insert(i, -1);
@@ -129,19 +136,23 @@ namespace OMineGuard.Miners
                     }
                 }
             }
-            catch { return null; }
+            catch { return new MinerInfo(); }
         }
         private class GminerInfo
         {
+#pragma warning disable IDE1006 // Стили именования
             public GminerDevice[] devices { get; set; }
+#pragma warning restore IDE1006 // Стили именования
         }
         private class GminerDevice
         {
+#pragma warning disable IDE1006 // Стили именования
             public int gpu_id { get; set; }
             public double speed { get; set; }
             public int accepted_shares { get; set; }
             public int rejected_shares { get; set; }
             public int temperature { get; set; }
+#pragma warning restore IDE1006 // Стили именования
         }
     }
 }

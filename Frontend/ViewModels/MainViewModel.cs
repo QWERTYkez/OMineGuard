@@ -192,17 +192,17 @@ namespace OMineGuard.ViewModels
             SetRigName = new RelayCommand(obj =>
             {
                 Profile.RigName = RigName;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetAutoRun = new RelayCommand(obj =>
             {
                 Profile.Autostart = AutoRun;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetGPUsSwitch = new RelayCommand(obj =>
             {
                 Profile.GPUsSwitch = GPUsSwitch;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
         }
         private void SaveProfile()
@@ -333,7 +333,7 @@ namespace OMineGuard.ViewModels
             {
                 Profile.ConfigsList.Add(new Backend.Config());
                 ConfigsNames = from i in Profile.ConfigsList select i.Name;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
                 SelectedConfigIndex = ConfigsNames.Count() - 1;
             });
             MinusConfig = new RelayCommand(obj =>
@@ -343,7 +343,7 @@ namespace OMineGuard.ViewModels
                     Profile.ConfigsList.RemoveAt(SelectedConfigIndex);
                     ConfigsNames = from i in Profile.ConfigsList select i.Name;
                     SelectedConfigIndex = -1;
-                    _model.cmd_SaveProfile(Profile);
+                    _model.CMD_SaveProfile(Profile);
                 }
             });
             SaveConfig = new RelayCommand(obj =>
@@ -351,7 +351,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedConfigIndex > -1)
                 {
                     SaveProfile();
-                    _model.cmd_SaveProfile(Profile);
+                    _model.CMD_SaveProfile(Profile);
                 }
             });
             StartConfig = new RelayCommand(obj =>
@@ -359,7 +359,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedConfigIndex > -1)
                 {
                     SaveProfile();
-                    _model.cmd_RunProfile(Profile, SelectedConfigIndex);
+                    _model.CMD_RunProfile(Profile, SelectedConfigIndex);
                 }
             });
         }
@@ -494,7 +494,7 @@ namespace OMineGuard.ViewModels
             {
                 Profile.ClocksList.Add(new Backend.Overclock());
                 OverclocksNames = from i in Profile.ClocksList select i.Name;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
                 SelectedOverclockIndex = OverclocksNames.Count() - 1;
                 
             });
@@ -504,7 +504,7 @@ namespace OMineGuard.ViewModels
                 {
                     Profile.ClocksList.RemoveAt(SelectedOverclockIndex);
                     OverclocksNames = from i in Profile.ClocksList select i.Name;
-                    _model.cmd_SaveProfile(Profile);
+                    _model.CMD_SaveProfile(Profile);
                     SelectedOverclockIndex = -1;
                 }
             });
@@ -513,7 +513,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedOverclockIndex > -1)
                 {
                     SaveCLock();
-                    _model.cmd_SaveProfile(Profile);
+                    _model.CMD_SaveProfile(Profile);
                 }
             });
             ApplyOverclock = new RelayCommand(obj =>
@@ -521,7 +521,7 @@ namespace OMineGuard.ViewModels
                 if (SelectedOverclockIndex > -1)
                 {
                     SaveCLock();
-                    _model.cmd_ApplyClock(Profile, SelectedOverclockIndex);
+                    _model.CMD_ApplyClock(Profile, SelectedOverclockIndex);
                 }
             });
         }
@@ -587,15 +587,15 @@ namespace OMineGuard.ViewModels
             SetLogFontSize = new RelayCommand(obj =>
             {
                 Profile.LogTextSize = LogFontSize;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             ShowMinerLog = new RelayCommand(obj => 
             {
-                _model.cmd_ShowMinerLog();
+                _model.CMD_ShowMinerLog();
             });
             SwitchProcess = new RelayCommand(obj =>
             {
-                _model.cmd_SwitchProcess();
+                _model.CMD_SwitchProcess();
             });
         }
         #endregion
@@ -625,37 +625,37 @@ namespace OMineGuard.ViewModels
                 {
                     IdleTimeout = WachdogTimer;
                 }
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetIdleTimeout = new RelayCommand(obj =>
             {
                 Profile.TimeoutIdle = IdleTimeout;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetLHTimeout = new RelayCommand(obj =>
             {
                 Profile.TimeoutLH = LHTimeout;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetVKInformer = new RelayCommand(obj =>
             {
                 Profile.Informer.VkInform = VKInformer;
                 if (!VKInformer) Profile.Informer.VKuserID = "";
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetVKUserID = new RelayCommand(obj =>
             {
                 Profile.Informer.VKuserID = VKUserID;
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetTelegramInformer = new RelayCommand(obj =>
             {
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
             SetTelegramUserID = new RelayCommand(obj =>
             {
 
-                _model.cmd_SaveProfile(Profile);
+                _model.CMD_SaveProfile(Profile);
             });
         }
         #endregion

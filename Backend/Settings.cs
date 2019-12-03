@@ -9,26 +9,21 @@ namespace OMineGuard.Backend
     {
         static Settings()
         {
-            profile = ReadProfile();
+            Profile = ReadProfile();
         }
-        private static Profile profile;
-
-        public static Profile GetProfile()
-        {
-            return profile;
-        }
+        public static Profile Profile { get; private set; }
         public static void SetProfile(Profile prof)
         {
-            profile = prof;
+            Profile = prof;
             SaveProfile();
         }
 
-        private static object profileKey = new object();
+        private static readonly object ProfileKey = new object();
         private static void SaveProfile()
         {
-            lock (profileKey)
+            lock (ProfileKey)
             {
-                string JSON = JsonConvert.SerializeObject(profile);
+                string JSON = JsonConvert.SerializeObject(Profile);
 
                 using (FileStream fstream = new FileStream("json", FileMode.Create))
                 {
@@ -39,7 +34,7 @@ namespace OMineGuard.Backend
         }
         private static Profile ReadProfile()
         {
-            lock (profileKey)
+            lock (ProfileKey)
             {
                 try
                 {

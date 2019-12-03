@@ -16,7 +16,7 @@ namespace OMineGuard.Models
         private Profile CurrProf;
         public MainModel()
         {
-            CurrProf = Settings.GetProfile();
+            CurrProf = Settings.Profile;
             Profile = CurrProf;
             if (CurrProf.Autostart)
             {
@@ -39,28 +39,28 @@ namespace OMineGuard.Models
         public bool? Indicator { get; set; }
 
         #region Commands
-        public void cmd_SaveProfile(Profile prof)
+        public void CMD_SaveProfile(Profile prof)
         {
             CurrProf = prof;
             Settings.SetProfile(CurrProf);
         }
-        public void cmd_RunProfile(Profile prof, int index)
+        public void CMD_RunProfile(Profile prof, int index)
         {
             CurrProf = prof;
             Settings.SetProfile(CurrProf);
             OMGcontroller.SendSetting(CurrProf.ConfigsList[index].ID, MSGtype.RunConfig);
         }
-        public void cmd_ApplyClock(Profile prof, int index)
+        public void CMD_ApplyClock(Profile prof, int index)
         {
             CurrProf = prof;
             Settings.SetProfile(CurrProf);
             OMGcontroller.SendSetting(CurrProf.ClocksList[index].ID, MSGtype.ApplyClock);
         }
-        public void cmd_ShowMinerLog()
+        public void CMD_ShowMinerLog()
         {
             OMGcontroller.SendSetting(true, MSGtype.ShowMinerLog);
         }
-        public void cmd_SwitchProcess()
+        public void CMD_SwitchProcess()
         {
             if ((bool)Indicator)
             {

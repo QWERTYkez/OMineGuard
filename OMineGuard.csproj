@@ -78,7 +78,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Backend\Miners\_HashrateWachdog.cs" />
     <Compile Include="Backend\InternetConnectionWacher.cs" />
     <Compile Include="Frontend\Classes\RichTextBoxHelper.cs" />
     <Compile Include="Backend\Miners\Bminer.cs" />

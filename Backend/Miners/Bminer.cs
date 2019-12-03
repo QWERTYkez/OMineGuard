@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
 {
@@ -18,7 +17,6 @@ namespace OMineGuard.Miners
 
         private protected override void RunThisMiner(Config Config)
         {
-            Profile prof = Settings.GetProfile();
             string DT = DateTime.Now.ToString("HH.mm.ss - dd.MM.yy");
             string logfile = $"MinersLogs/log {DT} {Config.Name}.txt";
 
@@ -54,20 +52,20 @@ namespace OMineGuard.Miners
                     algo = "zhash";
                     break;
             }
-            string param = $"-uri {algo}://{Config.Wallet}.{prof.RigName}" +
+            string param = $"-uri {algo}://{Config.Wallet}.{Settings.Profile.RigName}" +
                 $"@{Config.Pool}:{Config.Port} {Config.Params} " +
                 $"-logfile \"{logfile}\" -api 127.0.0.1:{port}";
             if (algo == "equihash1445")
             {
                 param += " -pers Auto";
             }
-            if (prof.GPUsSwitch != null)
+            if (Settings.Profile.GPUsSwitch != null)
             {
                 string di = "";
-                int n = prof.GPUsSwitch.Count;
+                int n = Settings.Profile.GPUsSwitch.Count;
                 for (int i = 0; i < n; i++)
                 {
-                    if (prof.GPUsSwitch[i])
+                    if (Settings.Profile.GPUsSwitch[i])
                     {
                         di += "," + i;
                     }
@@ -79,15 +77,17 @@ namespace OMineGuard.Miners
                 }
             }
 
-            miner = new Process();
-            miner.StartInfo = new ProcessStartInfo($"{Directory}/{ProcessName}", param);
-            miner.StartInfo.UseShellExecute = false;
-            // set up output redirection
-            miner.StartInfo.RedirectStandardOutput = true;
-            miner.StartInfo.RedirectStandardError = true;
-            miner.EnableRaisingEvents = true;
-            miner.StartInfo.CreateNoWindow = true;
-            // see below for output handler
+            miner = new Process
+            {
+                EnableRaisingEvents = true,
+                StartInfo = new ProcessStartInfo($"{Directory}/{ProcessName}", param)
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
             miner.ErrorDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
             miner.OutputDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
 
@@ -96,7 +96,7 @@ namespace OMineGuard.Miners
             miner.BeginOutputReadLine();
         }
 
-        private protected override MinerInfo? CurrentMinerGetInfo()
+        private protected override MinerInfo CurrentMinerGetInfo()
         {
             try
             {
@@ -119,13 +119,17 @@ namespace OMineGuard.Miners
                             List<double> Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToList();
                             List<int> Temperatures = INF.miners.Select(m => m.device.temperature).ToList();
                             List<int> Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToList();
-                            List<int> ShAccepted = new List<int> { INF.stratum.accepted_shares };
-                            List<int> ShRejected = new List<int> { INF.stratum.rejected_shares };
 
                             if (GPUs != null)
                             {
                                 for (int i = 0; i < GPUs.Count; i++)
                                 {
+                                    if (i < Hashrates.Count)
+                                    {
+                                        Hashrates.Add(-2);
+                                        Temperatures.Add(-2);
+                                        Fanspeeds.Add(-2);
+                                    }
                                     if (!GPUs[i])
                                     {
                                         Hashrates.Insert(i, -1);
@@ -141,31 +145,41 @@ namespace OMineGuard.Miners
                     }
                 }
             }
-            catch { return null; }
+            catch { return new MinerInfo(); }
         }
         private class BminerInfo
         {
+#pragma warning disable IDE1006 // Стили именования
             public BminerStratum stratum { get; set; }
             public List<BminerMiner> miners { get; set; }
+#pragma warning restore IDE1006 // Стили именования
         }
         private class BminerStratum
         {
+#pragma warning disable IDE1006 // Стили именования
             public int accepted_shares { get; set; }
             public int rejected_shares { get; set; }
+#pragma warning restore IDE1006 // Стили именования
         }
         private class BminerMiner
         {
+#pragma warning disable IDE1006 // Стили именования
             public BminerSolver solver { get; set; }
             public BminerDevice device { get; set; }
+#pragma warning restore IDE1006 // Стили именования
         }
         private class BminerSolver
         {
+#pragma warning disable IDE1006 // Стили именования
             public double solution_rate { get; set; }
+#pragma warning restore IDE1006 // Стили именования
         }
         private class BminerDevice
         {
+#pragma warning disable IDE1006 // Стили именования
             public int temperature { get; set; }
             public int fan_speed { get; set; }
+#pragma warning restore IDE1006 // Стили именования
         }
     }
 }
