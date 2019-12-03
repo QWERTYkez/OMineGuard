@@ -14,7 +14,7 @@ namespace OMineGuard.Miners
         private protected abstract string ProcessName { get; set; }
         private protected abstract Process miner { get; set; }
 
-        private protected abstract void RunThisMiner(Backend.Config Config);
+        private protected abstract void RunThisMiner(Config Config);
         private protected abstract MinerInfo CurrentMinerGetInfo();
 
         //events
@@ -36,9 +36,22 @@ namespace OMineGuard.Miners
         }
 
         //common
-        public bool Processed { get {
-                return miner != null ? true : false;
-            } }
+        public Miner()
+        {
+            InternetConnectionWacher.InternetConnectionLost += () => 
+            { Task.Run(() => { EndMining(); }); };
+            InternetConnectionWacher.InternetConnectionRestored += () =>
+            {
+                if (ConfigToRecovery != null)
+                {
+                    StartMiner(ConfigToRecovery);
+                }
+            };
+        }
+        private Config ConfigToRecovery;
+
+        public bool Processing => 
+            miner != null ? true : false;
         private protected List<bool> GPUs;
         private protected void KillMiner()
         {
@@ -60,6 +73,7 @@ namespace OMineGuard.Miners
                 RunThisMiner(config);
                 GPUs = Settings.Profile.GPUsSwitch;
                 Task.Run(() => MinerStarted?.Invoke(config.ID));
+                ConfigToRecovery = config;
 
                 StartWaching(config);
 
@@ -72,23 +86,30 @@ namespace OMineGuard.Miners
         {
             Task.Run(() => 
             {
-                KillMiner();
-                Waching = false;
-                Task.Run(() => MinerStoped?.Invoke());
+                EndMining();
+                ConfigToRecovery = null;
             });
+        }
+        private void EndMining()
+        {
+            KillMiner();
+            Waching = false;
+            Inactivity = false;
+            LowHashrate = false;
+            Task.Run(() => MinerStoped?.Invoke());
         }
         public MinerInfo GetMinerInfo()
         {
             MinerInfo MI;
-            if (!Processed) MI = new MinerInfo();
+            if (!Processing) MI = new MinerInfo();
             MI = CurrentMinerGetInfo();
             _ = Task.Run(() => MinerInfoUpdated?.Invoke(MI));
             return MI;
         }
 
-        private object WachingKey = new object();
-        private object InactivityKey = new object();
-        private object LowHashrateKey = new object();
+        private readonly object WachingKey = new object();
+        private readonly object InactivityKey = new object();
+        private readonly object LowHashrateKey = new object();
         private bool waching = false;
         private bool inactivity = false;
         private bool lowHashrate = false;
@@ -129,7 +150,8 @@ namespace OMineGuard.Miners
                         activehashes = hashes.Where(h => h > -1).ToArray();
                         if (hashes != null)
                         {
-                            if (hashes.Contains(-2)) //неправильное количество карт
+                            //неправильное количество карт
+                            if (hashes.Contains(-2)) 
                             { Task.Run(() => GPUsQuantityError?.Invoke()); }
 
                             //бездаействие
