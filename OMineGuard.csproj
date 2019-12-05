@@ -79,6 +79,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Backend\InternetConnectionWacher.cs" />
+    <Compile Include="Backend\Overclocker.cs" />
     <Compile Include="Frontend\Classes\RichTextBoxHelper.cs" />
     <Compile Include="Backend\Miners\Bminer.cs" />
     <Compile Include="Backend\Miners\Claymore.cs" />
