@@ -12,6 +12,7 @@ namespace OMineGuard.Backend
     {
         public static event Action ConnectedToMSI;
         public static event Action<List<GPUinfo>> OverclockReceived;
+        public static event Action OverclockApplied;
 
         private static List<OHMgpu> OHMgpus = new List<OHMgpu>();
 
@@ -155,6 +156,164 @@ namespace OMineGuard.Backend
             });
         }
 
+        public static void ApplyOverclock(Overclock OC)
+        {
+            ControlMemory nConf = CM;
+
+            if (nConf.GpuEntries.Length > 0)
+            {
+                while (nConf.GpuEntries[0].PowerLimitMax == 0)
+                {
+                    Task.Delay(50);
+                    CM.ReloadAll();
+                    nConf = CM;
+                }
+            }
+
+            for (int i = 0; i < nConf.GpuEntries.Length; i++)
+            {
+                try
+                {
+                    nConf.GpuEntries[i].PowerLimitCur = SetParam(i, 1, OC.PowLim,
+                    nConf.GpuEntries[i].PowerLimitMax,
+                    nConf.GpuEntries[i].PowerLimitMin,
+                    nConf.GpuEntries[i].PowerLimitDef);
+                }
+                catch { }
+
+                if (nConf.GpuEntries[i].CoreClockBoostMax - nConf.GpuEntries[i].CoreClockBoostMin != 0)
+                {
+                    try
+                    {
+                        nConf.GpuEntries[i].CoreClockBoostCur = SetParam(i, 1000, OC.CoreClock,
+                        nConf.GpuEntries[i].CoreClockBoostMax,
+                        nConf.GpuEntries[i].CoreClockBoostMin,
+                        nConf.GpuEntries[i].CoreClockBoostDef);
+                    }
+                    catch { }
+                }
+                else if (nConf.GpuEntries[i].CoreClockMax - nConf.GpuEntries[i].CoreClockMin != 0)
+                {
+                    try
+                    {
+                        nConf.GpuEntries[i].CoreClockCur = SetParam(i, 1000, OC.CoreClock,
+                        nConf.GpuEntries[i].CoreClockMax,
+                        nConf.GpuEntries[i].CoreClockMin,
+                        nConf.GpuEntries[i].CoreClockDef);
+                    }
+                    catch { }
+                }
+
+                if (nConf.GpuEntries[i].MemoryClockBoostMax - nConf.GpuEntries[i].MemoryClockBoostMin != 0)
+                {
+                    try
+                    {
+                        nConf.GpuEntries[i].MemoryClockBoostCur = SetParam(i, 1000, OC.MemoryClock,
+                        nConf.GpuEntries[i].MemoryClockBoostMax,
+                        nConf.GpuEntries[i].MemoryClockBoostMin,
+                        nConf.GpuEntries[i].MemoryClockBoostDef);
+                    }
+                    catch { }
+                }
+                else if (nConf.GpuEntries[i].MemoryClockMax - nConf.GpuEntries[i].MemoryClockMin != 0)
+                {
+                    try
+                    {
+                        nConf.GpuEntries[i].MemoryClockCur = SetParam(i, 1000, OC.MemoryClock,
+                        nConf.GpuEntries[i].MemoryClockMax,
+                        nConf.GpuEntries[i].MemoryClockMin,
+                        nConf.GpuEntries[i].MemoryClockDef);
+                    }
+                    catch { }
+                }
+
+                try
+                {
+                    if (OC.FanSpeed != null)
+                    {
+                        if (OC.FanSpeed.Length > i)
+                        {
+                            nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.None;
+                            if (OC.FanSpeed[i] > nConf.GpuEntries[i].FanSpeedMax)
+                            {
+                                nConf.GpuEntries[i].FanSpeedCur = nConf.GpuEntries[i].FanSpeedMax;
+                            }
+                            else if (OC.FanSpeed[i] < nConf.GpuEntries[i].FanSpeedMin)
+                            {
+                                nConf.GpuEntries[i].FanSpeedCur = nConf.GpuEntries[i].FanSpeedMin;
+                            }
+                            else
+                            {
+                                nConf.GpuEntries[i].FanSpeedCur = Convert.ToUInt32(OC.FanSpeed[i]);
+                            }
+                        }
+                        else { nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
+                    }
+                    else { nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
+                }
+                catch { }
+            }
+
+            while (true)
+            {
+                try
+                {
+                    CM = nConf;
+                    CM.CommitChanges();
+                    Task.Run(() => OverclockApplied.Invoke());
+                    return;
+                }
+                catch { }
+                Task.Delay(50);
+            }
+        }
+        private static int SetParam(int i, int multiply, int[] param, int max, int min, int def)
+        {
+            if (param != null)
+            {
+                if (param.Length > i)
+                {
+                    if (param[i] * multiply > max)
+                    {
+                        return max;
+                    }
+                    else if (param[i] * multiply < min)
+                    {
+                        return min;
+                    }
+                    else
+                    {
+                        return param[i] * multiply;
+                    }
+                }
+                else { return def; }
+            }
+            else { return def; }
+        }
+        private static uint SetParam(int i, int multiply, int[] param, uint max, uint min, uint def)
+        {
+            if (param != null)
+            {
+                if (param.Length > i)
+                {
+                    if (param[i] * multiply > max)
+                    {
+                        return max;
+                    }
+                    else if (param[i] * multiply < min)
+                    {
+                        return min;
+                    }
+                    else
+                    {
+                        return Convert.ToUInt32(param[i] * multiply);
+                    }
+                }
+                else { return def; }
+            }
+            else { return def; }
+        }
+        
         private class OHMgpu
         {
             public OHMgpu(IHardware gpu)

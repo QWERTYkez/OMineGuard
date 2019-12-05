@@ -10,6 +10,7 @@ using MSI.Afterburner;
 using OpenHardwareMonitor.Hardware;
 using MSI.Afterburner.Exceptions;
 using Newtonsoft.Json;
+using OMineGuard.Backend;
 using PM = OMineGuard.ProfileManager;
 using TCP = OMineGuard.TCPserver;
 
@@ -250,13 +251,14 @@ namespace OMineGuard
             }
             else { return def; }
         }
-        public static void ApplyOverclock(Profile.Overclock OC)
+        public static void ApplyOverclock(Backend.Overclock OC)
         {
             MainWindow.context.Send((object o) =>
             {
                 MainWindow.This.ClocksList.SelectedIndex =
-                PM.Profile.ClocksList.Select(W => W.Name).ToList().IndexOf(OC.Name);
+                Settings.Profile.ClocksList.Select(W => W.Name).ToList().IndexOf(OC.Name);
             }, null);
+
             Task.Run(() =>
             {
                 CM.ReloadAll();
@@ -346,7 +348,7 @@ namespace OMineGuard
                                 }
                                 else
                                 {
-                                    nConf.GpuEntries[i].FanSpeedCur = OC.FanSpeed[i];
+                                    nConf.GpuEntries[i].FanSpeedCur = Convert.ToUInt32(OC.FanSpeed[i]);
                                 }
                             }
                             else { nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
