@@ -6,7 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace OMineGuard.Models
+namespace OMineGuard.Backend.Models
 {
     public class MainModel : INotifyPropertyChanged
     {

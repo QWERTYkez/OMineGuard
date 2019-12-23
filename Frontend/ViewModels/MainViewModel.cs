@@ -1,4 +1,4 @@
-﻿using OMineGuard.Models;
+﻿using OMineGuard.Backend.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -89,6 +89,9 @@ namespace OMineGuard.ViewModels
                             WachdogTimer = Profile.TimeoutWachdog;
                             IdleTimeout = Profile.TimeoutIdle;
                             LHTimeout = Profile.TimeoutLH;
+
+                            VKInformer = Profile.Informer.VkInform;
+                            VKUserID = Profile.Informer.VKuserID;
                         }
                         break;
                     }
@@ -647,13 +650,13 @@ namespace OMineGuard.ViewModels
         }
         #endregion
         #region BaseSettings
-        public int WachdogTimer { get; set; }
-        public int IdleTimeout { get; set; }
-        public int LHTimeout { get; set; }
+        public int WachdogTimer { get; set; } = 30;
+        public int IdleTimeout { get; set; } = 300;
+        public int LHTimeout { get; set; } = 30;
         public RelayCommand SetWachdogTimer { get; set; }
         public RelayCommand SetIdleTimeout { get; set; }
         public RelayCommand SetLHTimeout { get; set; }
-
+        
         public bool VKInformer { get; set; }
         public RelayCommand SetVKInformer { get; set; }
         public string VKUserID { get; set; }
