@@ -11,25 +11,28 @@ namespace OMineGuard.Miners
     public abstract class Miner
     {
         //abstract
-        public abstract event Action<string> LogDataReceived;
-
         private protected abstract string Directory { get; set; }
         private protected abstract string ProcessName { get; set; }
-        private protected abstract Process miner { get; set; }
-
+        
         private protected abstract void RunThisMiner(Config Config);
         private protected abstract MinerInfo CurrentMinerGetInfo();
 
         //events
-        public event Action<long, bool> MinerStarted;
-        public event Action MinerStoped;
-        public event Action<MinerInfo> MinerInfoUpdated;
-        public event Action<int> WachdogDelayTimer;
-        public event Action<int> InactivityTimer;
-        public event Action InactivityError;
-        public event Action<int> LowHashrateTimer;
-        public event Action LowHashrateError;
-        public event Action<int[]> GPUsfalled;
+        public static event Action<string> LogDataReceived;
+        private protected static void Logging(string log)
+        {
+            Task.Run(() => LogDataReceived?.Invoke(log));
+        }
+        public static event Action<Config, bool> MinerStarted;
+        public static event Action MinerStoped;
+        public static event Action<MinerInfo> MinerInfoUpdated;
+        public static event Action<int> WachdogDelayTimer;
+        public static event Action<int> InactivityTimer;
+        public static event Action<Miner> ZeroHash;
+        public static event Action InactivityError;
+        public static event Action<int> LowHashrateTimer;
+        public static event Action<Miner> LowHashrateError;
+        public static event Action<Miner, int[]> GPUsfalled;
 
         //common
         public Miner()
@@ -45,7 +48,7 @@ namespace OMineGuard.Miners
             };
         }
         private Config ConfigToRecovery;
-        public bool Processing => 
+        public static bool Processing => 
             miner != null ? true : false;
         private protected void KillMiner()
         {
@@ -71,9 +74,10 @@ namespace OMineGuard.Miners
 
                 RunThisMiner(config);
                 GPUs = Settings.Profile.GPUsSwitch;
-                Task.Run(() => MinerStarted?.Invoke(config.ID, InternetRestored));
+                Task.Run(() => MinerStarted?.Invoke(config, InternetRestored));
                 ConfigToRecovery = config;
 
+                WachdogInactivity();
                 StartWaching(config);
 
                 miner.WaitForExit();
@@ -96,6 +100,8 @@ namespace OMineGuard.Miners
         {
             Task.Run(() => 
             {
+                inactivity = false;
+                InactivityTimer?.Invoke(-1);
                 Ending();
                 ConfigToRecovery = null;
             });
@@ -118,23 +124,24 @@ namespace OMineGuard.Miners
             return MI;
         }
 
-        private readonly object WachingKey = new object();
-        private readonly object InactivityKey = new object();
-        private readonly object LowHashrateKey = new object();
-        private bool waching = false;
-        private bool inactivity = false;
-        private bool lowHashrate = false;
-        private bool Waching
+        private static protected Process miner { get; set; }
+        private static readonly object WachingKey = new object();
+        private static readonly object InactivityKey = new object();
+        private static readonly object LowHashrateKey = new object();
+        private static bool waching = false;
+        private static bool inactivity = false;
+        private static bool lowHashrate = false;
+        private static bool Waching
         {
             get { lock (WachingKey) return waching; }
             set { lock (WachingKey) waching = value; }
         }
-        private bool Inactivity
+        private static bool Inactivity
         {
             get { lock (InactivityKey) return inactivity; }
             set { lock (InactivityKey) inactivity = value; }
         }
-        private bool LowHashrate
+        private static bool LowHashrate
         {
             get { lock (LowHashrateKey) return lowHashrate; }
             set { lock (LowHashrateKey) lowHashrate = value; }
@@ -149,7 +156,15 @@ namespace OMineGuard.Miners
                 for (int i = Settings.Profile.TimeoutWachdog; i > -1; i--)
                 {
                     if (!Waching) return;
-                    Task.Run(() => GetMinerInfo());
+                    Task.Run(() => 
+                    {
+                        activehashes = GetMinerInfo().Hashrates.Where(h => h != null);
+                        if (activehashes.Sum() > config.MinHashrate)
+                        {
+                            inactivity = false;
+                            InactivityTimer?.Invoke(-1);
+                        }
+                    });
                     Task.Run(() => { if (Processing) WachdogDelayTimer?.Invoke(i); });
                     Thread.Sleep(1000);
                 }
@@ -164,16 +179,16 @@ namespace OMineGuard.Miners
                             //бездаействие
                             if (activehashes.Sum() == 0)
                             {
+                                Task.Run(() => ZeroHash?.Invoke(this));
                                 WachdogInactivity();
                             }
-                            else Inactivity = false;
 
                             // низкий хешрейт
                             if (activehashes.Sum() < config.MinHashrate)
                             {
-                                WachdogLowHashrate();
+                                WachdogLowHashrate(this);
                             }
-                            else LowHashrate = false;
+                            else { LowHashrate = false; Inactivity = false; }
 
                             //отвал карт
                             if (hashes.Contains(0))
@@ -183,7 +198,7 @@ namespace OMineGuard.Miners
                                 {
                                     if (hashes[i] == 0) gpus.Add(i);
                                 }
-                                Task.Run(() => GPUsfalled?.Invoke(gpus.ToArray()));
+                                Task.Run(() => GPUsfalled?.Invoke(this, gpus.ToArray()));
                             }
                             return;
                         }
@@ -193,43 +208,54 @@ namespace OMineGuard.Miners
                 }
             });
         }
-        private void WachdogInactivity()
+        private static void WachdogInactivity()
         {
-            Task.Run(() =>
+            if (!Inactivity)
             {
-                for (int i = Settings.Profile.TimeoutIdle; i > 0; i--)
+                Inactivity = true;
+
+                Task.Run(() =>
                 {
+
+                    for (int i = Settings.Profile.TimeoutIdle; i > 0; i--)
+                    {
+                        if (!Inactivity) goto Normal;
+                        Task.Run(() => { if (Processing) InactivityTimer?.Invoke(i); });
+                        Thread.Sleep(1000);
+                    }
                     if (!Inactivity) goto Normal;
-                    Task.Run(() => { if (Processing) InactivityTimer?.Invoke(i); });
-                    Thread.Sleep(1000);
-                }
-                if (!Inactivity) goto Normal;
-                Task.Run(() => { if (Processing) InactivityTimer?.Invoke(0); });
-                Task.Run(() => InactivityError?.Invoke());
-                return;
-            Normal:
-                Task.Run(() => { if (Processing) InactivityTimer?.Invoke(-1); });
-                return;
-            });
+                    Task.Run(() => { if (Processing) InactivityTimer?.Invoke(0); });
+                    Task.Run(() => InactivityError?.Invoke());
+                    return;
+                Normal:
+                    Task.Run(() => { if (Processing) InactivityTimer?.Invoke(-1); });
+                    return;
+                });
+            }
         }
-        private void WachdogLowHashrate()
+        private static void WachdogLowHashrate(Miner miner)
         {
-            Task.Run(() =>
+            if (!LowHashrate)
             {
-                for (int i = Settings.Profile.TimeoutLH; i > 0; i--)
+                LowHashrate = true;
+
+                Task.Run(() =>
                 {
+                    for (int i = Settings.Profile.TimeoutLH; i > 0; i--)
+                    {
+                        if (!LowHashrate) goto Normal;
+                        Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(i); });
+                        Thread.Sleep(1000);
+                    }
                     if (!LowHashrate) goto Normal;
-                    Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(i); });
-                    Thread.Sleep(1000);
-                }
-                if (!LowHashrate) goto Normal;
-                Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(0); });
-                Task.Run(() => LowHashrateError?.Invoke());
-                return;
-            Normal:
-                Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(-1); });
-                return;
-            });
+                    Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(0); });
+                    Task.Run(() => LowHashrateError?.Invoke(miner));
+                    return;
+                Normal:
+                    Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(-1); });
+                    return;
+                });
+            }
         }
 
         //const

@@ -12,11 +12,8 @@ namespace OMineGuard.Miners
 {
     class Bminer : Miner
     {
-        public override event Action<string> LogDataReceived;
-
         private protected override string Directory { get; set; } = "Bminer";
         private protected override string ProcessName { get; set; } = "bminer";
-        private protected override Process miner { get; set; }
 
         private protected override void RunThisMiner(Config Config)
         {
@@ -91,8 +88,8 @@ namespace OMineGuard.Miners
                     RedirectStandardError = true
                 }
             };
-            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
-            miner.OutputDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
+            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") Logging(e.Data); };
+            miner.OutputDataReceived += (s, e) => { if (e.Data != "") Logging(e.Data); };
 
             miner.Start();
             miner.BeginErrorReadLine();

@@ -37,6 +37,59 @@ namespace OMineGuard.Models
             Miners = Miner.Miners;
             Algoritms = Miner.Algoritms;
 
+            Miner.LogDataReceived += s => { if (showlog) Logging(s); };
+            Miner.MinerInfoUpdated += mi => { MI = mi; };
+            Miner.MinerStarted += (conf, ethernet) =>
+            {
+                CurrProf.StartedID = conf.ID;
+                Settings.SetProfile(CurrProf);
+                Indicator = true;
+                TCPserver.Indication = true;
+                string msg;
+                if (!ethernet) msg = $"{conf.Name} запущен";
+                else msg = $"Интернет восстановлен, {conf.Name} запущен";
+                Logging(msg, true);
+            };
+            Miner.MinerStoped += () =>
+            {
+                Indicator = false;
+                TCPserver.Indication = false;
+                MI = null;
+            };
+            Miner.InactivityTimer += n =>
+            {
+                if (n < 1) IdleWachdog = "";
+                else IdleWachdog = $"Бездаействие {n}";
+            };
+            Miner.LowHashrateTimer += n =>
+            {
+                if (n < 1) LowHWachdog = "";
+                else LowHWachdog = $"Низкий хешрейт {n}";
+            };
+            Miner.WachdogDelayTimer += n =>
+            {
+                if (n < 1) WachdogInfo = "";
+                else WachdogInfo = $"Активация вачдога {n}";
+            };
+            Miner.GPUsfalled += (miner, gs) =>
+            {
+                string str = "";
+                foreach (int g in gs) str += $"{g},";
+                Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);
+                miner.RestartMiner();
+            };
+            Miner.InactivityError += () =>
+            {
+                Logging("Бездействие, перезагрузка", true);
+                System.Diagnostics.Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
+                System.Windows.Application.Current.Shutdown();
+            };
+            Miner.LowHashrateError += miner =>
+            {
+                Logging("Низкий хешрейт, перезапуск майнера", true);
+                miner.RestartMiner();
+            };
+
             if (CurrProf.Autostart)
             {
                 if (CurrProf.StartedID != null)
@@ -71,60 +124,6 @@ namespace OMineGuard.Models
                 case 1: miner = new Claymore(); break;
                 case 2: miner = new Gminer(); break;
             }
-
-            miner.LogDataReceived += s => { if (showlog) Logging(s); };
-            miner.MinerInfoUpdated += mi => { MI = mi; };
-            miner.MinerStarted += (lng, ethernet) => 
-            {
-                CurrProf.StartedID = lng;
-                Settings.SetProfile(CurrProf);
-                Indicator = true;
-                TCPserver.Indication = true;
-                string msg;
-                if (!ethernet) msg = $"{config.Name} запущен"; 
-                else msg = $"Интернет восстановлен, {config.Name} запущен";
-                Logging(msg, true);
-            };
-            miner.MinerStoped += () =>
-            {
-                Indicator = false;
-                TCPserver.Indication = false;
-                MI = null;
-            };
-            miner.InactivityTimer += n =>
-            {
-                if (n < 1) IdleWachdog = "";
-                else IdleWachdog = $"Бездаействие {n}";
-            };
-            miner.LowHashrateTimer += n =>
-            {
-                if (n < 1) LowHWachdog = "";
-                else LowHWachdog = $"Низкий хешрейт {n}";
-            };
-            miner.WachdogDelayTimer += n =>
-            {
-                if (n < 1) WachdogInfo = "";
-                else WachdogInfo = $"Активация вачдога {n}";
-            };
-            miner.GPUsfalled += gs =>
-            {
-                string str = "";
-                foreach (int g in gs) str += $"{g},";
-                str.TrimEnd(',');
-                Logging($"Отвал GPUs:[{str}] перезапуск майнера", true);
-                miner.RestartMiner();
-            };
-            miner.InactivityError += () =>
-            {
-                Logging("Бездействие, перезагрузка", true);
-                System.Diagnostics.Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
-                System.Windows.Application.Current.Shutdown();
-            };
-            miner.LowHashrateError += () =>
-            {
-                Logging("Низкий хешрейт, перезапуск майнера", true);
-                miner.RestartMiner();
-            };
 
             if(config.ClockID != null)
             {

@@ -13,11 +13,8 @@ namespace OMineGuard.Miners
 {
     public class Claymore : Miner
     {
-        public override event Action<string> LogDataReceived;
-
         private protected override string Directory { get; set; } = "Claymore's Dual Miner";
         private protected override string ProcessName { get; set; } = "EthDcrMiner64";
-        private protected override Process miner { get; set; }
         private protected override void RunThisMiner(Config Config)
         {
             string DT = DateTime.Now.ToString("HH.mm.ss - dd.MM.yy");
@@ -87,7 +84,7 @@ namespace OMineGuard.Miners
                                       str.Contains("recv") ||
                                       str.Contains("sent")))
                                 {
-                                    Task.Run(() => LogDataReceived?.Invoke(str));
+                                    Logging(str);
                                     Task.Run(() =>
                                     {
                                         using (StreamWriter fstr = new StreamWriter(logfile, true))
