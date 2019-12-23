@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace OMineGuard.Styles
+namespace OMineGuard.Frontend.Styles
 {
     public class Tumbler : CheckBox
     {

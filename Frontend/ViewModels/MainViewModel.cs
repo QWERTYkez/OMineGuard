@@ -1,75 +1,95 @@
 ﻿using OMineGuard.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace OMineGuard.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
+        public event Action Autostarted;
+
         public event PropertyChangedEventHandler PropertyChanged;
         public void OnPropertyChanged([CallerMemberName]string prop = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
 
-        readonly MainModel _model = new MainModel();
+        private MainModel _model;
         public MainViewModel()
         {
-            _model.PropertyChanged += ModelChanged;
-
             IniConfigsCommands();
             IniConfigCommands();
             IniOverclockCommands();
             IniLogCommands();
             IniBaseSettingsCommands();
+
+            Task.Run(() => 
+            {
+                _model = new MainModel();
+                _model.PropertyChanged += ModelChanged;
+                _model.Autostarted += () => Autostarted?.Invoke();
+                _model.IniModel();
+            });
         }
 
         private Backend.Profile Profile;
         private Dictionary<string, int[]> Algs;
         private List<string> MinersList;
         public int GPUs { get; set; }
+        private static readonly object gpkey = new object();
         public void ResetGPUs()
         {
-            int[] l = new int[]
+            lock (gpkey)
             {
-                (InfPowerLimits != null? InfPowerLimits.Length : 0),
-                (InfCoreClocks != null? InfCoreClocks.Length : 0),
-                (InfMemoryClocks != null? InfMemoryClocks.Length : 0),
-                (InfFanSpeeds != null? InfFanSpeeds.Length : 0),
-                (InfTemperatures != null? InfTemperatures.Length : 0),
-                GPUsCountSelected
-            };
-            int m = l.Max();
-            if (GPUs != m) GPUs = m;
+                int[] l = new int[]
+                {
+                    (InfPowerLimits != null? InfPowerLimits.Length : 0),
+                    (InfCoreClocks != null? InfCoreClocks.Length : 0),
+                    (InfMemoryClocks != null? InfMemoryClocks.Length : 0),
+                    (InfFanSpeeds != null? InfFanSpeeds.Length : 0),
+                    (InfTemperatures != null? InfTemperatures.Length : 0),
+                    GPUsCountSelected
+                };
+                int m = l.Max();
+                if (GPUs != m)
+                {
+                    GPUs = m;
+                }
+            }
+            
         }
-        public Backend.DC DefClock { get; set; }
         private void ModelChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
             {
                 case "Profile":
                     {
-                        Profile = _model.Profile;
-
-                        LogFontSize = Profile.LogTextSize;
-                        GPUsSwitch = Profile.GPUsSwitch;
-                        if (Profile.GPUsSwitch != null)
+                        if (_model.Profile != null)
                         {
-                            GPUsCountSelected = _model.Profile.GPUsSwitch.Count;
+                            Profile = _model.Profile;
+
+                            LogFontSize = Profile.LogTextSize;
+                            GPUsSwitch = Profile.GPUsSwitch;
+                            if (Profile.GPUsSwitch != null)
+                            {
+                                GPUsCountSelected = _model.Profile.GPUsSwitch.Count;
+                            }
+                            else { GPUsCountSelected = 0; }
+                            RigName = Profile.RigName;
+                            AutoRun = Profile.Autostart;
+                            ConfigsNames = from i in Profile.ConfigsList select i.Name;
+                            List<string> CL = (from i in Profile.ClocksList select i.Name).ToList();
+                            CL.Insert(0, "---");
+                            ConfigOverclocks = CL;
+                            OverclocksNames = from i in Profile.ClocksList select i.Name;
+                            WachdogTimer = Profile.TimeoutWachdog;
+                            IdleTimeout = Profile.TimeoutIdle;
+                            LHTimeout = Profile.TimeoutLH;
                         }
-                        else { GPUsCountSelected = 0; }
-                        RigName = Profile.RigName;
-                        AutoRun = Profile.Autostart;
-                        ConfigsNames = from i in Profile.ConfigsList select i.Name;
-                        List<string> CL = (from i in Profile.ClocksList select i.Name).ToList();
-                        CL.Insert(0, "---");
-                        ConfigOverclocks = CL;
-                        OverclocksNames = from i in Profile.ClocksList select i.Name;
-                        WachdogTimer = Profile.TimeoutWachdog;
-                        IdleTimeout = Profile.TimeoutIdle;
-                        LHTimeout = Profile.TimeoutLH;
                         break;
                     }
                 case "Miners":
@@ -88,48 +108,87 @@ namespace OMineGuard.ViewModels
                         Log += _model.Loggong;
                     }
                     break;
-                case "OC":
+                case "MSI":
                     {
-                        if (InfPowerLimits != _model.OC.MSI_PowerLimits)
+                        var xx = _model.MSI;
+                        if (xx != null)
                         {
-                            InfPowerLimits = _model.OC.MSI_PowerLimits;
-                        }
-                        if (InfCoreClocks != _model.OC.MSI_CoreClocks)
-                        {
-                            InfCoreClocks = _model.OC.MSI_CoreClocks;
-                        }
-                        if (InfMemoryClocks != _model.OC.MSI_MemoryClocks)
-                        {
-                            InfMemoryClocks = _model.OC.MSI_MemoryClocks;
-                        }
-                        if (InfFanSpeeds != _model.OC.MSI_FanSpeeds)
-                        {
-                            InfFanSpeeds = _model.OC.MSI_FanSpeeds;
-                        }
+                            if (!MSIenable) MSIenable = true;
 
+                            InfPowerLimits = xx.Value.PowerLimits;
+                            InfCoreClocks = xx.Value.CoreClocks;
+                            InfMemoryClocks = xx.Value.MemoryClocks;
+                            if (!OHMenable) InfFanSpeeds = xx.Value.FanSpeeds;
+                        }
+                        else 
+                        { 
+                            if (MSIenable) MSIenable = false;
+
+                            InfPowerLimits = null;
+                            InfCoreClocks = null;
+                            InfMemoryClocks = null;
+                            if (!MIenable && !OHMenable) InfFanSpeeds = null;
+                        }
+                        ResetGPUs();
+                    }
+                    break;
+                case "OHM":
+                    {
+                        var xx = _model.OHM;
+                        if (xx != null)
+                        {
+                            if(!OHMenable) OHMenable = true;
+
+                            InfOHMCoreClocks = xx.Value.CoreClocks;
+                            InfOHMMemoryClocks = xx.Value.MemoryClocks;
+                            InfTemperatures = xx.Value.Temperatures;
+                            InfFanSpeeds = xx.Value.FanSpeeds;
+                        }
+                        else 
+                        { 
+                            if (OHMenable) OHMenable = false;
+
+                            InfOHMCoreClocks = null;
+                            InfOHMMemoryClocks = null;
+                            if (!MIenable) InfTemperatures = null;
+                            if (!MIenable && !MSIenable) InfFanSpeeds = null;
+                        }
+                        ResetGPUs();
+                    }
+                    break;
+                case "MI":
+                    {
+                        var xx = _model.MI;
+                        if (xx != null)
+                        {
+                            if (!MIenable) MIenable = true;
+
+                            if (xx.Value.Hashrates != null)
+                            {
+                                InfHashrates = xx.Value.Hashrates;
+                                TotalHashrate = InfHashrates.Sum();
+                            }
+                            if (!OHMenable) { InfTemperatures = xx.Value.Temperatures; }
+                            if (!MSIenable) InfFanSpeeds = xx.Value.Fanspeeds;
+                        }
+                        else
+                        {
+                            if (MIenable) MIenable = false;
+
+                            InfHashrates = null;
+                            TotalHashrate = null;
+                            if (!OHMenable) InfTemperatures = null;
+                            if (!OHMenable && !MSIenable) InfFanSpeeds = null;
+                        }
                         ResetGPUs();
                     }
                     break;
                 case "DefClock":
                     {
-                        DefClock = _model.DefClock;
-                    }
-                    break;
-                case "Hashrates":
-                    {
-                        if (InfHashrates != _model.Hashrates)
-                        {
-                            InfHashrates = _model.Hashrates;
-                            TotalHashrate = _model.Hashrates.Sum();
-                        }
-                    }
-                    break;
-                case "Temperatures":
-                    {
-                        if (InfTemperatures != _model.Temperatures)
-                        {
-                            InfTemperatures = _model.Temperatures;
-                        }
+                        DefPowerLimits = _model.DefClock.PowerLimits;
+                        DefCoreClocks = _model.DefClock.CoreClocks;
+                        DefMemoryClocks = _model.DefClock.MemoryClocks;
+                        DefFanSpeeds = _model.DefClock.FanSpeeds;
                     }
                     break;
                 case "WachdogInfo":
@@ -150,15 +209,9 @@ namespace OMineGuard.ViewModels
                         SetTimersVisibility();
                     }
                     break;
-                case "ShowMLogTB":
-                    {
-                        ShowMLogTB = _model.ShowMLogTB;
-                        SetTimersVisibility();
-                    }
-                    break;
                 case "Indicator":
                     {
-                        Indication = (bool)_model.Indicator;
+                        Indication = _model.Indicator;
                         if (Indication)
                         {
                             SwitchProcessButtonText = "KillProcess";
@@ -374,11 +427,16 @@ namespace OMineGuard.ViewModels
         public RelayCommand SaveOverclock { get; set; }
         public RelayCommand ApplyOverclock { get; set; }
 
+        private int[] DefPowerLimits;
+        private int[] DefCoreClocks;
+        private int[] DefMemoryClocks;
+        private int[] DefFanSpeeds;
+
         public string OverclockName { get; set; }
-        public List<int> PowerLimits { get; set; }
-        public List<int> CoreClocks { get; set; }
-        public List<int> MemoryClocks { get; set; }
-        public List<int> FanSpeeds { get; set; }
+        public int[] PowerLimits { get; set; }
+        public int[] CoreClocks { get; set; }
+        public int[] MemoryClocks { get; set; }
+        public int[] FanSpeeds { get; set; }
 
         public RelayCommand PowerLimitsOn { get; set; }
         public RelayCommand CoreClocksOn { get; set; }
@@ -390,20 +448,20 @@ namespace OMineGuard.ViewModels
         public RelayCommand MemoryClocksOff { get; set; }
         public RelayCommand FanSpeedsOff { get; set; }
 
-        public int[] InfPowerLimits { get; set; }
-        public int[] InfCoreClocks { get; set; }
-        public int[] InfMemoryClocks { get; set; }
-        public int[] InfFanSpeeds { get; set; }
-        public int[] InfTemperatures { get; set; }
-        public double[] InfHashrates { get; set; }
-        public double TotalHashrate { get; set; }
+        private bool MSIenable = false;
+        private bool OHMenable = false;
+        private bool MIenable = false;
 
-        private List<int> ArrayToList(int[] source)
-        {
-            List<int> S = source?.ToList();
-            if (S != null) { while (S.Count < GPUsCountSelected) S.Add(0); }
-            return S;
-        }
+        public int?[] InfPowerLimits { get; set; }
+        public int?[] InfCoreClocks { get; set; }
+        public int?[] InfMemoryClocks { get; set; }
+        public int?[] InfOHMCoreClocks { get; set; }  //
+        public int?[] InfOHMMemoryClocks { get; set; }  //
+        public int?[] InfFanSpeeds { get; set; }
+        public int?[] InfTemperatures { get; set; }
+        public double?[] InfHashrates { get; set; }
+        public double? TotalHashrate { get; set; }
+
         private void IniOverclockCommands()
         {
             SelectOverclock = new RelayCommand(obj =>
@@ -412,10 +470,10 @@ namespace OMineGuard.ViewModels
                 {
                     OverclockName = Profile.ClocksList[SelectedOverclockIndex].Name;
 
-                    PowerLimits = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].PowLim);
-                    CoreClocks = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].CoreClock);
-                    MemoryClocks = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].MemoryClock);
-                    FanSpeeds = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].FanSpeed);
+                    PowerLimits = Profile.ClocksList[SelectedOverclockIndex].PowLim;
+                    CoreClocks = Profile.ClocksList[SelectedOverclockIndex].CoreClock;
+                    MemoryClocks = Profile.ClocksList[SelectedOverclockIndex].MemoryClock;
+                    FanSpeeds = Profile.ClocksList[SelectedOverclockIndex].FanSpeed;
                 }
                 else
                 {
@@ -431,46 +489,30 @@ namespace OMineGuard.ViewModels
             PowerLimitsOn = new RelayCommand(obj =>
             {
                 if (Profile.ClocksList[SelectedOverclockIndex].PowLim == null)
-                {
-                    PowerLimits = ArrayToList(DefClock.PowerLimits);
-                }
+                    PowerLimits = DefPowerLimits;
                 else
-                {
-                    PowerLimits = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].PowLim);
-                }
+                    PowerLimits = Profile.ClocksList[SelectedOverclockIndex].PowLim;
             });
             CoreClocksOn = new RelayCommand(obj =>
             {
                 if (Profile.ClocksList[SelectedOverclockIndex].PowLim == null)
-                {
-                    CoreClocks = ArrayToList(DefClock.CoreClocks);
-                }
+                    CoreClocks = DefCoreClocks;
                 else
-                {
-                    CoreClocks = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].CoreClock);
-                }
+                    CoreClocks = Profile.ClocksList[SelectedOverclockIndex].CoreClock;
             });
             MemoryClocksOn = new RelayCommand(obj =>
             {
                 if (Profile.ClocksList[SelectedOverclockIndex].PowLim == null)
-                {
-                    MemoryClocks = ArrayToList(DefClock.MemoryClocks);
-                }
+                    MemoryClocks = DefMemoryClocks;
                 else
-                {
-                    MemoryClocks = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].MemoryClock);
-                }
+                    MemoryClocks = Profile.ClocksList[SelectedOverclockIndex].MemoryClock;
             });
             FanSpeedsOn = new RelayCommand(obj =>
             {
                 if (Profile.ClocksList[SelectedOverclockIndex].PowLim == null)
-                {
-                    FanSpeeds = ArrayToList(DefClock.FanSpeeds);
-                }
+                    FanSpeeds = DefFanSpeeds;
                 else
-                {
-                    FanSpeeds = ArrayToList(Profile.ClocksList[SelectedOverclockIndex].FanSpeed);
-                }
+                    FanSpeeds = Profile.ClocksList[SelectedOverclockIndex].FanSpeed;
             });
 
             PowerLimitsOff = new RelayCommand(obj =>
@@ -561,7 +603,8 @@ namespace OMineGuard.ViewModels
         public int LogFontSize { get; set; }
         public RelayCommand SetLogFontSize { get; set; }
         public bool LogAutoscroll { get; set; } = true;
-        public RelayCommand ShowMinerLog { get; set; }
+        public RelayCommand MinerLogShow { get; set; }
+        public RelayCommand MinerLogHide { get; set; }
         public string SwitchProcessButtonText { get; set; } = "Switch Process";
         public RelayCommand SwitchProcess { get; set; }
 
@@ -572,7 +615,7 @@ namespace OMineGuard.ViewModels
         public object TimersVisibility { get; set; } = null;
         private void SetTimersVisibility()
         {
-            if (WachdogInfo == "" && LowHWachdog == "" && IdleWachdog == "" && ShowMLogTB == "")
+            if (WachdogInfo == "" && LowHWachdog == "" && IdleWachdog == "")
             {
                 TimersVisibility = null;
             }
@@ -589,9 +632,13 @@ namespace OMineGuard.ViewModels
                 Profile.LogTextSize = LogFontSize;
                 _model.CMD_SaveProfile(Profile);
             });
-            ShowMinerLog = new RelayCommand(obj => 
+            MinerLogShow = new RelayCommand(obj => 
             {
-                _model.CMD_ShowMinerLog();
+                _model.CMD_MinerLogShow();
+            });
+            MinerLogHide = new RelayCommand(obj =>
+            {
+                _model.CMD_MinerLogHide();
             });
             SwitchProcess = new RelayCommand(obj =>
             {

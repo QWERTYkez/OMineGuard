@@ -6,7 +6,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Markup;
 
-namespace OMineGuard.Styles
+namespace OMineGuard.Frontend.Styles
 {
     public class ObjectExistToVisibilityConverter : IValueConverter
     {

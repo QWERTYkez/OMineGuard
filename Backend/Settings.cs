@@ -25,7 +25,7 @@ namespace OMineGuard.Backend
             {
                 string JSON = JsonConvert.SerializeObject(Profile);
 
-                using (FileStream fstream = new FileStream("json", FileMode.Create))
+                using (FileStream fstream = new FileStream("Settings.json", FileMode.Create))
                 {
                     byte[] array = System.Text.Encoding.Default.GetBytes(JSON);
                     fstream.Write(array, 0, array.Length);
@@ -38,7 +38,7 @@ namespace OMineGuard.Backend
             {
                 try
                 {
-                    using (FileStream fstream = File.OpenRead("json"))
+                    using (FileStream fstream = File.OpenRead("Settings.json"))
                     {
                         byte[] array = new byte[fstream.Length];
                         fstream.Read(array, 0, array.Length);
@@ -134,19 +134,5 @@ namespace OMineGuard.Backend
 
         public bool VkInform;
         public string VKuserID;
-    }
-    public struct OC
-    {
-        public int[] MSI_PowerLimits;
-        public int[] MSI_CoreClocks;
-        public int[] MSI_MemoryClocks;
-        public int[] MSI_FanSpeeds;
-    }
-    public struct DC
-    {
-        public int[] PowerLimits;
-        public int[] CoreClocks;
-        public int[] MemoryClocks;
-        public int[] FanSpeeds;
     }
 }

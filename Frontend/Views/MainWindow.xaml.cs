@@ -9,11 +9,11 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace OMineGuard.Views
+namespace OMineGuard.Frontend.Views
 {
     public partial class MainWindow : Window
     {
-        public const string Ver = "1.8";
+        public const string Ver = "2.0";
 
         public MainWindow()
         {
@@ -21,8 +21,11 @@ namespace OMineGuard.Views
             _context = SynchronizationContext.Current;
             OMGindication();
 
-            _ViewModel = (MainViewModel)DataContext;
+            this.Title = $"OMineGuard v.{Ver}";
+
+            DataContext = _ViewModel = new MainViewModel();
             _ViewModel.PropertyChanged += MainWindow_PropertyChanged;
+            _ViewModel.Autostarted += () => StartProfile(null, null);
         }
 
         private SynchronizationContext _context;
@@ -104,7 +107,7 @@ namespace OMineGuard.Views
 
         private void MainWindow_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            _context.Send((object o) =>
+            Dispatcher.Invoke(() => 
             {
                 switch (e.PropertyName)
                 {
@@ -128,14 +131,16 @@ namespace OMineGuard.Views
                                     GPUs.Children.Add(Lb);
                                 }
                             }
-                            SetLabels(InfPowerLimits, "InfPowerLimits", PLsLengthA, PLsLengthB, n);
                             SetTextBoxes(PowerLimits, "PowerLimits", n);
-                            SetLabels(InfCoreClocks, "InfCoreClocks", CoresLengthA, CoresLengthB, n);
+                            SetLabels(InfPowerLimits, "InfPowerLimits", PLsLengthA, PLsLengthB, n);
                             SetTextBoxes(CoreClocks, "CoreClocks", n);
-                            SetLabels(InfMemoryClocks, "InfMemoryClocks", MemorysLengthA, MemorysLengthB, n);
+                            SetLabels(InfCoreClocks, "InfCoreClocks", CoresLengthA, CoresLengthB, n);
+                            SetLabels(InfOHMCoreClocks, "InfOHMCoreClocks", null, null, n);
                             SetTextBoxes(MemoryClocks, "MemoryClocks", n);
-                            SetLabels(InfoFanSpeeds, "InfFanSpeeds", FansLengthA, FansLengthB, n);
+                            SetLabels(InfMemoryClocks, "InfMemoryClocks", MemorysLengthA, MemorysLengthB, n);
+                            SetLabels(InfOHMMemoryClocks, "InfOHMMemoryClocks", null, null, n);
                             SetTextBoxes(FanSpeeds, "FanSpeeds", n);
+                            SetLabels(InfoFanSpeeds, "InfFanSpeeds", FansLengthA, FansLengthB, n);
                             SetLabels(InfTemps, "InfTemperatures", TempsLengthA, TempsLengthB, n);
                             SetLabels(LogTemperatures, "InfTemperatures", n, "0°C");
                             SetLabels(InfHashrates, "InfHashrates", HashesLengthA, HashesLengthB, n, "0.00");
@@ -163,6 +168,22 @@ namespace OMineGuard.Views
                             {
                                 ArrCoreClocks = _ViewModel.InfCoreClocks;
                                 SetLengths(ArrCoreClocks, CoresLengthA, CoresLengthB);
+                            }
+                        }
+                        break;
+                    case "InfOHMCoreClocks":
+                        {
+                            if (ArrOHMCoreClocks != _ViewModel.InfOHMCoreClocks)
+                            {
+                                ArrOHMCoreClocks = _ViewModel.InfOHMCoreClocks;
+                            }
+                        }
+                        break;
+                    case "InfOHMMemoryClocks":
+                        {
+                            if (ArrOHMMemoryClocks != _ViewModel.InfOHMMemoryClocks)
+                            {
+                                ArrOHMMemoryClocks = _ViewModel.InfOHMMemoryClocks;
                             }
                         }
                         break;
@@ -203,123 +224,182 @@ namespace OMineGuard.Views
                         }
                         break;
                 }
-            },
-            null);
+            });
         }
-        private static void SetLengths(int[] vals, List<ColumnDefinition> cdA, List<ColumnDefinition> cdB)
+        private static void SetLengths(double?[] vals, List<ColumnDefinition> cdA, List<ColumnDefinition> cdB)
         {
-            if (vals.Length > 0)
+            if (vals != null)
             {
-                double mx = vals.Max();
-                for (int i = 0; i < vals.Length; i++)
+                if (vals.Length > 0)
                 {
-                    double cr = vals[i];
-                    cdA[i].Width = new GridLength(cr / mx, GridUnitType.Star);
-                    cdB[i].Width = new GridLength((mx - cr) / mx, GridUnitType.Star);
+                    double? mx = vals.Max().Value;
+                    if (mx != null)
+                    {
+                        double? cr;
+                        for (int i = 0; i < cdA.Count; i++)
+                        {
+                            try
+                            {
+                                cr = vals[i];
+                                if (cr != null)
+                                {
+                                    try
+                                    {
+                                        cdA[i].Width = new GridLength(cr.Value / mx.Value, GridUnitType.Star);
+                                        cdB[i].Width = new GridLength((mx.Value - cr.Value) / mx.Value, GridUnitType.Star);
+                                    }
+                                    catch { }
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                        cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            catch
+                            {
+                                try
+                                {
+                                    cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                    cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < cdA.Count; i++)
+                        {
+                            try
+                            {
+                                cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                            }
+                            catch { }
+                        }
+                    }
                 }
             }
         }
-        private static void SetLengths(double[] vals, List<ColumnDefinition> cdA, List<ColumnDefinition> cdB)
+        private static void SetLengths(int?[] vals, List<ColumnDefinition> cdA, List<ColumnDefinition> cdB)
         {
-            if (vals.Length > 0)
+            if (vals != null)
             {
-                double mx = vals.Max();
-                for (int i = 0; i < vals.Length; i++)
+                if (vals.Length > 0)
                 {
-                    double cr = vals[i];
-                    cdA[i].Width = new GridLength(cr / mx, GridUnitType.Star);
-                    cdB[i].Width = new GridLength((mx - cr) / mx, GridUnitType.Star);
+                    double? mx = vals.Max().Value;
+                    if (mx != null)
+                    {
+                        double? cr;
+                        for (int i = 0; i < cdA.Count; i++)
+                        {
+                            try
+                            {
+                                cr = vals[i];
+                                if (cr != null)
+                                {
+                                    try
+                                    {
+                                        cdA[i].Width = new GridLength(cr.Value / mx.Value, GridUnitType.Star);
+                                        cdB[i].Width = new GridLength((mx.Value - cr.Value) / mx.Value, GridUnitType.Star);
+                                    }
+                                    catch { }
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                        cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            catch 
+                            {
+                                try
+                                {
+                                    cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                    cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < cdA.Count; i++)
+                        {
+                            try
+                            {
+                                cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                            }
+                            catch { }
+                        }
+                    }
                 }
             }
         }
 
-        private int[] ArrPowerLimits;
+        private int?[] ArrPowerLimits;
         private List<ColumnDefinition> PLsLengthA = new List<ColumnDefinition>();
         private List<ColumnDefinition> PLsLengthB = new List<ColumnDefinition>();
-        private int[] ArrCoreClocks;
+        private int?[] ArrCoreClocks;
         private List<ColumnDefinition> CoresLengthA = new List<ColumnDefinition>();
         private List<ColumnDefinition> CoresLengthB = new List<ColumnDefinition>();
-        private int[] ArrMemoryClocks;
+        private int?[] ArrOHMCoreClocks;
+        private int?[] ArrMemoryClocks;
         private List<ColumnDefinition> MemorysLengthA = new List<ColumnDefinition>();
         private List<ColumnDefinition> MemorysLengthB = new List<ColumnDefinition>();
-        private int[] ArrFanSpeeds;
+        private int?[] ArrOHMMemoryClocks;
+        private int?[] ArrFanSpeeds;
         private List<ColumnDefinition> FansLengthA = new List<ColumnDefinition>();
         private List<ColumnDefinition> FansLengthB = new List<ColumnDefinition>();
-        private int[] ArrTemperatures;
+        private int?[] ArrTemperatures;
         private List<ColumnDefinition> TempsLengthA = new List<ColumnDefinition>();
         private List<ColumnDefinition> TempsLengthB = new List<ColumnDefinition>();
-        private double[] ArrHashrates;
+        private double?[] ArrHashrates;
         private List<ColumnDefinition> HashesLengthA = new List<ColumnDefinition>();
         private List<ColumnDefinition> HashesLengthB = new List<ColumnDefinition>();
 
         private void SetLabels(StackPanel SP, string prop,
-            List<ColumnDefinition> LengthsA, List<ColumnDefinition> LengthsB, int length)
+            List<ColumnDefinition> LengthsA, List<ColumnDefinition> LengthsB, int length, string format = null)
         {
             SP.Children.Clear();
-            LengthsA.Clear();
-            LengthsB.Clear();
-            for (int i = 0; i < length; i++)
+            if (LengthsA != null && LengthsB != null)
             {
-                Grid GRD = new Grid();
-                {
-                    Grid GRDD = new Grid();
-                    {
-                        ColumnDefinition cdA = new ColumnDefinition();
-                        LengthsA.Add(cdA);
-                        GRDD.ColumnDefinitions.Add(cdA);
-
-                        ColumnDefinition cdB = new ColumnDefinition();
-                        LengthsB.Add(cdB);
-                        GRDD.ColumnDefinitions.Add(cdB);
-                    }
-                    {
-                        Grid grd = new Grid { Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)) };
-                        Grid.SetColumn(grd, 0);
-
-                        GRDD.Children.Add(grd);
-                    }
-
-                    Label Lb = new Label
-                    {
-                        Height = 26,
-                        HorizontalContentAlignment = HorizontalAlignment.Center,
-                        VerticalContentAlignment = VerticalAlignment.Center,
-                        FontFamily = new FontFamily("Consolas"),
-                        FontSize = 14
-                    };
-                    Lb.SetBinding(Label.ContentProperty, $"{prop}[{i}]");
-
-                    GRD.Children.Add(GRDD);
-                    GRD.Children.Add(Lb);
-                }
-                SP.Children.Add(GRD);
+                LengthsA.Clear();
+                LengthsB.Clear();
             }
-        }
-        private void SetLabels(StackPanel SP, string prop,
-            List<ColumnDefinition> LengthsA, List<ColumnDefinition> LengthsB, int length, string format)
-        {
-            SP.Children.Clear();
-            LengthsA.Clear();
-            LengthsB.Clear();
             for (int i = 0; i < length; i++)
             {
                 Grid GRD = new Grid();
                 {
-                    Grid GRDD = new Grid();
+                    if (LengthsA != null && LengthsB != null)
                     {
-                        ColumnDefinition cdA = new ColumnDefinition();
-                        LengthsA.Add(cdA);
-                        GRDD.ColumnDefinitions.Add(cdA);
+                        Grid GRDD = new Grid();
+                        {
+                            ColumnDefinition cdA = new ColumnDefinition { Width = new GridLength(0, GridUnitType.Star) };
+                            LengthsA.Add(cdA);
+                            GRDD.ColumnDefinitions.Add(cdA);
 
-                        ColumnDefinition cdB = new ColumnDefinition();
-                        LengthsB.Add(cdB);
-                        GRDD.ColumnDefinitions.Add(cdB);
-                    }
-                    {
-                        Grid grd = new Grid { Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)) };
-                        Grid.SetColumn(grd, 0);
+                            ColumnDefinition cdB = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) };
+                            LengthsB.Add(cdB);
+                            GRDD.ColumnDefinitions.Add(cdB);
+                        }
+                        {
+                            Grid grd = new Grid { Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)) };
+                            Grid.SetColumn(grd, 0);
 
-                        GRDD.Children.Add(grd);
+                            GRDD.Children.Add(grd);
+                        }
+                        GRD.Children.Add(GRDD);
                     }
 
                     Label Lb = new Label
@@ -329,11 +409,10 @@ namespace OMineGuard.Views
                         VerticalContentAlignment = VerticalAlignment.Center,
                         FontFamily = new FontFamily("Consolas"),
                         FontSize = 14,
-                        ContentStringFormat = format
                     };
+                    if (format != null) Lb.ContentStringFormat = format;
                     Lb.SetBinding(Label.ContentProperty, $"{prop}[{i}]");
 
-                    GRD.Children.Add(GRDD);
                     GRD.Children.Add(Lb);
                 }
                 SP.Children.Add(GRD);
@@ -414,6 +493,14 @@ namespace OMineGuard.Views
                         Thread.Sleep(200);
                     }
                 }
+            });
+        }
+
+        private void StartProfile(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.Invoke(() => 
+            {
+                TABCON.SelectedIndex = 2;
             });
         }
     }

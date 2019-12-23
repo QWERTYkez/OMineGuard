@@ -6,11 +6,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
 {
     class Gminer : Miner
     {
+        public override event Action<string> LogDataReceived;
+
         private protected override string Directory { get; set; } = "Gminer";
         private protected override string ProcessName { get; set; } = "miner";
         private protected override Process miner { get; set; }
@@ -83,8 +86,8 @@ namespace OMineGuard.Miners
                     RedirectStandardError = true
                 }
             };
-            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
-            miner.OutputDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
+            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
+            miner.OutputDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
 
             miner.Start();
             miner.BeginErrorReadLine();
@@ -105,28 +108,21 @@ namespace OMineGuard.Miners
                             GminerDevice[] GDs = JsonConvert.DeserializeObject<GminerInfo>(reader.ReadToEnd()).
                                 devices.OrderBy(GD => GD.gpu_id).ToArray();
 
-                            List<double> Hashrates = GDs.Select(GD => GD.speed).ToList();
-                            List<int> Temperatures = GDs.Select(GD => GD.temperature).ToList();
-                            List<int> ShAccepted = GDs.Select(GD => GD.accepted_shares).ToList();
-                            List<int> ShRejected = GDs.Select(GD => GD.rejected_shares).ToList();
+                            List<double?> Hashrates = GDs.Select(GD => GD.speed).ToList();
+                            List<int?> Temperatures = GDs.Select(GD => GD.temperature).ToList();
+                            List<int?> ShAccepted = GDs.Select(GD => GD.accepted_shares).ToList();
+                            List<int?> ShRejected = GDs.Select(GD => GD.rejected_shares).ToList();
 
                             if (GPUs != null)
                             {
                                 for (int i = 0; i < GPUs.Count; i++)
                                 {
-                                    if (i < Hashrates.Count)
-                                    {
-                                        Hashrates.Add(-2);
-                                        Temperatures.Add(-2);
-                                        ShAccepted.Add(-2);
-                                        ShRejected.Add(-2);
-                                    }
                                     if (!GPUs[i])
                                     {
-                                        Hashrates.Insert(i, -1);
-                                        Temperatures.Insert(i, -1);
-                                        ShAccepted.Insert(i, -1);
-                                        ShRejected.Insert(i, -1);
+                                        Hashrates.Insert(i, null);
+                                        Temperatures.Insert(i, null);
+                                        ShAccepted.Insert(i, null);
+                                        ShRejected.Insert(i, null);
                                     }
                                 }
                             }
@@ -148,10 +144,10 @@ namespace OMineGuard.Miners
         {
 #pragma warning disable IDE1006 // Стили именования
             public int gpu_id { get; set; }
-            public double speed { get; set; }
-            public int accepted_shares { get; set; }
-            public int rejected_shares { get; set; }
-            public int temperature { get; set; }
+            public double? speed { get; set; }
+            public int? accepted_shares { get; set; }
+            public int? rejected_shares { get; set; }
+            public int? temperature { get; set; }
 #pragma warning restore IDE1006 // Стили именования
         }
     }

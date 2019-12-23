@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OMineGuard.Backend
@@ -19,7 +20,7 @@ namespace OMineGuard.Backend
         private static readonly int WachDelay = 3; //sec
         private static void StartWachInternetConnection()
         {
-            Task.Run(async () => 
+            Task.Run(() => 
             {
                 bool ICSnew;
                 while (true)
@@ -37,7 +38,7 @@ namespace OMineGuard.Backend
                         }
                         InternetConnectedState = ICSnew;
                     }
-                    await Task.Delay(WachDelay * 1000);
+                    Thread.Sleep(WachDelay * 1000);
                 }
             });
         }

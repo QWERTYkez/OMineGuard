@@ -6,11 +6,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
 {
     class Bminer : Miner
     {
+        public override event Action<string> LogDataReceived;
+
         private protected override string Directory { get; set; } = "Bminer";
         private protected override string ProcessName { get; set; } = "bminer";
         private protected override Process miner { get; set; }
@@ -88,8 +91,8 @@ namespace OMineGuard.Miners
                     RedirectStandardError = true
                 }
             };
-            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
-            miner.OutputDataReceived += (s, e) => { if (e.Data != "") MinerStartedInvoke(e.Data); };
+            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
+            miner.OutputDataReceived += (s, e) => { if (e.Data != "") Task.Run(() => LogDataReceived?.Invoke(e.Data)); };
 
             miner.Start();
             miner.BeginErrorReadLine();
@@ -116,25 +119,19 @@ namespace OMineGuard.Miners
 
                             BminerInfo INF = JsonConvert.DeserializeObject<BminerInfo>(content);
 
-                            List<double> Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToList();
-                            List<int> Temperatures = INF.miners.Select(m => m.device.temperature).ToList();
-                            List<int> Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToList();
+                            List<double?> Hashrates = INF.miners.Select(m => m.solver.solution_rate).ToList();
+                            List<int?> Temperatures = INF.miners.Select(m => m.device.temperature).ToList();
+                            List<int?> Fanspeeds = INF.miners.Select(m => m.device.fan_speed).ToList();
 
                             if (GPUs != null)
                             {
                                 for (int i = 0; i < GPUs.Count; i++)
                                 {
-                                    if (i < Hashrates.Count)
-                                    {
-                                        Hashrates.Add(-2);
-                                        Temperatures.Add(-2);
-                                        Fanspeeds.Add(-2);
-                                    }
                                     if (!GPUs[i])
                                     {
-                                        Hashrates.Insert(i, -1);
-                                        Temperatures.Insert(i, -1);
-                                        Fanspeeds.Insert(i, -1);
+                                        Hashrates.Insert(i, null);
+                                        Temperatures.Insert(i, null);
+                                        Fanspeeds.Insert(i, null);
                                     }
                                 }
                             }
@@ -171,14 +168,14 @@ namespace OMineGuard.Miners
         private class BminerSolver
         {
 #pragma warning disable IDE1006 // Стили именования
-            public double solution_rate { get; set; }
+            public double? solution_rate { get; set; }
 #pragma warning restore IDE1006 // Стили именования
         }
         private class BminerDevice
         {
 #pragma warning disable IDE1006 // Стили именования
-            public int temperature { get; set; }
-            public int fan_speed { get; set; }
+            public int? temperature { get; set; }
+            public int? fan_speed { get; set; }
 #pragma warning restore IDE1006 // Стили именования
         }
     }
