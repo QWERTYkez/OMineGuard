@@ -18,7 +18,7 @@ namespace OMineGuard.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
 
-        private MainModel _model;
+        public MainModel _model;
         public MainViewModel()
         {
             IniConfigsCommands();
@@ -40,28 +40,7 @@ namespace OMineGuard.ViewModels
         private Dictionary<string, int[]> Algs;
         private List<string> MinersList;
         public int GPUs { get; set; }
-        private static readonly object gpkey = new object();
-        public void ResetGPUs()
-        {
-            lock (gpkey)
-            {
-                int[] l = new int[]
-                {
-                    (InfPowerLimits != null? InfPowerLimits.Length : 0),
-                    (InfCoreClocks != null? InfCoreClocks.Length : 0),
-                    (InfMemoryClocks != null? InfMemoryClocks.Length : 0),
-                    (InfFanSpeeds != null? InfFanSpeeds.Length : 0),
-                    (InfTemperatures != null? InfTemperatures.Length : 0),
-                    GPUsCountSelected
-                };
-                int m = l.Max();
-                if (GPUs != m)
-                {
-                    GPUs = m;
-                }
-            }
-            
-        }
+        
         private void ModelChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
@@ -74,11 +53,6 @@ namespace OMineGuard.ViewModels
 
                             LogFontSize = Profile.LogTextSize;
                             GPUsSwitch = Profile.GPUsSwitch;
-                            if (Profile.GPUsSwitch != null)
-                            {
-                                GPUsCountSelected = _model.Profile.GPUsSwitch.Count;
-                            }
-                            else { GPUsCountSelected = 0; }
                             RigName = Profile.RigName;
                             AutoRun = Profile.Autostart;
                             ConfigsNames = from i in Profile.ConfigsList select i.Name;
@@ -95,6 +69,16 @@ namespace OMineGuard.ViewModels
                         }
                         break;
                     }
+                case "GPUs": { GPUs = _model.GPUs; break; }
+                case "InfPowerLimits": { InfPowerLimits = _model.InfPowerLimits; break; }
+                case "InfCoreClocks": { InfCoreClocks = _model.InfCoreClocks; break; }
+                case "InfMemoryClocks": { InfMemoryClocks = _model.InfMemoryClocks; break; }
+                case "InfOHMCoreClocks": { InfOHMCoreClocks = _model.InfOHMCoreClocks; break; }
+                case "InfOHMMemoryClocks": { InfOHMMemoryClocks = _model.InfOHMMemoryClocks; break; }
+                case "InfFanSpeeds": { InfFanSpeeds = _model.InfFanSpeeds; break; }
+                case "InfTemperatures": { InfTemperatures = _model.InfTemperatures; break; }
+                case "InfHashrates": { InfHashrates = _model.InfHashrates; break; }
+                case "TotalHashrate": { TotalHashrate = _model.TotalHashrate; break; }
                 case "Miners":
                     {
                         MinersList = _model.Miners;
@@ -109,81 +93,6 @@ namespace OMineGuard.ViewModels
                 case "Loggong":
                     {
                         Log += _model.Loggong;
-                    }
-                    break;
-                case "MSI":
-                    {
-                        var xx = _model.MSI;
-                        if (xx != null)
-                        {
-                            if (!MSIenable) MSIenable = true;
-
-                            InfPowerLimits = xx.Value.PowerLimits;
-                            InfCoreClocks = xx.Value.CoreClocks;
-                            InfMemoryClocks = xx.Value.MemoryClocks;
-                            if (!OHMenable) InfFanSpeeds = xx.Value.FanSpeeds;
-                        }
-                        else 
-                        { 
-                            if (MSIenable) MSIenable = false;
-
-                            InfPowerLimits = null;
-                            InfCoreClocks = null;
-                            InfMemoryClocks = null;
-                            if (!MIenable && !OHMenable) InfFanSpeeds = null;
-                        }
-                        ResetGPUs();
-                    }
-                    break;
-                case "OHM":
-                    {
-                        var xx = _model.OHM;
-                        if (xx != null)
-                        {
-                            if(!OHMenable) OHMenable = true;
-
-                            InfOHMCoreClocks = xx.Value.CoreClocks;
-                            InfOHMMemoryClocks = xx.Value.MemoryClocks;
-                            InfTemperatures = xx.Value.Temperatures;
-                            InfFanSpeeds = xx.Value.FanSpeeds;
-                        }
-                        else 
-                        { 
-                            if (OHMenable) OHMenable = false;
-
-                            InfOHMCoreClocks = null;
-                            InfOHMMemoryClocks = null;
-                            if (!MIenable) InfTemperatures = null;
-                            if (!MIenable && !MSIenable) InfFanSpeeds = null;
-                        }
-                        ResetGPUs();
-                    }
-                    break;
-                case "MI":
-                    {
-                        var xx = _model.MI;
-                        if (xx != null)
-                        {
-                            if (!MIenable) MIenable = true;
-
-                            if (xx.Value.Hashrates != null)
-                            {
-                                InfHashrates = xx.Value.Hashrates;
-                                TotalHashrate = InfHashrates.Sum();
-                            }
-                            if (!OHMenable) { InfTemperatures = xx.Value.Temperatures; }
-                            if (!MSIenable) InfFanSpeeds = xx.Value.Fanspeeds;
-                        }
-                        else
-                        {
-                            if (MIenable) MIenable = false;
-
-                            InfHashrates = null;
-                            TotalHashrate = null;
-                            if (!OHMenable) InfTemperatures = null;
-                            if (!OHMenable && !MSIenable) InfFanSpeeds = null;
-                        }
-                        ResetGPUs();
                     }
                     break;
                 case "DefClock":
@@ -239,7 +148,6 @@ namespace OMineGuard.ViewModels
         public List<string> GPUsCounts { get; set; } = new List<string>() { "Auto", "1", "2",
             "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" };
         public bool GPUsCanSelect { get; set; } = false;
-        public int GPUsCountSelected { get; set; } = -1;
         public List<bool> GPUsSwitch { get; set; }
         public RelayCommand SetGPUsSwitch { get; set; }
 
@@ -451,15 +359,11 @@ namespace OMineGuard.ViewModels
         public RelayCommand MemoryClocksOff { get; set; }
         public RelayCommand FanSpeedsOff { get; set; }
 
-        private bool MSIenable = false;
-        private bool OHMenable = false;
-        private bool MIenable = false;
-
         public int?[] InfPowerLimits { get; set; }
         public int?[] InfCoreClocks { get; set; }
         public int?[] InfMemoryClocks { get; set; }
-        public int?[] InfOHMCoreClocks { get; set; }  //
-        public int?[] InfOHMMemoryClocks { get; set; }  //
+        public int?[] InfOHMCoreClocks { get; set; }
+        public int?[] InfOHMMemoryClocks { get; set; }
         public int?[] InfFanSpeeds { get; set; }
         public int?[] InfTemperatures { get; set; }
         public double?[] InfHashrates { get; set; }

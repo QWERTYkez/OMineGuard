@@ -106,6 +106,29 @@ namespace OMineGuard.Miners
                 ConfigToRecovery = null;
             });
         }
+        public void ExxtraStopMiner()
+        {
+            inactivity = false;
+            InactivityTimer?.Invoke(-1);
+            if (miner != null)
+            {
+                miner.Kill();
+                miner = null;
+            }
+            foreach (Process proc in Process.GetProcessesByName(ProcessName))
+            {
+                try
+                {
+                    proc.Kill();
+                }
+                catch { }
+            }
+            Waching = false;
+            WachdogDelayTimer?.Invoke(-1);
+            LowHashrate = false;
+            LowHashrateTimer?.Invoke(-1);
+            ConfigToRecovery = null;
+        }
         private void Ending()
         {
             KillMiner();
@@ -158,12 +181,16 @@ namespace OMineGuard.Miners
                     if (!Waching) return;
                     Task.Run(() => 
                     {
-                        activehashes = GetMinerInfo().Hashrates.Where(h => h != null);
-                        if (activehashes.Sum() > config.MinHashrate)
+                        try
                         {
-                            inactivity = false;
-                            InactivityTimer?.Invoke(-1);
+                            activehashes = GetMinerInfo().Hashrates.Where(h => h != null);
+                            if (activehashes.Sum() > config.MinHashrate)
+                            {
+                                inactivity = false;
+                                InactivityTimer?.Invoke(-1);
+                            }
                         }
+                        catch { }
                     });
                     Task.Run(() => { if (Processing) WachdogDelayTimer?.Invoke(i); });
                     Thread.Sleep(1000);
@@ -314,7 +341,6 @@ namespace OMineGuard.Miners
             this.ShTotalAccepted = null;
             this.ShTotalRejected = null;
             this.ShTotalInvalid = null;
-            TimeStamp = DateTime.Now;
         }
         public MinerInfo(List<double?> Hashrates, List<int?> Temperatures,
             List<int?> Fanspeeds, int? ShTotalAccepted, int? ShTotalRejected, int? ShTotalInvalid)
@@ -328,10 +354,8 @@ namespace OMineGuard.Miners
             this.ShAccepted = null;
             this.ShRejected = null;
             this.ShInvalid = null;
-            TimeStamp = DateTime.Now;
         }
 
-        public DateTime TimeStamp { get; private set; }
         public double?[] Hashrates;
         public int?[] Temperatures;
         public int?[] Fanspeeds;

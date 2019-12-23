@@ -18,7 +18,6 @@ namespace OMineGuard.Frontend.Views
         public MainWindow()
         {
             InitializeComponent();
-            _context = SynchronizationContext.Current;
             OMGindication();
 
             this.Title = $"OMineGuard v.{Ver}";
@@ -28,13 +27,12 @@ namespace OMineGuard.Frontend.Views
             _ViewModel.Autostarted += () => StartProfile(null, null);
         }
 
-        private SynchronizationContext _context;
-        private MainViewModel _ViewModel;
+        private readonly MainViewModel _ViewModel;
 
         private void GPUsCB_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            int k = ((MainViewModel)DataContext).GPUsCountSelected;
-            ((MainViewModel)DataContext).ResetGPUs();
+            int k = ((MainViewModel)DataContext).GPUs;
+            ((MainViewModel)DataContext)._model.ResetGPUs();
             ComboBox ComB = (ComboBox)sender;
             if (((MainViewModel)DataContext).GPUsCanSelect)
             {
@@ -348,25 +346,25 @@ namespace OMineGuard.Frontend.Views
         }
 
         private int?[] ArrPowerLimits;
-        private List<ColumnDefinition> PLsLengthA = new List<ColumnDefinition>();
-        private List<ColumnDefinition> PLsLengthB = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> PLsLengthA = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> PLsLengthB = new List<ColumnDefinition>();
         private int?[] ArrCoreClocks;
-        private List<ColumnDefinition> CoresLengthA = new List<ColumnDefinition>();
-        private List<ColumnDefinition> CoresLengthB = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> CoresLengthA = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> CoresLengthB = new List<ColumnDefinition>();
         private int?[] ArrOHMCoreClocks;
         private int?[] ArrMemoryClocks;
-        private List<ColumnDefinition> MemorysLengthA = new List<ColumnDefinition>();
-        private List<ColumnDefinition> MemorysLengthB = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> MemorysLengthA = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> MemorysLengthB = new List<ColumnDefinition>();
         private int?[] ArrOHMMemoryClocks;
         private int?[] ArrFanSpeeds;
-        private List<ColumnDefinition> FansLengthA = new List<ColumnDefinition>();
-        private List<ColumnDefinition> FansLengthB = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> FansLengthA = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> FansLengthB = new List<ColumnDefinition>();
         private int?[] ArrTemperatures;
-        private List<ColumnDefinition> TempsLengthA = new List<ColumnDefinition>();
-        private List<ColumnDefinition> TempsLengthB = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> TempsLengthA = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> TempsLengthB = new List<ColumnDefinition>();
         private double?[] ArrHashrates;
-        private List<ColumnDefinition> HashesLengthA = new List<ColumnDefinition>();
-        private List<ColumnDefinition> HashesLengthB = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> HashesLengthA = new List<ColumnDefinition>();
+        private readonly List<ColumnDefinition> HashesLengthB = new List<ColumnDefinition>();
 
         private void SetLabels(StackPanel SP, string prop,
             List<ColumnDefinition> LengthsA, List<ColumnDefinition> LengthsB, int length, string format = null)
@@ -450,8 +448,7 @@ namespace OMineGuard.Frontend.Views
                     FontSize = 14
                 };
                 Tb.SetBinding(TextBox.TextProperty, $"{prop}[{i}]");
-                Binding b = new Binding($"{prop}");
-                b.Converter = new Styles.ListIntExistToBool();
+                Binding b = new Binding($"{prop}") { Converter = new Styles.ListIntExistToBool() };
                 Tb.SetBinding(TextBox.IsEnabledProperty, b);
                 SP.Children.Add(Tb);
             }
@@ -467,29 +464,26 @@ namespace OMineGuard.Frontend.Views
                 {
                     while (OMGworking == true)
                     {
-                        _context.Send((object o) =>
+                        Dispatcher.Invoke(() => 
                         {
                             IndicatorEl.Fill = Brushes.Lime;
                             IndicatorEl2.Fill = Brushes.Lime;
-                        },
-                        null);
+                        });
                         Thread.Sleep(700);
-                        _context.Send((object o) =>
+                        Dispatcher.Invoke(() => 
                         {
                             IndicatorEl.Fill = null;
                             IndicatorEl2.Fill = null;
-                        },
-                        null);
+                        });
                         Thread.Sleep(300);
                     }
                     while (OMGworking == false)
                     {
-                        _context.Send((object o) =>
+                        Dispatcher.Invoke(() =>
                         {
                             IndicatorEl.Fill = Brushes.Red;
                             IndicatorEl2.Fill = Brushes.Red;
-                        },
-                        null);
+                        });
                         Thread.Sleep(200);
                     }
                 }

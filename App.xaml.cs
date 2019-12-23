@@ -7,7 +7,7 @@ namespace OMineGuard
     {
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-            Backend.Models.MainModel.StopMiner();
+            Backend.Models.MainModel.ExxtraStopMiner();
             TCPserver.StopServers();
             Overclocker.ApplicationLive = false;
         }

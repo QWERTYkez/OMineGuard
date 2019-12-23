@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json;
+using OMineGuard.Backend.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -13,18 +16,19 @@ namespace OMineGuard.Backend
     {
         public static event Action<RootObject> OMWsent;
         public static bool Indication = false;
-        private static DefClock DC = null;
 
         private static bool ServerAlive { get; set; } = true;
         private static TcpListener Server1;
         private static TcpListener Server2;
         private static TcpListener Server3;
 
-        public static void _TCPserver()
+        private static MainModel _model;
+        public static void InitializeTCPserver(MainModel model)
         {
+            _model = model;
+            _model.PropertyChanged += ModelChanged;
             Task.Run(() => 
             {
-                Overclocker.ConnectedToMSI += def => DC = def;
                 Task.Run(() =>
                 {
                     while (ServerAlive) 
@@ -69,12 +73,12 @@ namespace OMineGuard.Backend
                                 {
                                     try
                                     {
-                                        SendMessage(client, stream, Settings.Profile, MSGtype.Profile);
-                                        SendMessage(client, stream, Miners.Miner.Algoritms, MSGtype.Algoritms);
-                                        SendMessage(client, stream, Miners.Miner.Miners, MSGtype.Miners);
-                                        SendMessage(client, stream, DC, MSGtype.DefClock);
-                                        SendMessage(client, stream, Indication, MSGtype.Indication);
-                                        SendMessage(client, stream, Models.MainModel.Log, MSGtype.Log);
+                                        OMWsendState(client, stream, new object[] { _model.Profile, ContolStateType.Profile });
+                                        OMWsendState(client, stream, new object[] { _model.Algoritms, ContolStateType.Algoritms });
+                                        OMWsendState(client, stream, new object[] { _model.Miners, ContolStateType.Miners });
+                                        OMWsendState(client, stream, new object[] { _model.DefClock, ContolStateType.DefClock });
+                                        OMWsendState(client, stream, new object[] { _model.Indicator, ContolStateType.Indication });
+                                        OMWsendState(client, stream, new object[] { _model.Log, ContolStateType.Logging });
 
                                         // Отправление статистики
                                         Task.Run(() =>
@@ -95,16 +99,17 @@ namespace OMineGuard.Backend
                                             {
                                                 using (NetworkStream statstream = statclient.GetStream())
                                                 {
-                                                    object[] o;
+                                                    StateServerActive = true;
                                                     while (statclient.Connected && ServerAlive)
                                                     {
                                                         if (StateQueue.Count > 0)
                                                         {
-                                                            o = StateQueue.Dequeue();
-                                                            OMWsendState(client, stream, o[0], (ContolStateType)o[1]);
+                                                            OMWsendState(client, stream, StateQueue.Dequeue());
                                                         }
                                                         Thread.Sleep(100);
                                                     }
+                                                    StateServerActive = false;
+                                                    StateQueue.Clear();
                                                 }
                                             }
                                             Server3.Stop();
@@ -131,6 +136,8 @@ namespace OMineGuard.Backend
                 });
             });
         }
+
+        private static readonly object infkey = new object();
         private static void OMWinforming(IAsyncResult ar)
         {
             if (ServerAlive)
@@ -142,33 +149,31 @@ namespace OMineGuard.Backend
                     using (NetworkStream stream = client.GetStream())
                     {
                         //Стартовые сообщения
-                        OMWsendInform(client, stream, Indication, InformStateType.Indication);
-
-                        object[] o;
-                        while (client.Connected && ServerAlive)
+                        OMWsendInform(client, stream, new object[] { Indication, InformStateType.Indication });
+                        try
                         {
-                            if (InformQueue.Count > 0)
+                            InformServerActiveCount++;
+                            while (client.Connected && ServerAlive)
                             {
-                                o = InformQueue.Dequeue();
-                                OMWsendState(client, stream, o[0], (ContolStateType)o[1]);
+                                lock (infkey)
+                                {
+                                    if (InformQueue.Count > 0)
+                                    {
+                                        OMWsendInform(client, stream, InformQueue.Dequeue());
+                                    }
+                                    Thread.Sleep(100);
+                                }
                             }
-                            Thread.Sleep(100);
+                        }
+                        finally 
+                        {
+                            InformServerActiveCount--;
+                            if (InformServerActiveCount == 0) InformQueue.Clear();
                         }
                     }
                 }
             }
             catch { }
-        }
-
-        private static readonly Queue<object[]> StateQueue = new Queue<object[]>();
-        private static readonly Queue<object[]> InformQueue = new Queue<object[]>();
-        public static void SendContolState(object body, ContolStateType type)
-        {
-            StateQueue.Enqueue(new object[] { body, type });
-        }
-        public static void SendInformState(object body, InformStateType type)
-        {
-            InformQueue.Enqueue(new object[] { body, type });
         }
         public static void StopServers()
         {
@@ -193,47 +198,9 @@ namespace OMineGuard.Backend
             int count = stream.Read(msg, 0, msg.Length);
             return Encoding.Default.GetString(msg, 0, count);
         }
-        private static readonly object key = new object();
         private static readonly object key2 = new object();
         private static readonly object key3 = new object();
-        private static void SendMessage(TcpClient client, NetworkStream stream, object body, MSGtype type)
-        {
-            Task.Run(() =>
-            {
-                if (client != null)
-                {
-                    if (client.Connected)
-                    {
-                        lock (key)
-                        {
-                            string header = "";
-                            switch (type)
-                            {
-                                case MSGtype.Algoritms: header = "Algoritms"; break;
-                                case MSGtype.DefClock: header = "DefClock"; break;
-                                case MSGtype.Indication: header = "Indication"; break;
-                                case MSGtype.Log: header = "Log"; break;
-                                case MSGtype.Miners: header = "Miners"; break;
-                                case MSGtype.Profile: header = "Profile"; break;
-                            }
-
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
-
-                            byte[] Message = Encoding.Default.GetBytes(msg);
-                            byte[] Header = BitConverter.GetBytes(Message.Length);
-
-                            stream.Write(Header, 0, Header.Length);
-
-                            byte[] b = new byte[1];
-                            stream.Read(b, 0, b.Length);
-
-                            stream.Write(Message, 0, Message.Length);
-                        }
-                    }
-                }
-            });
-        }
-        private static void OMWsendState(TcpClient client, NetworkStream stream, object body, ContolStateType type)
+        private static void OMWsendState(TcpClient client, NetworkStream stream, object[] o)
         {
             Task.Run(() =>
             {
@@ -244,21 +211,31 @@ namespace OMineGuard.Backend
                         lock (key2)
                         {
                             string header = "";
-                            switch (type)
+                            switch ((ContolStateType)o[1])
                             {
-                                case ContolStateType.Hashrates: header = "Hashrates"; break;
-                                case ContolStateType.Overclock: header = "Overclock"; break;
+                                case ContolStateType.Algoritms: header = "Algoritms"; break;
+                                case ContolStateType.DefClock: header = "DefClock"; break;
+                                case ContolStateType.IdleWachdog: header = "IdleWachdog"; break;
                                 case ContolStateType.Indication: header = "Indication"; break;
                                 case ContolStateType.Logging: header = "Logging"; break;
-                                case ContolStateType.WachdogInfo: header = "WachdogInfo"; break;
                                 case ContolStateType.LowHWachdog: header = "LowHWachdog"; break;
-                                case ContolStateType.IdleWachdog: header = "IdleWachdog"; break;
-                                case ContolStateType.ShowMLogTB: header = "ShowMLogTB"; break;
-                                case ContolStateType.DefClock: header = "DefClock"; break;
-                                case ContolStateType.Temperatures: header = "Temperatures"; break;
+                                case ContolStateType.Miners: header = "Miners"; break;
+                                case ContolStateType.Profile: header = "Profile"; break;
+                                case ContolStateType.WachdogInfo: header = "WachdogInfo"; break;
+
+                                case ContolStateType.GPUs: header = "GPUs"; break;
+                                case ContolStateType.InfPowerLimits: header = "InfPowerLimits"; break;
+                                case ContolStateType.InfCoreClocks: header = "InfCoreClocks"; break;
+                                case ContolStateType.InfMemoryClocks: header = "InfMemoryClocks"; break;
+                                case ContolStateType.InfOHMCoreClocks: header = "InfOHMCoreClocks"; break;
+                                case ContolStateType.InfOHMMemoryClocks: header = "InfOHMMemoryClocks"; break;
+                                case ContolStateType.InfFanSpeeds: header = "InfFanSpeeds"; break;
+                                case ContolStateType.InfTemperatures: header = "InfTemperatures"; break;
+                                case ContolStateType.InfHashrates: header = "InfHashrates"; break;
+                                case ContolStateType.TotalHashrate: header = "TotalHashrate"; break;
                             }
 
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o[0])}}}";
 
                             byte[] Message = Encoding.Default.GetBytes(msg);
                             byte[] Header = BitConverter.GetBytes(Message.Length);
@@ -274,7 +251,7 @@ namespace OMineGuard.Backend
                 }
             });
         }
-        private static void OMWsendInform(TcpClient client, NetworkStream stream, object body, InformStateType type)
+        private static void OMWsendInform(TcpClient client, NetworkStream stream, object[] o)
         {
             Task.Run(() =>
             {
@@ -285,21 +262,20 @@ namespace OMineGuard.Backend
                         lock (key3)
                         {
                             string header = "";
-                            switch (type)
+                            switch ((InformStateType)o[1])
                             {
-                                case InformStateType.Hashrates: header = "Hashrates"; break;
-                                //case InformStateType.Overclock: header = "Overclock"; break;
                                 case InformStateType.Indication: header = "Indication"; break;
-                                //case InformStateType.Logging: header = "Logging"; break;
-                                //case InformStateType.WachdogInfo: header = "WachdogInfo"; break;
-                                //case InformStateType.LowHWachdog: header = "LowHWachdog"; break;
-                                //case InformStateType.IdleWachdog: header = "IdleWachdog"; break;
-                                //case InformStateType.ShowMLogTB: header = "ShowMLogTB"; break;
-                                //case InformStateType.DefClock: header = "DefClock"; break;
-                                case InformStateType.Temperatures: header = "Temperatures"; break;
+                                case InformStateType.InfHashrates: header = "InfHashrates"; break;
+                                case InformStateType.InfTemperatures: header = "InfTemperatures"; break;
+                                case InformStateType.ShAccepted: header = "ShAccepted"; break;
+                                case InformStateType.ShInvalid: header = "ShInvalid"; break;
+                                case InformStateType.ShRejected: header = "ShRejected"; break;
+                                case InformStateType.ShTotalAccepted: header = "ShTotalAccepted"; break;
+                                case InformStateType.ShTotalInvalid: header = "ShTotalInvalid"; break;
+                                case InformStateType.ShTotalRejected: header = "ShTotalRejected"; break;
                             }
 
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(body)}}}";
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o[0])}}}";
 
                             byte[] Message = Encoding.Default.GetBytes(msg);
                             byte[] Header = BitConverter.GetBytes(Message.Length);
@@ -315,6 +291,76 @@ namespace OMineGuard.Backend
                 }
             });
         }
+
+        private static bool StateServerActive = false;
+        private static int InformServerActiveCount = 0;
+        private static readonly Queue<object[]> StateQueue = new Queue<object[]>();
+        private static readonly Queue<object[]> InformQueue = new Queue<object[]>();
+        private static void SendContolState(object body, ContolStateType type)
+        {
+            if (StateServerActive)
+            {
+                StateQueue.Enqueue(new object[] { body, type });
+            }
+        }
+        public static void SendInformState(object body, InformStateType type)
+        {
+            if (InformServerActiveCount > 0)
+            {
+                InformQueue.Enqueue(new object[] { body, type });
+            }
+        }
+
+        private static void ModelChanged(object sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case "Profile":
+                    {
+                        if (_model.Profile != null)
+                        {
+                            SendContolState(_model.Profile, ContolStateType.Profile);
+                        }
+                        break;
+                    }
+                case "Loggong": { SendContolState(_model.Loggong, ContolStateType.Logging); } break;
+                case "GPUs": { SendContolState(_model.GPUs, ContolStateType.GPUs); break; }
+                case "InfPowerLimits": { SendContolState(_model.InfPowerLimits, ContolStateType.InfPowerLimits); break; }
+                case "InfCoreClocks": { SendContolState(_model.InfCoreClocks, ContolStateType.InfCoreClocks); break; }
+                case "InfMemoryClocks": { SendContolState(_model.InfMemoryClocks, ContolStateType.InfMemoryClocks); break; }
+                case "InfOHMCoreClocks": { SendContolState(_model.InfOHMCoreClocks, ContolStateType.InfOHMCoreClocks); break; }
+                case "InfOHMMemoryClocks": { SendContolState(_model.InfOHMMemoryClocks, ContolStateType.InfOHMMemoryClocks); break; }
+                case "InfFanSpeeds": { SendContolState(_model.InfFanSpeeds, ContolStateType.InfFanSpeeds); break; }
+                case "InfTemperatures": 
+                    { 
+                        SendContolState(_model.InfTemperatures, ContolStateType.InfTemperatures);
+                        SendInformState(_model.InfTemperatures, InformStateType.InfTemperatures);
+                        break; 
+                    }
+                case "InfHashrates": 
+                    { 
+                        SendContolState(_model.InfHashrates, ContolStateType.InfHashrates);
+                        SendInformState(_model.InfHashrates, InformStateType.InfHashrates); 
+                        break;
+                    }
+                case "TotalHashrate": { SendContolState(_model.TotalHashrate, ContolStateType.TotalHashrate); break; }
+                case "WachdogInfo": { SendContolState(_model.WachdogInfo, ContolStateType.WachdogInfo); } break;
+                case "LowHWachdog": { SendContolState(_model.LowHWachdog, ContolStateType.LowHWachdog); } break;
+                case "IdleWachdog": { SendContolState(_model.IdleWachdog, ContolStateType.IdleWachdog); } break;
+                case "Indicator":
+                    {
+                        SendContolState(_model.Indicator, ContolStateType.Indication);
+                        SendInformState(_model.Indicator, InformStateType.Indication);
+                    }
+                    break;
+                case "ShAccepted": { SendInformState(_model.ShAccepted, InformStateType.ShAccepted); } break;
+                case "ShInvalid": { SendInformState(_model.ShInvalid, InformStateType.ShInvalid); } break;
+                case "ShRejected": { SendInformState(_model.ShRejected, InformStateType.ShRejected); } break;
+                case "ShTotalAccepted": { SendInformState(_model.ShTotalAccepted, InformStateType.ShTotalAccepted); } break;
+                case "ShTotalInvalid": { SendInformState(_model.ShTotalInvalid, InformStateType.ShTotalInvalid); } break;
+                case "ShTotalRejected": { SendInformState(_model.ShTotalRejected, InformStateType.ShTotalRejected); } break;
+            }
+        }
     }
     public class RootObject
     {
@@ -324,32 +370,39 @@ namespace OMineGuard.Backend
         public bool? SwitchProcess { get; set; }
         public bool? ShowMinerLog { get; set; }
     }
-    public enum MSGtype
-    {
-        Algoritms,
-        DefClock,
-        Indication,
-        Log,
-        Miners,
-        Profile
-    }
     public enum ContolStateType
     {
-        DefClock,
-        Hashrates,
+        Profile,
+        Logging,
+        InfPowerLimits,
+        InfCoreClocks,
+        InfMemoryClocks,
+        InfOHMCoreClocks,
+        InfOHMMemoryClocks,
+        InfFanSpeeds,
+        InfTemperatures,
+        InfHashrates,
+        TotalHashrate,
+        WachdogInfo,
+        LowHWachdog,
         IdleWachdog,
         Indication,
-        Logging,
-        LowHWachdog,
-        Overclock,
-        ShowMLogTB,
-        Temperatures,
-        WachdogInfo
+        Algoritms,
+        Miners,
+        GPUs,
+        DefClock
     }
     public enum InformStateType
     {
-        Hashrates,
-        Indication,
-        Temperatures
+        ShAccepted,
+        ShInvalid,
+        ShRejected,
+        ShTotalAccepted,
+        ShTotalInvalid,
+        ShTotalRejected,
+
+        InfHashrates,
+        InfTemperatures,
+        Indication
     }
 }
