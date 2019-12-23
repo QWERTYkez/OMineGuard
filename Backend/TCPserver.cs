@@ -148,27 +148,22 @@ namespace OMineGuard.Backend
                 {
                     using (NetworkStream stream = client.GetStream())
                     {
-                        //Стартовые сообщения
-                        OMWsendInform(client, stream, new object[] { Indication, InformStateType.Indication });
-                        try
+                        using (InformQueue qu = new InformQueue())
                         {
-                            InformServerActiveCount++;
+                            //Стартовые сообщения
+                            OMWsendInform(client, stream, new object[] { Indication, InformStateType.Indication });
                             while (client.Connected && ServerAlive)
                             {
                                 lock (infkey)
                                 {
-                                    if (InformQueue.Count > 0)
+                                    if (qu.CurrentQueue.Count > 0)
                                     {
-                                        OMWsendInform(client, stream, InformQueue.Dequeue());
+                                        OMWsendInform(client, stream, qu.CurrentQueue.Dequeue());
                                     }
                                     Thread.Sleep(100);
                                 }
                             }
-                        }
-                        finally 
-                        {
-                            InformServerActiveCount--;
-                            if (InformServerActiveCount == 0) InformQueue.Clear();
+                            qu.CurrentQueue.Clear();
                         }
                     }
                 }
@@ -293,9 +288,31 @@ namespace OMineGuard.Backend
         }
 
         private static bool StateServerActive = false;
-        private static int InformServerActiveCount = 0;
         private static readonly Queue<object[]> StateQueue = new Queue<object[]>();
-        private static readonly Queue<object[]> InformQueue = new Queue<object[]>();
+        private class InformQueue : IDisposable
+        {
+            public InformQueue()
+            {
+                Queues.Add(CurrentQueue);
+            }
+
+            public readonly Queue<object[]> CurrentQueue = new Queue<object[]>();
+
+            private static List<Queue<object[]>> Queues = new List<Queue<object[]>>();
+            public static void SendInformState(object body, InformStateType type)
+            {
+                foreach (var q in Queues)
+                {
+                    q.Enqueue(new object[] { body, type });
+                }
+            }
+
+            public void Dispose()
+            {
+                if (Queues.Contains(CurrentQueue))
+                    Queues.Remove(CurrentQueue);
+            }
+        }
         private static void SendContolState(object body, ContolStateType type)
         {
             if (StateServerActive)
@@ -305,10 +322,7 @@ namespace OMineGuard.Backend
         }
         public static void SendInformState(object body, InformStateType type)
         {
-            if (InformServerActiveCount > 0)
-            {
-                InformQueue.Enqueue(new object[] { body, type });
-            }
+            InformQueue.SendInformState(body, type);
         }
 
         private static void ModelChanged(object sender, PropertyChangedEventArgs e)
