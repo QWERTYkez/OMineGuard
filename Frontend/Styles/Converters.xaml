@@ -1,0 +1,19 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:OMineGuard.Frontend.Styles">
+
+    <local:BoolInverceConverter x:Key="BoolInverceConverter" />
+    <local:SelectedIndexToVisibilityConverter x:Key="SelectedIndexToVisibilityConverter" />
+    <local:ObjectExistToVisibilityConverter x:Key="ObjectExistToVisibilityConverter" />
+    <local:ObjectExistToVisibilityConverterReverce x:Key="ObjectExistToVisibilityConverterReverce" />
+    <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <local:BoolToVisibilityConverterReverce x:Key="BoolToVisibilityConverterReverce" />
+    <local:SelectedIndexToboolConverter x:Key="SelectedIndexToboolConverter" />
+    <local:SelectedIndexToboolConverterZero x:Key="SelectedIndexToboolConverterZero" />
+    <local:ObjectExistToBoolConverter x:Key="ObjectExistToBoolConverter" />
+    <local:ListIntExistToBool x:Key="ListIntExistToBool" />
+    <local:TextToVisibilityConverter x:Key="TextToVisibilityConverter" />
+    <local:FlowDocumentConverter x:Key="FlowDocumentConverter" />
+
+</ResourceDictionary>
