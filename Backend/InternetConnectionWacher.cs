@@ -15,7 +15,7 @@ namespace OMineGuard.Backend
 
         public static event Action InternetConnectionLost;
         public static event Action InternetConnectionRestored;
-        public static bool InternetConnectedState { get; private set; } = InternetConnetction();
+        public static bool InternetConnectionState { get; private set; } = true;
 
         private static readonly int WachDelay = 3; //sec
         private static void StartWachInternetConnection()
@@ -26,7 +26,7 @@ namespace OMineGuard.Backend
                 while (true)
                 {
                     ICSnew = InternetConnetction();
-                    if (InternetConnectedState != ICSnew)
+                    if (InternetConnectionState != ICSnew)
                     {
                         if (ICSnew)
                         {
@@ -36,7 +36,7 @@ namespace OMineGuard.Backend
                         {
                             InternetConnectionLost.Invoke();
                         }
-                        InternetConnectedState = ICSnew;
+                        InternetConnectionState = ICSnew;
                     }
                     Thread.Sleep(WachDelay * 1000);
                 }

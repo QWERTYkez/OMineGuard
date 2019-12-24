@@ -38,7 +38,7 @@ namespace OMineGuard.Miners
         public Miner()
         {
             InternetConnectionWacher.InternetConnectionLost += () => 
-            { Task.Run(() => { Ending(); }); };
+            { Task.Run(() => Ending()); };
             InternetConnectionWacher.InternetConnectionRestored += () =>
             {
                 if (ConfigToRecovery != null)
