@@ -195,7 +195,7 @@ namespace OMineGuard.Backend
         }
         private static readonly object key2 = new object();
         private static readonly object key3 = new object();
-        private static void OMWsendState(TcpClient client, NetworkStream stream, (object, ContolStateType) o)
+        private static void OMWsendState(TcpClient client, NetworkStream stream, (object body, ContolStateType type) o)
         {
             Task.Run(() =>
             {
@@ -206,7 +206,7 @@ namespace OMineGuard.Backend
                         lock (key2)
                         {
                             string header = "";
-                            switch (o.Item2)
+                            switch (o.type)
                             {
                                 case ContolStateType.Algoritms: header = "Algoritms"; break;
                                 case ContolStateType.DefClock: header = "DefClock"; break;
@@ -230,7 +230,7 @@ namespace OMineGuard.Backend
                                 case ContolStateType.TotalHashrate: header = "TotalHashrate"; break;
                             }
 
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.Item2)}}}";
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.body)}}}";
 
                             byte[] Message = Encoding.Default.GetBytes(msg);
                             byte[] Header = BitConverter.GetBytes(Message.Length);
@@ -246,7 +246,7 @@ namespace OMineGuard.Backend
                 }
             });
         }
-        private static void OMWsendInform(TcpClient client, NetworkStream stream, (object, InformStateType) o)
+        private static void OMWsendInform(TcpClient client, NetworkStream stream, (object body, InformStateType type) o)
         {
             Task.Run(() =>
             {
@@ -257,7 +257,7 @@ namespace OMineGuard.Backend
                         lock (key3)
                         {
                             string header = "";
-                            switch (o.Item2)
+                            switch (o.type)
                             {
                                 case InformStateType.Indication: header = "Indication"; break;
                                 case InformStateType.InfHashrates: header = "InfHashrates"; break;
@@ -270,7 +270,7 @@ namespace OMineGuard.Backend
                                 case InformStateType.ShTotalRejected: header = "ShTotalRejected"; break;
                             }
 
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.Item1)}}}";
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.body)}}}";
 
                             byte[] Message = Encoding.Default.GetBytes(msg);
                             byte[] Header = BitConverter.GetBytes(Message.Length);
