@@ -153,6 +153,11 @@ namespace OMineGuard.Backend.Models
                 if (n < 1) WachdogInfo = "";
                 else WachdogInfo = $"Активация вачдога {n}";
             };
+            Miner.ZeroHash += miner =>
+            {
+                Logging("Нулевой [Zero] хешрейт, перезапуск майнера", true);
+                miner.RestartMiner();
+            };
             Miner.GPUsfalled += (miner, gs) =>
             {
                 string str = "";
@@ -168,7 +173,7 @@ namespace OMineGuard.Backend.Models
             };
             Miner.LowHashrateError += miner =>
             {
-                Logging("Низкий хешрейт, перезапуск майнера", true);
+                Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
                 miner.RestartMiner();
             };
 

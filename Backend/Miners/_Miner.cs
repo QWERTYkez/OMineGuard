@@ -209,23 +209,25 @@ namespace OMineGuard.Miners
                                 Task.Run(() => ZeroHash?.Invoke(this));
                                 WachdogInactivity();
                             }
-
-                            // низкий хешрейт
-                            if (activehashes.Sum() < config.MinHashrate)
+                            else
                             {
-                                WachdogLowHashrate(this);
-                            }
-                            else { LowHashrate = false; Inactivity = false; }
-
-                            //отвал карт
-                            if (hashes.Contains(0))
-                            {
-                                List<int> gpus = new List<int>();
-                                for (int i = 0; i < hashes.Length; i++)
+                                // низкий хешрейт
+                                if (activehashes.Sum() < config.MinHashrate)
                                 {
-                                    if (hashes[i] == 0) gpus.Add(i);
+                                    WachdogLowHashrate(this);
                                 }
-                                Task.Run(() => GPUsfalled?.Invoke(this, gpus.ToArray()));
+                                else { LowHashrate = false; Inactivity = false; }
+
+                                //отвал карт
+                                if (hashes.Contains(0))
+                                {
+                                    List<int> gpus = new List<int>();
+                                    for (int i = 0; i < hashes.Length; i++)
+                                    {
+                                        if (hashes[i] == 0) gpus.Add(i);
+                                    }
+                                    Task.Run(() => GPUsfalled?.Invoke(this, gpus.ToArray()));
+                                }
                             }
                             return;
                         }
