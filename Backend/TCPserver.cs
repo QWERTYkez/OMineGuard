@@ -73,12 +73,12 @@ namespace OMineGuard.Backend
                                 {
                                     try
                                     {
-                                        OMWsendState(client, stream, new object[] { _model.Profile, ContolStateType.Profile });
-                                        OMWsendState(client, stream, new object[] { _model.Algoritms, ContolStateType.Algoritms });
-                                        OMWsendState(client, stream, new object[] { _model.Miners, ContolStateType.Miners });
-                                        OMWsendState(client, stream, new object[] { _model.DefClock, ContolStateType.DefClock });
-                                        OMWsendState(client, stream, new object[] { _model.Indicator, ContolStateType.Indication });
-                                        OMWsendState(client, stream, new object[] { _model.Log, ContolStateType.Logging });
+                                        OMWsendState(client, stream, (_model.Profile, ContolStateType.Profile));
+                                        OMWsendState(client, stream, (_model.Algoritms, ContolStateType.Algoritms));
+                                        OMWsendState(client, stream, (_model.Miners, ContolStateType.Miners));
+                                        OMWsendState(client, stream, (_model.DefClock, ContolStateType.DefClock));
+                                        OMWsendState(client, stream, (_model.Indicator, ContolStateType.Indication));
+                                        OMWsendState(client, stream, (_model.Log, ContolStateType.Logging));
 
                                         // Отправление статистики
                                         Task.Run(() =>
@@ -151,7 +151,7 @@ namespace OMineGuard.Backend
                         using (InformQueue qu = new InformQueue())
                         {
                             //Стартовые сообщения
-                            OMWsendInform(client, stream, new object[] { Indication, InformStateType.Indication });
+                            OMWsendInform(client, stream, (Indication, InformStateType.Indication));
                             while (client.Connected && ServerAlive)
                             {
                                 lock (infkey)
@@ -195,7 +195,7 @@ namespace OMineGuard.Backend
         }
         private static readonly object key2 = new object();
         private static readonly object key3 = new object();
-        private static void OMWsendState(TcpClient client, NetworkStream stream, object[] o)
+        private static void OMWsendState(TcpClient client, NetworkStream stream, (object, ContolStateType) o)
         {
             Task.Run(() =>
             {
@@ -206,7 +206,7 @@ namespace OMineGuard.Backend
                         lock (key2)
                         {
                             string header = "";
-                            switch ((ContolStateType)o[1])
+                            switch (o.Item2)
                             {
                                 case ContolStateType.Algoritms: header = "Algoritms"; break;
                                 case ContolStateType.DefClock: header = "DefClock"; break;
@@ -230,7 +230,7 @@ namespace OMineGuard.Backend
                                 case ContolStateType.TotalHashrate: header = "TotalHashrate"; break;
                             }
 
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o[0])}}}";
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.Item2)}}}";
 
                             byte[] Message = Encoding.Default.GetBytes(msg);
                             byte[] Header = BitConverter.GetBytes(Message.Length);
@@ -246,7 +246,7 @@ namespace OMineGuard.Backend
                 }
             });
         }
-        private static void OMWsendInform(TcpClient client, NetworkStream stream, object[] o)
+        private static void OMWsendInform(TcpClient client, NetworkStream stream, (object, InformStateType) o)
         {
             Task.Run(() =>
             {
@@ -257,7 +257,7 @@ namespace OMineGuard.Backend
                         lock (key3)
                         {
                             string header = "";
-                            switch ((InformStateType)o[1])
+                            switch (o.Item2)
                             {
                                 case InformStateType.Indication: header = "Indication"; break;
                                 case InformStateType.InfHashrates: header = "InfHashrates"; break;
@@ -270,7 +270,7 @@ namespace OMineGuard.Backend
                                 case InformStateType.ShTotalRejected: header = "ShTotalRejected"; break;
                             }
 
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o[0])}}}";
+                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.Item1)}}}";
 
                             byte[] Message = Encoding.Default.GetBytes(msg);
                             byte[] Header = BitConverter.GetBytes(Message.Length);
@@ -288,7 +288,7 @@ namespace OMineGuard.Backend
         }
 
         private static bool StateServerActive = false;
-        private static readonly Queue<object[]> StateQueue = new Queue<object[]>();
+        private static readonly Queue<(object, ContolStateType)> StateQueue = new Queue<(object, ContolStateType)>();
         private class InformQueue : IDisposable
         {
             public InformQueue()
@@ -296,14 +296,14 @@ namespace OMineGuard.Backend
                 Queues.Add(CurrentQueue);
             }
 
-            public readonly Queue<object[]> CurrentQueue = new Queue<object[]>();
+            public readonly Queue<(object, InformStateType)> CurrentQueue = new Queue<(object, InformStateType)>();
 
-            private static List<Queue<object[]>> Queues = new List<Queue<object[]>>();
+            private static List<Queue<(object, InformStateType)>> Queues = new List<Queue<(object, InformStateType)>>();
             public static void SendInformState(object body, InformStateType type)
             {
                 foreach (var q in Queues)
                 {
-                    q.Enqueue(new object[] { body, type });
+                    q.Enqueue((body, type));
                 }
             }
 
@@ -317,7 +317,7 @@ namespace OMineGuard.Backend
         {
             if (StateServerActive)
             {
-                StateQueue.Enqueue(new object[] { body, type });
+                StateQueue.Enqueue((body, type));
             }
         }
         public static void SendInformState(object body, InformStateType type)
