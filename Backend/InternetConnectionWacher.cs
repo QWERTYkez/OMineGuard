@@ -15,7 +15,7 @@ namespace OMineGuard.Backend
 
         public static event Action InternetConnectionLost;
         public static event Action InternetConnectionRestored;
-        public static bool InternetConnectedState { get; private set; } = true;
+        public static bool InternetConnectedState { get; private set; } = InternetConnetction();
 
         private static readonly int WachDelay = 3; //sec
         private static void StartWachInternetConnection()
@@ -43,31 +43,35 @@ namespace OMineGuard.Backend
             });
         }
 
+        private static readonly object ICSkey = new object();
         private static bool InternetConnetction()
         {
-            InternetConnectionState_e cs = new InternetConnectionState_e();
-            InternetGetConnectedState(ref cs, 0);
-
-            bool[] IC = new bool[]
+            lock (ICSkey)
             {
+                InternetConnectionState_e cs = new InternetConnectionState_e();
+                InternetGetConnectedState(ref cs, 0);
+
+                bool[] IC = new bool[]
+                {
                 (cs & InternetConnectionState_e.INTERNET_CONNECTION_LAN) == InternetConnectionState_e.INTERNET_CONNECTION_LAN,
                 (cs & InternetConnectionState_e.INTERNET_CONNECTION_MODEM) == InternetConnectionState_e.INTERNET_CONNECTION_MODEM,
                 (cs & InternetConnectionState_e.INTERNET_CONNECTION_PROXY) == InternetConnectionState_e.INTERNET_CONNECTION_PROXY
-            };
-            IPStatus? status = null;
-            if (IC[0] || IC[1] || IC[2])
-            {
-                using (Ping ping = new Ping())
+                };
+                IPStatus? status = null;
+                if (IC[0] || IC[1] || IC[2])
                 {
-                    for (byte i = 0; i < 4; i++)
+                    using (Ping ping = new Ping())
                     {
-                        try { status = ping.Send("8.8.8.8").Status; }
-                        catch { }
-                        if (status == IPStatus.Success) return true;
+                        for (byte i = 0; i < 4; i++)
+                        {
+                            try { status = ping.Send("8.8.8.8").Status; }
+                            catch { }
+                            if (status == IPStatus.Success) return true;
+                        }
                     }
-                } 
+                }
+                return false;
             }
-            return false;
         }
         /// DLLimport
         [DllImport("wininet.dll", CharSet = CharSet.Auto)]

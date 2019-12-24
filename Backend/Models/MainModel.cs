@@ -160,6 +160,7 @@ namespace OMineGuard.Backend.Models
             };
             Miner.GPUsfalled += (miner, gs) =>
             {
+
                 string str = "";
                 foreach (int g in gs) str += $"{g},";
                 Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);

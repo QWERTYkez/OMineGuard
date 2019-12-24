@@ -78,6 +78,7 @@ namespace OMineGuard.Miners
                 ConfigToRecovery = config;
 
                 WachdogInactivity();
+                ErrorsCounter = 0;
                 StartWaching(config);
 
                 miner.WaitForExit();
@@ -169,6 +170,7 @@ namespace OMineGuard.Miners
             get { lock (LowHashrateKey) return lowHashrate; }
             set { lock (LowHashrateKey) lowHashrate = value; }
         }
+        private static byte ErrorsCounter = 0;
         private void StartWaching(Config config)
         {
             Task.Run(() =>
@@ -206,8 +208,12 @@ namespace OMineGuard.Miners
                             //бездаействие
                             if (activehashes.Sum() == 0)
                             {
-                                Task.Run(() => ZeroHash?.Invoke(this));
-                                WachdogInactivity();
+                                ErrorsCounter++;
+                                if (ErrorsCounter > 4)
+                                {
+                                    Task.Run(() => ZeroHash?.Invoke(this));
+                                    WachdogInactivity();
+                                }
                             }
                             else
                             {
@@ -216,17 +222,27 @@ namespace OMineGuard.Miners
                                 {
                                     WachdogLowHashrate(this);
                                 }
-                                else { LowHashrate = false; Inactivity = false; }
+                                else 
+                                { 
+                                    // блок хорошего поведения
+                                    LowHashrate = false; 
+                                    Inactivity = false;
+                                    ErrorsCounter = 0;
+                                }
 
                                 //отвал карт
                                 if (hashes.Contains(0))
                                 {
-                                    List<int> gpus = new List<int>();
-                                    for (int i = 0; i < hashes.Length; i++)
+                                    ErrorsCounter++;
+                                    if (ErrorsCounter > 4)
                                     {
-                                        if (hashes[i] == 0) gpus.Add(i);
+                                        List<int> gpus = new List<int>();
+                                        for (int i = 0; i < hashes.Length; i++)
+                                        {
+                                            if (hashes[i] == 0) gpus.Add(i);
+                                        }
+                                        Task.Run(() => GPUsfalled?.Invoke(this, gpus.ToArray()));
                                     }
-                                    Task.Run(() => GPUsfalled?.Invoke(this, gpus.ToArray()));
                                 }
                             }
                             return;
