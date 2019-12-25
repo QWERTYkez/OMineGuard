@@ -210,15 +210,10 @@ namespace OMineGuard.Backend.Models
             }
             Miner.StartMiner(config);
         }
-        private static void StopMiner()
+        public static void StopMiner()
         {
             if (miner != null) 
                 miner.StopMiner();
-        }
-        public static void ExxtraStopMiner()
-        {
-            if (miner != null)
-                miner.ExxtraStopMiner();
         }
 
         public Profile Profile { get; set; }
