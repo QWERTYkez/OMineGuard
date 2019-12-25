@@ -1,8 +1,8 @@
-﻿using OMineGuard.Backend;
-using OMineGuard.Miners;
+﻿using OMineGuard.Miners;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -106,8 +106,9 @@ namespace OMineGuard.Backend.Models
                 if (mi.ShTotalInvalid != null) ShTotalInvalid = mi.ShTotalInvalid;
                 if (mi.ShTotalRejected != null) ShTotalRejected = mi.ShTotalRejected;
             };
-            Miner.MinerStarted += (conf, ethernet) =>
+            Miner.MinerStarted += (miner, conf, ethernet) =>
             {
+                MainModel.miner = miner;
                 CurrProf.StartedID = conf.ID;
                 Settings.SetProfile(CurrProf);
                 Indicator = true;
@@ -160,7 +161,6 @@ namespace OMineGuard.Backend.Models
             };
             Miner.GPUsfalled += (miner, gs) =>
             {
-
                 string str = "";
                 foreach (int g in gs) str += $"{g},";
                 Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);
@@ -169,7 +169,7 @@ namespace OMineGuard.Backend.Models
             Miner.InactivityError += () =>
             {
                 Logging("Бездействие, перезагрузка", true);
-                System.Diagnostics.Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
+                Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
                 System.Windows.Application.Current.Shutdown();
             };
             Miner.LowHashrateError += miner =>
@@ -202,21 +202,13 @@ namespace OMineGuard.Backend.Models
                 miner.StopMiner();
                 miner = null;
             }
-
-            switch (config.Miner.Value)
-            {
-                case 0: miner = new Bminer(); break;
-                case 1: miner = new Claymore(); break;
-                case 2: miner = new Gminer(); break;
-            }
-
             if(config.ClockID != null)
             {
                 Overclock oc = CurrProf.ClocksList.
                     Where(c => c.ID == config.ClockID).First();
                 Overclocker.ApplyOverclock(oc);
             }
-            miner.StartMiner(config);
+            Miner.StartMiner(config);
         }
         private static void StopMiner()
         {
@@ -332,9 +324,10 @@ namespace OMineGuard.Backend.Models
         }
         public void CMD_SwitchProcess()
         {
-            if (Indicator) StopMiner();
-            else StartMiner(CurrProf.ConfigsList.
-                            Where(c => c.ID == CurrProf.StartedID.Value).First());
+            StopMiner();
+            if (!Indicator)
+                StartMiner(CurrProf.ConfigsList.
+                     Where(c => c.ID == CurrProf.StartedID.Value).First());
         }
 
         private void TCP_OMWsent(RootObject RO)

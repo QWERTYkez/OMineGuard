@@ -13,8 +13,10 @@ namespace OMineGuard.Miners
 {
     public class Claymore : Miner
     {
-        private protected override string Directory { get; set; } = "Claymore's Dual Miner";
-        private protected override string ProcessName { get; set; } = "EthDcrMiner64";
+        private protected override string Directory { get; } = "Claymore's Dual Miner";
+        private protected override string ProcessName { get => CurrentProcessName; }
+        public static string CurrentProcessName { get; } = "EthDcrMiner64";
+
         private protected override void RunThisMiner(Config Config)
         {
             string DT = DateTime.Now.ToString("HH.mm.ss - dd.MM.yy");
@@ -23,7 +25,7 @@ namespace OMineGuard.Miners
             string logbuffer = $"{LogFolder}/buflog.txt";
             string param = $" -epool {Config.Pool}:{Config.Port} " +
                     $"-ewal {Config.Wallet}.{Settings.Profile.RigName} " +
-                    $"-logfile \"{logbuffer}\" -wd 0 {Config.Params} -mport -{port}";
+                    $"-logfile \"{logbuffer}\" -retrydelay 2 -wd 0 {Config.Params} -mport -{port}";
             if (Settings.Profile.GPUsSwitch != null)
             {
                 string di = "";
@@ -42,7 +44,7 @@ namespace OMineGuard.Miners
                 }
             }
             {
-                miner = new Process
+                process = new Process
                 {
                     StartInfo = new ProcessStartInfo($"{Directory}/{ProcessName}", param)
                     {
@@ -50,10 +52,11 @@ namespace OMineGuard.Miners
                         CreateNoWindow = true
                     }
                 };
-                miner.Start();
+                process.Start();
                 StartReadLog(logbuffer, logfile);
             }
         }
+        private static readonly object logfilekey = new object();
         private void StartReadLog(string logbuffer, string logfile)
         {
             Task.Run(() => 
@@ -87,9 +90,12 @@ namespace OMineGuard.Miners
                                     Logging(str);
                                     Task.Run(() =>
                                     {
-                                        using (StreamWriter fstr = new StreamWriter(logfile, true))
+                                        lock (logfilekey)
                                         {
-                                            fstr.WriteLine(str);
+                                            using (StreamWriter fstr = new StreamWriter(logfile, true))
+                                            {
+                                                fstr.WriteLine(str);
+                                            }
                                         }
                                     });
                                 }

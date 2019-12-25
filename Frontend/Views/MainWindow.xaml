@@ -783,7 +783,7 @@
                     <WrapPanel
                         Grid.Row="0"
                         Grid.ColumnSpan="3"
-                        Visibility="{Binding Path=TimersVisibility, Converter={StaticResource ObjectExistToVisibilityConverter}}">
+                        Visibility="Visible">
                         <Label
                             Margin="0,0,5,0"
                             Background="#20000000"
@@ -949,13 +949,6 @@
                                 </i:EventTrigger>
                             </i:Interaction.Triggers>
                         </Styles:Tumbler>
-                        <!--<Button
-                            Margin="5,0,5,0"
-                            VerticalAlignment="Center"
-                            Command="{Binding ShowMinerLog}"
-                            FontSize="14">
-                            ShowMinerLog
-                        </Button>-->
                         <Button
                             Margin="5,0,5,0"
                             VerticalAlignment="Center"

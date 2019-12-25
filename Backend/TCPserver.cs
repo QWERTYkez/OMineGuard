@@ -3,7 +3,6 @@ using OMineGuard.Backend.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -345,16 +344,16 @@ namespace OMineGuard.Backend
                 case "InfOHMCoreClocks": { SendContolState(_model.InfOHMCoreClocks, ContolStateType.InfOHMCoreClocks); break; }
                 case "InfOHMMemoryClocks": { SendContolState(_model.InfOHMMemoryClocks, ContolStateType.InfOHMMemoryClocks); break; }
                 case "InfFanSpeeds": { SendContolState(_model.InfFanSpeeds, ContolStateType.InfFanSpeeds); break; }
-                case "InfTemperatures": 
-                    { 
+                case "InfTemperatures":
+                    {
                         SendContolState(_model.InfTemperatures, ContolStateType.InfTemperatures);
                         SendInformState(_model.InfTemperatures, InformStateType.InfTemperatures);
-                        break; 
+                        break;
                     }
-                case "InfHashrates": 
-                    { 
+                case "InfHashrates":
+                    {
                         SendContolState(_model.InfHashrates, ContolStateType.InfHashrates);
-                        SendInformState(_model.InfHashrates, InformStateType.InfHashrates); 
+                        SendInformState(_model.InfHashrates, InformStateType.InfHashrates);
                         break;
                     }
                 case "TotalHashrate": { SendContolState(_model.TotalHashrate, ContolStateType.TotalHashrate); break; }

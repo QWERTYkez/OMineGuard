@@ -12,8 +12,9 @@ namespace OMineGuard.Miners
 {
     class Bminer : Miner
     {
-        private protected override string Directory { get; set; } = "Bminer";
-        private protected override string ProcessName { get; set; } = "bminer";
+        private protected override string Directory { get; } = "Bminer";
+        private protected override string ProcessName { get => CurrentProcessName; }
+        public static string CurrentProcessName { get; } = "bminer";
 
         private protected override void RunThisMiner(Config Config)
         {
@@ -77,7 +78,7 @@ namespace OMineGuard.Miners
                 }
             }
 
-            miner = new Process
+            process = new Process
             {
                 EnableRaisingEvents = true,
                 StartInfo = new ProcessStartInfo($"{Directory}/{ProcessName}", param)
@@ -88,12 +89,12 @@ namespace OMineGuard.Miners
                     RedirectStandardError = true
                 }
             };
-            miner.ErrorDataReceived += (s, e) => { if (e.Data != "") Logging(e.Data); };
-            miner.OutputDataReceived += (s, e) => { if (e.Data != "") Logging(e.Data); };
+            process.ErrorDataReceived += (s, e) => { if (e.Data != "") Logging(e.Data); };
+            process.OutputDataReceived += (s, e) => { if (e.Data != "") Logging(e.Data); };
 
-            miner.Start();
-            miner.BeginErrorReadLine();
-            miner.BeginOutputReadLine();
+            process.Start();
+            process.BeginErrorReadLine();
+            process.BeginOutputReadLine();
         }
 
         private protected override MinerInfo CurrentMinerGetInfo()

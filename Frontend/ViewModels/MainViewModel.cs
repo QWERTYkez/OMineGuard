@@ -106,19 +106,16 @@ namespace OMineGuard.ViewModels
                 case "WachdogInfo":
                     {
                         WachdogInfo = _model.WachdogInfo;
-                        SetTimersVisibility();
                     }
                     break;
                 case "LowHWachdog":
                     {
                         LowHWachdog = _model.LowHWachdog;
-                        SetTimersVisibility();
                     }
                     break;
                 case "IdleWachdog":
                     {
                         IdleWachdog = _model.IdleWachdog;
-                        SetTimersVisibility();
                     }
                     break;
                 case "Indicator":
@@ -519,18 +516,6 @@ namespace OMineGuard.ViewModels
         public string LowHWachdog { get; set; }
         public string IdleWachdog { get; set; }
         public string ShowMLogTB { get; set; }
-        public object TimersVisibility { get; set; } = null;
-        private void SetTimersVisibility()
-        {
-            if (WachdogInfo == "" && LowHWachdog == "" && IdleWachdog == "")
-            {
-                TimersVisibility = null;
-            }
-            else
-            {
-                TimersVisibility = new object();
-            }
-        }
 
         private void IniLogCommands()
         {

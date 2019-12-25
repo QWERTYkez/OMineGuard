@@ -464,27 +464,35 @@ namespace OMineGuard.Frontend.Views
                 {
                     while (OMGworking == true)
                     {
-                        Dispatcher.Invoke(() => 
+                        try
                         {
-                            IndicatorEl.Fill = Brushes.Lime;
-                            IndicatorEl2.Fill = Brushes.Lime;
-                        });
-                        Thread.Sleep(700);
-                        Dispatcher.Invoke(() => 
-                        {
-                            IndicatorEl.Fill = null;
-                            IndicatorEl2.Fill = null;
-                        });
-                        Thread.Sleep(300);
+                            Dispatcher.Invoke(() =>
+                            {
+                                IndicatorEl.Fill = Brushes.Lime;
+                                IndicatorEl2.Fill = Brushes.Lime;
+                            });
+                            Thread.Sleep(700);
+                            Dispatcher.Invoke(() =>
+                            {
+                                IndicatorEl.Fill = null;
+                                IndicatorEl2.Fill = null;
+                            });
+                            Thread.Sleep(300);
+                        }
+                        catch { }
                     }
                     while (OMGworking == false)
                     {
-                        Dispatcher.Invoke(() =>
+                        try
                         {
-                            IndicatorEl.Fill = Brushes.Red;
-                            IndicatorEl2.Fill = Brushes.Red;
-                        });
-                        Thread.Sleep(200);
+                            Dispatcher.Invoke(() =>
+                            {
+                                IndicatorEl.Fill = Brushes.Red;
+                                IndicatorEl2.Fill = Brushes.Red;
+                            });
+                            Thread.Sleep(200);
+                        }
+                        catch { }
                     }
                 }
             });
