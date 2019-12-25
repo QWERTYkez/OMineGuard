@@ -54,101 +54,13 @@ namespace OMineGuard.Miners
             LowHashrate = false;
             LowHashrateTimer?.Invoke(-1);
         }
-        public MinerInfo GetMinerInfo()
+        private MinerInfo GetMinerInfo()
         {
             MinerInfo MI;
             if (!Processing) MI = new MinerInfo();
             MI = CurrentMinerGetInfo();
             Task.Run(() => MinerInfoUpdated?.Invoke(MI));
             return MI;
-        }
-        private bool waching = false;
-        private bool Waching
-        {
-            get { lock (WachingKey) return waching; }
-            set { lock (WachingKey) waching = value; }
-        }
-
-        //---------------static
-        //events
-        public static event Action<string> LogDataReceived;
-        private protected static void Logging(string log)
-        {
-            Task.Run(() => LogDataReceived?.Invoke(log));
-        }
-        public static event Action<Miner, Config, bool> MinerStarted;
-        public static event Action MinerStoped;
-        public static event Action<MinerInfo> MinerInfoUpdated;
-        public static event Action<int> WachdogDelayTimer;
-        public static event Action<int> InactivityTimer;
-        public static event Action<Miner> ZeroHash;
-        public static event Action InactivityError;
-        public static event Action<int> LowHashrateTimer;
-        public static event Action<Miner> LowHashrateError;
-        public static event Action<Miner, int[]> GPUsfalled;
-        //common
-        private static Config ConfigToRecovery { get; set; }
-        public static bool Processing => process != null ? true : false;
-        private static protected Process process { get; set; }
-        public static List<bool> GPUs { get; private set; }
-        private static readonly object WachingKey = new object();
-        private static readonly object InactivityKey = new object();
-        private static readonly object LowHashrateKey = new object();
-        private static bool inactivity = false;
-        private static bool lowHashrate = false;
-        private static bool Inactivity
-        {
-            get { lock (InactivityKey) return inactivity; }
-            set { lock (InactivityKey) inactivity = value; }
-        }
-        private static bool LowHashrate
-        {
-            get { lock (LowHashrateKey) return lowHashrate; }
-            set { lock (LowHashrateKey) lowHashrate = value; }
-        }
-        private static byte ErrorsCounter = 0;
-        //methods
-        private static void KillMiner()
-        {
-            var ProcessNames = new string[] 
-            {
-                Bminer.CurrentProcessName,
-                Gminer.CurrentProcessName,
-                Claymore.CurrentProcessName
-            };
-            var processes = Process.GetProcesses().
-                Where(p => ProcessNames.Contains(p.ProcessName));
-            foreach (var proc in processes)
-                try { proc.Kill(); } catch { }
-        }
-        public static Task StartMiner(Config config, bool InternetRestored = false)
-        {
-            return Task.Run(() =>
-            {
-                KillMiner();
-
-                Miner miner;
-                switch (config.Miner.Value)
-                {
-                    case 0: miner = new Bminer(); goto StartThisMiner;
-                    case 1: miner = new Claymore(); goto StartThisMiner;
-                    case 2: miner = new Gminer(); goto StartThisMiner;
-                }
-                return;
-            StartThisMiner:
-                miner.RunThisMiner(config);
-                GPUs = Settings.Profile.GPUsSwitch;
-                Task.Run(() => MinerStarted?.Invoke(miner, config, InternetRestored));
-                ConfigToRecovery = config;
-
-                ErrorsCounter = 0;
-                WachdogInactivity();
-                miner.StartWaching(config.MinHashrate);
-
-                process.WaitForExit();
-                process = null;
-                Task.Run(() => MinerStoped?.Invoke());
-            });
         }
         private Task StartWaching(double minhash)
         {
@@ -242,6 +154,90 @@ namespace OMineGuard.Miners
                 }
             });
         }
+        private bool waching = false;
+        private bool Waching
+        {
+            get { lock (WachingKey) return waching; }
+            set { lock (WachingKey) waching = value; }
+        }
+
+        //---------------static
+        //events
+        public static event Action<Miner, Config, bool> MinerStarted;
+        public static event Action MinerStoped;
+        public static event Action<MinerInfo> MinerInfoUpdated;
+        public static event Action<int> WachdogDelayTimer;
+        public static event Action<int> InactivityTimer;
+        public static event Action<Miner> ZeroHash;
+        public static event Action InactivityError;
+        public static event Action<int> LowHashrateTimer;
+        public static event Action<Miner> LowHashrateError;
+        public static event Action<Miner, int[]> GPUsfalled;
+        public static event Action<string> LogDataReceived;
+        //common
+        public static bool Processing => process != null ? true : false;
+        public static List<bool> GPUs { get; private set; }
+        private static protected Process process { get; set; }
+        private static Config ConfigToRecovery { get; set; }
+        private static readonly object WachingKey = new object();
+        private static readonly object InactivityKey = new object();
+        private static readonly object LowHashrateKey = new object();
+        private static bool inactivity = false;
+        private static bool lowHashrate = false;
+        private static bool Inactivity
+        {
+            get { lock (InactivityKey) return inactivity; }
+            set { lock (InactivityKey) inactivity = value; }
+        }
+        private static bool LowHashrate
+        {
+            get { lock (LowHashrateKey) return lowHashrate; }
+            set { lock (LowHashrateKey) lowHashrate = value; }
+        }
+        private static byte ErrorsCounter = 0;
+        //methods
+        public static Task StartMiner(Config config, bool InternetRestored = false)
+        {
+            return Task.Run(() =>
+            {
+                KillMiner();
+
+                Miner miner;
+                switch (config.Miner.Value)
+                {
+                    case 0: miner = new Bminer(); goto StartThisMiner;
+                    case 1: miner = new Claymore(); goto StartThisMiner;
+                    case 2: miner = new Gminer(); goto StartThisMiner;
+                }
+                return;
+            StartThisMiner:
+                miner.RunThisMiner(config);
+                GPUs = Settings.Profile.GPUsSwitch;
+                Task.Run(() => MinerStarted?.Invoke(miner, config, InternetRestored));
+                ConfigToRecovery = config;
+
+                ErrorsCounter = 0;
+                WachdogInactivity();
+                miner.StartWaching(config.MinHashrate);
+
+                process.WaitForExit();
+                process = null;
+                Task.Run(() => MinerStoped?.Invoke());
+            });
+        }
+        private static void KillMiner()
+        {
+            var ProcessNames = new string[]
+            {
+                Bminer.CurrentProcessName,
+                Gminer.CurrentProcessName,
+                Claymore.CurrentProcessName
+            };
+            var processes = Process.GetProcesses().
+                Where(p => ProcessNames.Contains(p.ProcessName));
+            foreach (var proc in processes)
+                try { proc.Kill(); } catch { }
+        }
         private static Task WachdogInactivity()
         {
             if (!Inactivity)
@@ -291,6 +287,10 @@ namespace OMineGuard.Miners
                 });
             }
             return null;
+        }
+        private protected static void Logging(string log)
+        {
+            Task.Run(() => LogDataReceived?.Invoke(log));
         }
         //const
         private protected const int port = 3330;
