@@ -2,28 +2,5 @@
     x:Class="OMineGuard.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="clr-namespace:OMineGuard"
     Exit="Application_Exit"
-    StartupUri="Frontend\Views\MainWindow.xaml">
-    <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Frontend\Styles\Brushes.xaml" />
-
-                <ResourceDictionary Source="Frontend\Styles\Button.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\CheckBox.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\ComboBox.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\GroupBox.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\Listbox.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\PasswordBox.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\TabControl.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\TabItem.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\TextBox.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\Tumbler.xaml" />
-                <ResourceDictionary Source="Frontend\Styles\Label.xaml" />
-
-                <ResourceDictionary Source="Frontend\Styles\Converters.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </Application.Resources>
-</Application>
+    StartupUri="MainWindow.xaml" />

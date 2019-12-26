@@ -1,0 +1,22 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:OMineGuardControlLibrary">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Styles\Brushes.xaml" />
+
+        <ResourceDictionary Source="Styles\Button.xaml" />
+        <ResourceDictionary Source="Styles\CheckBox.xaml" />
+        <ResourceDictionary Source="Styles\ComboBox.xaml" />
+        <ResourceDictionary Source="Styles\GroupBox.xaml" />
+        <ResourceDictionary Source="Styles\Listbox.xaml" />
+        <ResourceDictionary Source="Styles\PasswordBox.xaml" />
+        <ResourceDictionary Source="Styles\TabControl.xaml" />
+        <ResourceDictionary Source="Styles\TabItem.xaml" />
+        <ResourceDictionary Source="Styles\TextBox.xaml" />
+        <ResourceDictionary Source="Styles\Tumblerr.xaml" />
+        <ResourceDictionary Source="Styles\Label.xaml" />
+
+        <ResourceDictionary Source="Styles\Converters.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

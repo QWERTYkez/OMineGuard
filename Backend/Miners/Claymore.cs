@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using OMineGuard.Backend;
+using OMineGuardControlLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,7 +18,7 @@ namespace OMineGuard.Miners
         private protected override string ProcessName { get => CurrentProcessName; }
         public static string CurrentProcessName { get; } = "EthDcrMiner64";
 
-        private protected override void RunThisMiner(Config Config)
+        private protected override void RunThisMiner(IConfig Config)
         {
             string DT = DateTime.Now.ToString("HH.mm.ss - dd.MM.yy");
             string logfile = $"MinersLogs/log {DT} {Config.Name}.txt";

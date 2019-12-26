@@ -1,4 +1,5 @@
 ﻿using MSI.Afterburner;
+using OMineGuardControlLibrary;
 using OpenHardwareMonitor.Hardware;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace OMineGuard.Backend
 
         public static bool MSIconnected { get; private set; } = false;
         public static bool OHMenable { get; private set; } = false;
-        public static void ApplyOverclock(Overclock OC)
+        public static void ApplyOverclock(IOverclock OC)
         {
             Task.Run(() => 
             {
@@ -433,11 +434,11 @@ namespace OMineGuard.Backend
         public int?[] CoreClocks;
         public int?[] MemoryClocks;
     }
-    public class DefClock
+    public class DefClock : IDefClock
     {
-        public int[] PowerLimits;
-        public int[] CoreClocks;
-        public int[] MemoryClocks;
-        public int[] FanSpeeds;
+        public int[] PowerLimits { get; set; }
+        public int[] CoreClocks { get; set; }
+        public int[] MemoryClocks { get; set; }
+        public int[] FanSpeeds { get; set; }
     }
 }

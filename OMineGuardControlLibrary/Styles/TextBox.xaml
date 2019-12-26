@@ -1,0 +1,49 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:OMineGuardControlLibrary.Styles">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Brushes.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <ControlTemplate x:Key="ContrastTextBox" TargetType="{x:Type TextBox}">
+        <Grid x:Name="xxx">
+            <Border
+                x:Name="Bx"
+                Background="{StaticResource Custom.TextBox.Background}"
+                BorderBrush="{StaticResource Custom.TextBox.Foreground}"
+                BorderThickness="2"
+                SnapsToDevicePixels="True">
+                <Border.Effect>
+                    <BlurEffect Radius="2" />
+                </Border.Effect>
+            </Border>
+            <Border
+                x:Name="border"
+                BorderBrush="{StaticResource Custom.TextBox.Foreground}"
+                BorderThickness="1"
+                SnapsToDevicePixels="True">
+                <ScrollViewer
+                    x:Name="PART_ContentHost"
+                    Focusable="False"
+                    HorizontalScrollBarVisibility="Hidden"
+                    VerticalScrollBarVisibility="Hidden" />
+            </Border>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsEnabled" Value="True">
+                <Setter Property="TextBoxBase.Foreground" Value="{StaticResource Custom.TextBox.Foreground}" />
+                <Setter Property="TextBoxBase.CaretBrush" Value="White" />
+                <Setter Property="TextBoxBase.SelectionBrush" Value="White" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="xxx" Property="Opacity" Value="0.56" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Template" Value="{StaticResource ContrastTextBox}" />
+    </Style>
+
+</ResourceDictionary>

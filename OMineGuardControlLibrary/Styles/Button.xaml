@@ -1,0 +1,81 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:OMineGuardControlLibrary.Styles">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Brushes.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+
+    <ControlTemplate x:Key="ContrastButtonKey" TargetType="{x:Type ButtonBase}">
+        <!--#region Макет-->
+        <Grid>
+            <Border
+                x:Name="border"
+                BorderBrush="LightBlue"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                SnapsToDevicePixels="True">
+                <ContentPresenter
+                    x:Name="contentPresenter"
+                    Margin="4,0,4,0"
+                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    Content="{TemplateBinding Content}"
+                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                    Focusable="False"
+                    RecognizesAccessKey="True"
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+            </Border>
+            <Border
+                x:Name="a"
+                Margin="-1"
+                BorderThickness="2">
+                <Border.Effect>
+                    <BlurEffect Radius="5" />
+                </Border.Effect>
+            </Border>
+            <Border
+                x:Name="b"
+                Margin="0"
+                BorderThickness="1" />
+        </Grid>
+        <!--#endregion Макет-->
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="False">
+                <Setter TargetName="a" Property="BorderBrush" Value="{StaticResource Custom.Button.Base.Foreground}" />
+                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Custom.Button.Base.Foreground}" />
+                <Setter Property="Foreground" Value="{StaticResource Custom.Button.Base.Foreground}" />
+                <Setter TargetName="border" Property="Background" Value="{StaticResource Custom.Button.Base.Background}" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="a" Property="BorderBrush" Value="{StaticResource Custom.Button.MouseOver.Foreground}" />
+                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Custom.Button.MouseOver.Foreground}" />
+                <Setter Property="Foreground" Value="{StaticResource Custom.Button.MouseOver.Foreground}" />
+                <Setter TargetName="border" Property="Background" Value="{StaticResource Custom.Button.MouseOver.Background}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="a" Property="BorderBrush" Value="{StaticResource Custom.Button.Click.Foreground}" />
+                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Custom.Button.Click.Foreground}" />
+                <Setter Property="Foreground" Value="{StaticResource Custom.Button.Click.Foreground}" />
+                <Setter TargetName="border" Property="Background" Value="{StaticResource Custom.Button.Click.Background}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="false">
+                <Setter TargetName="a" Property="BorderBrush" Value="{StaticResource Custom.Button.Disabled.Foreground}" />
+                <Setter TargetName="b" Property="BorderBrush" Value="{StaticResource Custom.Button.Disabled.Foreground}" />
+                <Setter Property="Foreground" Value="{StaticResource Custom.Button.Disabled.Foreground}" />
+                <Setter TargetName="border" Property="Background" Value="{StaticResource Custom.Button.Disabled.Background}" />
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <BlurEffect Radius="1" />
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style TargetType="Button">
+        <Setter Property="Template" Value="{StaticResource ContrastButtonKey}" />
+    </Style>
+
+</ResourceDictionary>

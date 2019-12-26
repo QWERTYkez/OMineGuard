@@ -1,0 +1,22 @@
+﻿<Window
+    x:Class="OMineGuard.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="OMineGuard"
+    Width="1000"
+    Height="600"
+    MinWidth="1100"
+    MinHeight="600"
+    mc:Ignorable="d">
+    <Window.Background>
+        <RadialGradientBrush RadiusX="0.75" RadiusY="0.75">
+            <GradientStop Offset="0" Color="#FF2F5566" />
+            <GradientStop Offset="0.768" Color="#FF07212C" />
+            <GradientStop Offset="1" Color="#FF032330" />
+            <GradientStop Offset="0.211" Color="#FF1C4252" />
+        </RadialGradientBrush>
+    </Window.Background>
+    <ContentPresenter x:Name="Presenter" />
+</Window>

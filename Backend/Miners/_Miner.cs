@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Threading;
+using OMineGuardControlLibrary;
 
 namespace OMineGuard.Miners
 {
@@ -14,7 +15,7 @@ namespace OMineGuard.Miners
         //abstract
         private protected abstract string Directory { get; }
         private protected abstract string ProcessName { get; }
-        private protected abstract void RunThisMiner(Config Config);
+        private protected abstract void RunThisMiner(IConfig Config);
         private protected abstract MinerInfo CurrentMinerGetInfo();
         //common
         public Miner()
@@ -163,7 +164,7 @@ namespace OMineGuard.Miners
 
         //---------------static
         //events
-        public static event Action<Miner, Config, bool> MinerStarted;
+        public static event Action<Miner, IConfig, bool> MinerStarted;
         public static event Action MinerStoped;
         public static event Action<MinerInfo> MinerInfoUpdated;
         public static event Action<int> WachdogDelayTimer;
@@ -178,7 +179,7 @@ namespace OMineGuard.Miners
         public static bool Processing => process != null ? true : false;
         public static List<bool> GPUs { get; private set; }
         private static protected Process process { get; set; }
-        private static Config ConfigToRecovery { get; set; }
+        private static IConfig ConfigToRecovery { get; set; }
         private static readonly object WachingKey = new object();
         private static readonly object InactivityKey = new object();
         private static readonly object LowHashrateKey = new object();
@@ -196,7 +197,7 @@ namespace OMineGuard.Miners
         }
         private static byte ErrorsCounter = 0;
         //methods
-        public static Task StartMiner(Config config, bool InternetRestored = false)
+        public static Task StartMiner(IConfig config, bool InternetRestored = false)
         {
             return Task.Run(() =>
             {

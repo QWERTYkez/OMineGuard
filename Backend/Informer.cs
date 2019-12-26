@@ -14,9 +14,9 @@ namespace OMineGuard.Backend
 
         private static void SendVKMessage(string message)
         {
-            if (Settings.Profile.Informer.VkInform)
+            if (Settings.Profile.VkInform)
             {
-                string user_id = Settings.Profile.Informer.VKuserID;
+                string user_id = Settings.Profile.VKuserID;
                 string access_token = "6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929";
                 string ver = "5.73";
 
