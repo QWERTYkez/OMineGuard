@@ -19,7 +19,28 @@ namespace OMineGuard.Backend
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
 
-        private IProfile CurrProf;
+        private static bool CheckArrays(int?[] a, int?[] b)
+        {
+            if (a == null && b == null) return false;
+            if (a == null ^ b == null) return true;
+            if (a.Length != b.Length) return true;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return true;
+            }
+            return false;
+        }
+        private static bool CheckArrays(double?[] a, double?[] b)
+        {
+            if (a == null && b == null) return false;
+            if (a == null ^ b == null) return true;
+            if (a.Length != b.Length) return true;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return true;
+            }
+            return false;
+        }
         public void IniModel()
         {
             TCPserver.OMWsent += TCP_OMWsent;
@@ -34,19 +55,23 @@ namespace OMineGuard.Backend
                 {
                     if (!MSIenable) MSIenable = true;
 
-                    InfPowerLimits = xx.Value.PowerLimits;
-                    InfCoreClocks = xx.Value.CoreClocks;
-                    InfMemoryClocks = xx.Value.MemoryClocks;
-                    if (!OHMenable) InfFanSpeeds = xx.Value.FanSpeeds;
+                    if (CheckArrays(InfPowerLimits, xx.Value.PowerLimits))
+                        InfPowerLimits = xx.Value.PowerLimits;
+                    if (CheckArrays(InfCoreClocks, xx.Value.CoreClocks))
+                        InfCoreClocks = xx.Value.CoreClocks;
+                    if (CheckArrays(InfMemoryClocks, xx.Value.MemoryClocks))
+                        InfMemoryClocks = xx.Value.MemoryClocks;
+                    if (!OHMenable && CheckArrays(InfFanSpeeds, xx.Value.FanSpeeds)) 
+                        InfFanSpeeds = xx.Value.FanSpeeds;
                 }
                 else
                 {
                     if (MSIenable) MSIenable = false;
 
-                    InfPowerLimits = null;
-                    InfCoreClocks = null;
-                    InfMemoryClocks = null;
-                    if (!MIenable && !OHMenable) InfFanSpeeds = null;
+                    if (InfPowerLimits != null) InfPowerLimits = null;
+                    if (InfCoreClocks != null) InfCoreClocks = null;
+                    if (InfMemoryClocks != null) InfMemoryClocks = null;
+                    if (!MIenable && !OHMenable && InfFanSpeeds != null) InfFanSpeeds = null;
                 }
 
                 var yy = ohm;
@@ -54,22 +79,24 @@ namespace OMineGuard.Backend
                 {
                     if (!OHMenable) OHMenable = true;
 
-                    InfOHMCoreClocks = yy.Value.CoreClocks;
-                    InfOHMMemoryClocks = yy.Value.MemoryClocks;
-                    InfTemperatures = yy.Value.Temperatures;
-                    InfFanSpeeds = yy.Value.FanSpeeds;
+                    if (CheckArrays(InfOHMCoreClocks, yy.Value.CoreClocks))
+                        InfOHMCoreClocks = yy.Value.CoreClocks;
+                    if (CheckArrays(InfOHMMemoryClocks, yy.Value.MemoryClocks))
+                        InfOHMMemoryClocks = yy.Value.MemoryClocks;
+                    if (CheckArrays(InfTemperatures, yy.Value.Temperatures))
+                        InfTemperatures = yy.Value.Temperatures;
+                    if (CheckArrays(InfFanSpeeds, yy.Value.FanSpeeds))
+                        InfFanSpeeds = yy.Value.FanSpeeds;
                 }
                 else
                 {
                     if (OHMenable) OHMenable = false;
 
-                    InfOHMCoreClocks = null;
-                    InfOHMMemoryClocks = null;
-                    if (!MIenable) InfTemperatures = null;
-                    if (!MIenable && !MSIenable) InfFanSpeeds = null;
+                    if (InfOHMCoreClocks != null) InfOHMCoreClocks = null;
+                    if (InfOHMMemoryClocks != null) InfOHMMemoryClocks = null;
+                    if (!MIenable && InfTemperatures != null) InfTemperatures = null;
+                    if (!MIenable && !MSIenable && InfFanSpeeds != null) InfFanSpeeds = null;
                 }
-
-                ResetGPUs();
             };
             Overclocker.ConnectedToMSI += def =>
             {
@@ -79,8 +106,7 @@ namespace OMineGuard.Backend
             Overclocker.OverclockApplied += () => Logging("Профиль разгона MSI Afterburner применен");
             Overclocker._Overclocker();
 
-            CurrProf = Settings.Profile;
-            Profile = CurrProf;
+            Profile = Settings.Profile;
             Miners = Miner.Miners;
             Algoritms = Miner.Algoritms;
 
@@ -92,26 +118,32 @@ namespace OMineGuard.Backend
 
                 if (xx.Hashrates != null)
                 {
-                    InfHashrates = xx.Hashrates;
-                    TotalHashrate = InfHashrates.Sum();
+                    if (CheckArrays(InfHashrates, xx.Hashrates))
+                        InfHashrates = xx.Hashrates;
+                        TotalHashrate = InfHashrates.Sum();
                 }
-                if (!OHMenable) { InfTemperatures = xx.Temperatures; }
-                if (!MSIenable) InfFanSpeeds = xx.Fanspeeds;
+                else
+                {
+                    InfHashrates = null;
+                    TotalHashrate = 0;
+                }
+                if (!OHMenable && CheckArrays(InfTemperatures, xx.Temperatures)) 
+                    InfTemperatures = xx.Temperatures; 
+                if (!MSIenable && CheckArrays(InfFanSpeeds, xx.Fanspeeds)) 
+                    InfFanSpeeds = xx.Fanspeeds;
 
-                ResetGPUs();
-
-                if (mi.ShAccepted != null) ShAccepted = mi.ShAccepted;
-                if (mi.ShInvalid != null) ShInvalid = mi.ShInvalid;
-                if (mi.ShRejected != null) ShRejected = mi.ShRejected;
-                if (mi.ShTotalAccepted != null) ShTotalAccepted = mi.ShTotalAccepted;
-                if (mi.ShTotalInvalid != null) ShTotalInvalid = mi.ShTotalInvalid;
-                if (mi.ShTotalRejected != null) ShTotalRejected = mi.ShTotalRejected;
+                //if (mi.ShAccepted != null) ShAccepted = mi.ShAccepted;
+                //if (mi.ShInvalid != null) ShInvalid = mi.ShInvalid;
+                //if (mi.ShRejected != null) ShRejected = mi.ShRejected;
+                //if (mi.ShTotalAccepted != null) ShTotalAccepted = mi.ShTotalAccepted;
+                //if (mi.ShTotalInvalid != null) ShTotalInvalid = mi.ShTotalInvalid;
+                //if (mi.ShTotalRejected != null) ShTotalRejected = mi.ShTotalRejected;
             };
             Miner.MinerStarted += (miner, conf, ethernet) =>
             {
                 MainModel.miner = miner;
-                CurrProf.StartedID = conf.ID;
-                Settings.SetProfile(CurrProf);
+                Profile.StartedID = conf.ID;
+                Settings.SetProfile(Profile);
                 Indicator = true;
                 TCPserver.Indication = true;
                 string msg;
@@ -130,8 +162,6 @@ namespace OMineGuard.Backend
                 TotalHashrate = null;
                 if (!OHMenable) InfTemperatures = null;
                 if (!OHMenable && !MSIenable) InfFanSpeeds = null;
-
-                ResetGPUs();
 
                 ShAccepted = null;
                 ShInvalid = null;
@@ -179,17 +209,17 @@ namespace OMineGuard.Backend
                 miner.RestartMiner();
             };
 
-            if (CurrProf.Autostart)
+            if (Profile.Autostart)
             {
-                if (CurrProf.StartedID != null)
+                if (Profile.StartedID != null)
                 {
                     try
                     {
-                        StartMiner(CurrProf.ConfigsList.
-                            Where(c => c.ID == CurrProf.StartedID.Value).First());
+                        StartMiner(Profile.ConfigsList.
+                            Where(c => c.ID == Profile.StartedID.Value).First());
                         System.Threading.Tasks.Task.Run(() => Autostarted?.Invoke());
                     }
-                    catch { CurrProf.StartedID = null; }
+                    catch { Profile.StartedID = null; }
                 }
             }
         }
@@ -205,7 +235,7 @@ namespace OMineGuard.Backend
             }
             if(config.ClockID != null)
             {
-                IOverclock oc = CurrProf.ClocksList.
+                IOverclock oc = Profile.ClocksList.
                     Where(c => c.ID == config.ClockID).First();
                 Overclocker.ApplyOverclock(oc);
             }
@@ -241,29 +271,6 @@ namespace OMineGuard.Backend
         private bool OHMenable = false;
         private bool MIenable = false;
 
-        public int GPUs { get; set; }
-        private static readonly object gpkey = new object();
-        public void ResetGPUs()
-        {
-            lock (gpkey)
-            {
-                int[] l = new int[]
-                {
-                    (InfPowerLimits != null? InfPowerLimits.Length : 0),
-                    (InfCoreClocks != null? InfCoreClocks.Length : 0),
-                    (InfMemoryClocks != null? InfMemoryClocks.Length : 0),
-                    (InfFanSpeeds != null? InfFanSpeeds.Length : 0),
-                    (InfTemperatures != null? InfTemperatures.Length : 0),
-                    CurrProf.GPUsSwitch.Count
-                };
-                int m = l.Max();
-                if (GPUs != m)
-                {
-                    GPUs = m;
-                }
-            }
-        }
-
         public int?[] InfPowerLimits { get; set; }
         public int?[] InfCoreClocks { get; set; }
         public int?[] InfMemoryClocks { get; set; }
@@ -289,26 +296,23 @@ namespace OMineGuard.Backend
         #region Commands
         public void CMD_SaveProfile(IProfile prof)
         {
-            CurrProf = prof;
-            Profile = null;
-            Profile = CurrProf;
-            Settings.SetProfile(CurrProf);
+            Profile = prof;
+            Settings.SetProfile(Profile);
         }
         public void CMD_RunProfile(IProfile prof, int index)
         {
-            CurrProf = prof;
             Profile = null;
-            Profile = CurrProf;
-            Settings.SetProfile(CurrProf);
-            StartMiner(CurrProf.ConfigsList[index]);
+            Profile = prof;
+            Settings.SetProfile(Profile);
+            StartMiner(Profile.ConfigsList[index]);
         }
         public void CMD_ApplyClock(IProfile prof, int index)
         {
-            CurrProf = prof;
+            Profile = prof;
             Profile = null;
-            Profile = CurrProf;
-            Settings.SetProfile(CurrProf);
-            Overclocker.ApplyOverclock(CurrProf.ClocksList[index]);
+            Profile = Profile;
+            Settings.SetProfile(Profile);
+            Overclocker.ApplyOverclock(Profile.ClocksList[index]);
         }
         public void CMD_MinerLogShow()
         {
@@ -322,8 +326,8 @@ namespace OMineGuard.Backend
         {
             StopMiner();
             if (!Indicator)
-                StartMiner(CurrProf.ConfigsList.
-                     Where(c => c.ID == CurrProf.StartedID.Value).First());
+                StartMiner(Profile.ConfigsList.
+                     Where(c => c.ID == Profile.StartedID.Value).First());
         }
 
         private void TCP_OMWsent(RootObject RO)

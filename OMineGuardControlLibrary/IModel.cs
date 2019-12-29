@@ -17,9 +17,6 @@ namespace OMineGuardControlLibrary
 
         string Loggong { get; set; }
 
-        int GPUs { get; set; }
-        void ResetGPUs();
-
         int?[] InfPowerLimits { get; set; }
         int?[] InfCoreClocks { get; set; }
         int?[] InfMemoryClocks { get; set; }
@@ -61,8 +58,6 @@ namespace OMineGuardControlLibrary
         string RigName { get; set; }
         bool Autostart { get; set; }
         long? StartedID { get; set; }
-        string StartedProcess { get; set; }
-        int Digits { get; set; }
         List<bool> GPUsSwitch { get; set; }
         List<IConfig> ConfigsList { get; set; }
         List<IOverclock> ClocksList { get; set; }

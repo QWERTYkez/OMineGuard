@@ -73,22 +73,22 @@
                         Width="60"
                         Height="25"
                         Margin="5,0,0,0"
-                        ItemsSource="{Binding GPUsCounts, Mode=TwoWay}"
-                        SelectedIndex="{Binding GPUsCountSelected}"
+                        ItemsSource="{Binding GPUsCounts}"
+                        SelectedIndex="{Binding GPUsCountSelected, Mode=TwoWay}"
                         SelectionChanged="GPUsCB_SelectionChanged" />
                     <Label
                         Margin="10,0,5,0"
                         VerticalAlignment="Bottom"
                         FontSize="14"
                         Foreground="White"
-                        Visibility="{Binding Path=GPUsSwitch, Converter={StaticResource ObjectExistToVisibilityConverter}}">
+                        Visibility="{Binding Path=GPUsSwitch, Converter={StaticResource BoolsCountToVisibilityConverter}}">
                         Вкл/Выкл:
                     </Label>
                     <Border
                         VerticalAlignment="Bottom"
                         BorderBrush="Gray"
                         BorderThickness="1"
-                        Visibility="{Binding Path=GPUsSwitch, Converter={StaticResource ObjectExistToVisibilityConverter}}">
+                        Visibility="{Binding Path=GPUsSwitch, Converter={StaticResource BoolsCountToVisibilityConverter}}">
                         <WrapPanel
                             x:Name="GPUswitchSP"
                             Margin="3"
@@ -209,7 +209,7 @@
                         IsEnabled="{Binding SelectedConfigIndex, Mode=OneWay, Converter={StaticResource SelectedIndexToboolConverter}}"
                         ItemsSource="{Binding ConfigOverclocks}"
                         SelectedIndex="{Binding ConfigSelectedOverclockIndex, Mode=TwoWay}"
-                        SelectedItem="{Binding ConfigSelectedOcerclockItem}" />
+                        SelectedItem="{Binding ConfigSelectedOcerclockItem, Mode=TwoWay}" />
 
 
                     <Label

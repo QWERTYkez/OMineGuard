@@ -35,11 +35,36 @@ namespace OMineGuardControlLibrary
             });
         }
 
-        private IProfile Profile;
+        public IProfile Profile; //private
         private Dictionary<string, int[]> Algs;
         private List<string> MinersList;
+
         public int GPUs { get; set; }
-        
+        private static readonly object gpkey = new object();
+        public void ResetGPUs()
+        {
+            lock (gpkey)
+            {
+                int[] l = new int[]
+                {
+                    (InfPowerLimits != null? InfPowerLimits.Length : 0),
+                    (InfCoreClocks != null? InfCoreClocks.Length : 0),
+                    (InfMemoryClocks != null? InfMemoryClocks.Length : 0),
+                    (InfFanSpeeds != null? InfFanSpeeds.Length : 0),
+                    (InfTemperatures != null? InfTemperatures.Length : 0),
+                    (InfOHMCoreClocks != null? InfOHMCoreClocks.Length : 0),
+                    (InfOHMMemoryClocks != null? InfOHMMemoryClocks.Length : 0),
+                    (InfHashrates != null? InfHashrates.Length : 0),
+                    Profile.GPUsSwitch.Count
+                };
+                int m = l.Max();
+                if (GPUs != m)
+                {
+                    GPUs = m;
+                }
+            }
+        }
+
         private void ModelChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
@@ -52,12 +77,13 @@ namespace OMineGuardControlLibrary
 
                             LogFontSize = Profile.LogTextSize;
                             GPUsSwitch = Profile.GPUsSwitch;
+                            GPUsCountSelected = _model.Profile.GPUsSwitch.Count;
                             RigName = Profile.RigName;
                             AutoRun = Profile.Autostart;
                             ConfigsNames = from i in Profile.ConfigsList select i.Name;
-                            List<string> CL = (from i in Profile.ClocksList select i.Name).ToList();
-                            CL.Insert(0, "---");
-                            ConfigOverclocks = CL;
+                            ConfigOverclocks = new List<string> { "---" };
+                            ConfigOverclocks = ConfigOverclocks.Concat(
+                                from i in Profile.ClocksList select i.Name);
                             OverclocksNames = from i in Profile.ClocksList select i.Name;
                             WachdogTimer = Profile.TimeoutWachdog;
                             IdleTimeout = Profile.TimeoutIdle;
@@ -68,15 +94,14 @@ namespace OMineGuardControlLibrary
                         }
                         break;
                     }
-                case "GPUs": { GPUs = _model.GPUs; break; }
-                case "InfPowerLimits": { InfPowerLimits = _model.InfPowerLimits; break; }
-                case "InfCoreClocks": { InfCoreClocks = _model.InfCoreClocks; break; }
-                case "InfMemoryClocks": { InfMemoryClocks = _model.InfMemoryClocks; break; }
-                case "InfOHMCoreClocks": { InfOHMCoreClocks = _model.InfOHMCoreClocks; break; }
-                case "InfOHMMemoryClocks": { InfOHMMemoryClocks = _model.InfOHMMemoryClocks; break; }
-                case "InfFanSpeeds": { InfFanSpeeds = _model.InfFanSpeeds; break; }
-                case "InfTemperatures": { InfTemperatures = _model.InfTemperatures; break; }
-                case "InfHashrates": { InfHashrates = _model.InfHashrates; break; }
+                case "InfPowerLimits": { InfPowerLimits = _model.InfPowerLimits; ResetGPUs(); break; }
+                case "InfCoreClocks": { InfCoreClocks = _model.InfCoreClocks; ResetGPUs(); break; }
+                case "InfMemoryClocks": { InfMemoryClocks = _model.InfMemoryClocks; ResetGPUs(); break; }
+                case "InfOHMCoreClocks": { InfOHMCoreClocks = _model.InfOHMCoreClocks; ResetGPUs(); break; }
+                case "InfOHMMemoryClocks": { InfOHMMemoryClocks = _model.InfOHMMemoryClocks; ResetGPUs(); break; }
+                case "InfFanSpeeds": { InfFanSpeeds = _model.InfFanSpeeds; ResetGPUs(); break; }
+                case "InfTemperatures": { InfTemperatures = _model.InfTemperatures; ResetGPUs(); break; }
+                case "InfHashrates": { InfHashrates = _model.InfHashrates; ResetGPUs(); break; }
                 case "TotalHashrate": { TotalHashrate = _model.TotalHashrate; break; }
                 case "Miners":
                     {
@@ -143,7 +168,7 @@ namespace OMineGuardControlLibrary
 
         public List<string> GPUsCounts { get; set; } = new List<string>() { "Auto", "1", "2",
             "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16" };
-        public bool GPUsCanSelect { get; set; } = false;
+        public int GPUsCountSelected { get; set; } = -1;
         public List<bool> GPUsSwitch { get; set; }
         public RelayCommand SetGPUsSwitch { get; set; }
 
@@ -161,6 +186,8 @@ namespace OMineGuardControlLibrary
             });
             SetGPUsSwitch = new RelayCommand(obj =>
             {
+                var bools = GPUsSwitch.ToArray();
+                GPUsSwitch = bools.ToList();
                 Profile.GPUsSwitch = GPUsSwitch;
                 _model.CMD_SaveProfile(Profile);
             });
@@ -239,7 +266,7 @@ namespace OMineGuardControlLibrary
                     {
                         foreach (IOverclock c in Profile.ClocksList)
                         {
-                            if (c.ID == Profile.ConfigsList[SelectedConfigIndex].ClockID)
+                            if (c.ID == Profile.ClocksList[SelectedConfigIndex].ID)
                             {
                                 ConfigSelectedOcerclockItem = c.Name;
                             }

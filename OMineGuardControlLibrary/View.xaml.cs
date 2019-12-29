@@ -24,48 +24,53 @@ namespace OMineGuardControlLibrary
 
         private readonly ViewModel _ViewModel;
 
+        public bool GPUsCanSelect { get; set; } = false;
         private void GPUsCB_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            int k = ((ViewModel)DataContext).GPUs;
-            ((ViewModel)DataContext)._model.ResetGPUs();
-            ComboBox ComB = (ComboBox)sender;
-            if (((ViewModel)DataContext).GPUsCanSelect)
+            int countCurrent = GPUswitchSP.Children.Count;
+            int countNew = _ViewModel.GPUsCountSelected;
+            if (GPUsCanSelect)
             {
-                GPUswitchSP.Children.Clear();
+                while (countCurrent != countNew)
+                {
+                    if (countCurrent < countNew)
+                    {
+                        if (_ViewModel.GPUsSwitch.Count < countCurrent + 1)
+                        {
+                            _ViewModel.GPUsSwitch.Add(true);
+                        }
 
-                if (k < 1)
-                {
-                    ((ViewModel)DataContext).GPUsSwitch = null;
-                }
-                else
-                {
-                    ((ViewModel)DataContext).GPUsSwitch = new List<bool>();
-                    for (int i = 0; i < k; i++)
-                    {
-                        ((ViewModel)DataContext).GPUsSwitch.Add(true);
-                    }
-                    for (byte n = 0; n < k; n++)
-                    {
                         Grid GR = new Grid { Width = 60 };
-                        GR.Children.Add(new TextBlock { Text = "GPU" + n, Effect = null, Foreground = Brushes.White });
+                        GR.Children.Add(new TextBlock { Text = "GPU" + countCurrent, Effect = null, Foreground = Brushes.White });
                         CheckBox CB = new CheckBox
                         {
-                            Name = "g" + n.ToString(),
+                            Name = "g" + countCurrent.ToString(),
                             Margin = new Thickness(0, 0, 7, 0),
-                            IsChecked = true,
+                            IsChecked = _ViewModel.GPUsSwitch[countCurrent],
                             HorizontalAlignment = HorizontalAlignment.Right
                         };
                         CB.Checked += SwitchGPU;
                         CB.Unchecked += SwitchGPU;
                         GR.Children.Add(CB);
                         GPUswitchSP.Children.Add(GR);
+                        countCurrent++;
                     }
-                    ((ViewModel)DataContext).SetGPUsSwitch.Execute(null);
+                    else
+                    {
+                        while (_ViewModel.GPUsSwitch.Count > countCurrent - 1)
+                        {
+                            _ViewModel.GPUsSwitch.RemoveAt(_ViewModel.GPUsSwitch.Count - 1);
+                        }
+                        GPUswitchSP.Children.RemoveAt(countCurrent - 1);
+                        countCurrent--;
+                    }
                 }
+                _ViewModel.ResetGPUs();
+                _ViewModel.SetGPUsSwitch.Execute(null);
             }
             else
             {
-                for (byte n = 0; n < k; n++)
+                for (byte n = 0; n < countNew; n++)
                 {
                     Grid GR = new Grid { Width = 60 };
                     GR.Children.Add(new TextBlock { Text = "GPU" + n, Effect = null, Foreground = Brushes.White });
@@ -73,7 +78,7 @@ namespace OMineGuardControlLibrary
                     {
                         Name = "g" + n.ToString(),
                         Margin = new Thickness(0, 0, 7, 0),
-                        IsChecked = ((ViewModel)DataContext).GPUsSwitch[n],
+                        IsChecked = _ViewModel.GPUsSwitch[n],
                         HorizontalAlignment = HorizontalAlignment.Right
                     };
                     CB.Checked += SwitchGPU;
@@ -81,7 +86,7 @@ namespace OMineGuardControlLibrary
                     GR.Children.Add(CB);
                     GPUswitchSP.Children.Add(GR);
                 }
-                ((ViewModel)DataContext).GPUsCanSelect = true;
+                GPUsCanSelect = true;
             }
         }
         private void SwitchGPU(object sender, RoutedEventArgs e)
@@ -89,13 +94,13 @@ namespace OMineGuardControlLibrary
             int i = Convert.ToInt32(((CheckBox)sender).Name.Replace("g", ""));
             if (((CheckBox)sender).IsChecked == true)
             {
-                ((ViewModel)DataContext).GPUsSwitch[i] = true;
+                _ViewModel.GPUsSwitch[i] = true;
             }
             else
             {
-                ((ViewModel)DataContext).GPUsSwitch[i] = false;
+                _ViewModel.GPUsSwitch[i] = false;
             }
-            ((ViewModel)DataContext).SetGPUsSwitch.Execute(null);
+            _ViewModel.SetGPUsSwitch.Execute(null);
         }
 
         private void MainWindow_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -106,7 +111,7 @@ namespace OMineGuardControlLibrary
                 {
                     case "GPUs":
                         {
-                            int n = ((ViewModel)DataContext).GPUs;
+                            int n = _ViewModel.GPUs;
                             /*SetGPUs*/
                             {
                                 GPUs.Children.Clear();
@@ -126,25 +131,39 @@ namespace OMineGuardControlLibrary
                             }
                             SetTextBoxes(PowerLimits, "PowerLimits", n);
                             SetLabels(InfPowerLimits, "InfPowerLimits", PLsLengthA, PLsLengthB, n);
+                            SetLengths(ArrPowerLimits, PLsLengthA, PLsLengthB);
+
                             SetTextBoxes(CoreClocks, "CoreClocks", n);
                             SetLabels(InfCoreClocks, "InfCoreClocks", CoresLengthA, CoresLengthB, n);
+                            SetLengths(ArrCoreClocks, CoresLengthA, CoresLengthB);
+
                             SetLabels(InfOHMCoreClocks, "InfOHMCoreClocks", null, null, n);
+
                             SetTextBoxes(MemoryClocks, "MemoryClocks", n);
                             SetLabels(InfMemoryClocks, "InfMemoryClocks", MemorysLengthA, MemorysLengthB, n);
+                            SetLengths(ArrMemoryClocks, MemorysLengthA, MemorysLengthB);
+
                             SetLabels(InfOHMMemoryClocks, "InfOHMMemoryClocks", null, null, n);
+
                             SetTextBoxes(FanSpeeds, "FanSpeeds", n);
                             SetLabels(InfoFanSpeeds, "InfFanSpeeds", FansLengthA, FansLengthB, n);
+                            SetLengths(ArrFanSpeeds, FansLengthA, FansLengthB);
+
                             SetLabels(InfTemps, "InfTemperatures", TempsLengthA, TempsLengthB, n);
-                            SetLabels(LogTemperatures, "InfTemperatures", n, "0°C");
+                            SetLengths(ArrTemperatures, TempsLengthA, TempsLengthB);
+
                             SetLabels(InfHashrates, "InfHashrates", HashesLengthA, HashesLengthB, n, "0.00");
+                            SetLengths(ArrHashrates, HashesLengthA, HashesLengthB);
+
+                            SetLabels(LogTemperatures, "InfTemperatures", n, "0°C");
                             SetLabels(LogHashrates, "InfHashrates", n, "0.00");
                         }
                         break;
                     case "Indication":
-                        OMGworking = ((ViewModel)DataContext).Indication;
+                        OMGworking = _ViewModel.Indication;
                         break;
                     case "Log":
-                        if (((ViewModel)DataContext).LogAutoscroll) LogScroller.ScrollToEnd();
+                        if (_ViewModel.LogAutoscroll) LogScroller.ScrollToEnd();
                         break;
                     case "InfPowerLimits":
                         {

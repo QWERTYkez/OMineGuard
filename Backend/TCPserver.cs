@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using OMineGuardControlLibrary;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,6 +14,26 @@ namespace OMineGuard.Backend
 {
     public static class TCPserver
     {
+        private class ConfigConverter : CustomCreationConverter<IConfig>
+        {
+            public override IConfig Create(Type objectType)
+            {
+                return new Config();
+            }
+        }
+        private class OverclockConverter : CustomCreationConverter<IOverclock>
+        {
+            public override IOverclock Create(Type objectType)
+            {
+                return new Overclock();
+            }
+        }
+        private static readonly JsonConverter[] Convs = new JsonConverter[]
+        {
+            new ConfigConverter(),
+            new OverclockConverter()
+        };
+
         public static event Action<RootObject> OMWsent;
         public static bool Indication = false;
 
@@ -61,9 +83,9 @@ namespace OMineGuard.Backend
                         catch { } 
                         Thread.Sleep(100); 
                     }
-                    while (ServerAlive)
+                    try
                     {
-                        try
+                        if (ServerAlive)
                         {
                             using (TcpClient client = Server2.AcceptTcpClient())
                             {
@@ -71,38 +93,57 @@ namespace OMineGuard.Backend
                                 {
                                     try
                                     {
-                                        OMWsendState(client, stream, (_model.Profile, ContolStateType.Profile));
-                                        OMWsendState(client, stream, (_model.Algoritms, ContolStateType.Algoritms));
-                                        OMWsendState(client, stream, (_model.Miners, ContolStateType.Miners));
-                                        OMWsendState(client, stream, (_model.DefClock, ContolStateType.DefClock));
-                                        OMWsendState(client, stream, (_model.Indicator, ContolStateType.Indication));
-                                        OMWsendState(client, stream, (_model.Log, ContolStateType.Logging));
-
-                                        // Отправление статистики
-                                        Task.Run(() =>
+                                        OMWsendState(client, stream, (new ControlStruct
                                         {
-                                            while (ServerAlive) 
-                                            { 
-                                                try 
-                                                {
-                                                    Server3 = new TcpListener(IPAddress.Any, 2113);
-                                                    Server3.Stop();
-                                                    Server3.Start();
-                                                    break; 
-                                                } 
-                                                catch { } 
-                                                Thread.Sleep(100); 
-                                            }
-                                            using (TcpClient statclient = Server3.AcceptTcpClient())
+                                            Profile = _model.Profile,
+                                            Logging = _model.Loggong,
+                                            InfPowerLimits = _model.InfPowerLimits,
+                                            InfCoreClocks = _model.InfCoreClocks,
+                                            InfMemoryClocks = _model.InfMemoryClocks,
+                                            InfOHMCoreClocks = _model.InfOHMCoreClocks,
+                                            InfOHMMemoryClocks = _model.InfOHMMemoryClocks,
+                                            InfFanSpeeds = _model.InfFanSpeeds,
+                                            InfTemperatures = _model.InfTemperatures,
+                                            InfHashrates = _model.InfHashrates,
+                                            TotalHashrate = _model.TotalHashrate,
+                                            WachdogInfo = _model.WachdogInfo,
+                                            LowHWachdog = _model.LowHWachdog,
+                                            IdleWachdog = _model.IdleWachdog,
+                                            Indication = _model.Indicator,
+                                            Algoritms = _model.Algoritms,
+                                            Miners = _model.Miners,
+                                            DefClock = _model.DefClock,
+                                        },
+                                        ContolStateType.ControlStruct));
+                                    }
+                                    catch { }
+                                    Task.Run(() =>
+                                    {
+                                        // Отправление статистики
+                                        while (ServerAlive)
+                                        {
+                                            try
                                             {
-                                                using (NetworkStream statstream = statclient.GetStream())
+                                                Server3 = new TcpListener(IPAddress.Any, 2113);
+                                                Server3.Stop();
+                                                Server3.Start();
+                                                break;
+                                            }
+                                            catch { }
+                                            Thread.Sleep(100);
+                                        }
+                                        try
+                                        {
+                                            using (var statclient = Server3.AcceptTcpClient())
+                                            {
+                                                using (var statstream = statclient.GetStream())
                                                 {
                                                     StateServerActive = true;
                                                     while (statclient.Connected && ServerAlive)
                                                     {
                                                         if (StateQueue.Count > 0)
                                                         {
-                                                            OMWsendState(client, stream, StateQueue.Dequeue());
+                                                            OMWsendState(statclient, statstream, StateQueue.Dequeue());
                                                         }
                                                         Thread.Sleep(100);
                                                     }
@@ -110,17 +151,25 @@ namespace OMineGuard.Backend
                                                     StateQueue.Clear();
                                                 }
                                             }
+                                        }
+                                        finally
+                                        {
                                             Server3.Stop();
-                                        });
-                                    }
-                                    catch { }
+                                        }
+                                    });
+                                    string message;
                                     while (client.Connected && ServerAlive)
                                     {
                                         RootObject RO;
+
                                         try
                                         {
-                                            RO = JsonConvert.DeserializeObject<RootObject>(ReadMessage(stream));
-                                            Task.Run(() => OMWsent?.Invoke(RO));
+                                            message = ReadMessage(stream);
+                                            RO = JsonConvert.DeserializeObject<RootObject>(message, Convs);
+                                            if (RO != null)
+                                            {
+                                                Task.Run(() => OMWsent?.Invoke(RO));
+                                            }
                                         }
                                         catch { }
                                         Thread.Sleep(100);
@@ -128,9 +177,8 @@ namespace OMineGuard.Backend
                                 }
                             }
                         }
-                        catch { }
-                        Thread.Sleep(100);
                     }
+                    catch { }
                 });
             });
         }
@@ -195,17 +243,19 @@ namespace OMineGuard.Backend
         private static readonly object key3 = new object();
         private static void OMWsendState(TcpClient client, NetworkStream stream, (object body, ContolStateType type) o)
         {
-            Task.Run(() =>
+            if (client != null)
             {
-                if (client != null)
+                if (client.Connected)
                 {
-                    if (client.Connected)
+                    try
                     {
                         lock (key2)
                         {
                             string header = "";
                             switch (o.type)
                             {
+                                case ContolStateType.ControlStruct: header = "ControlStruct"; break;
+
                                 case ContolStateType.Algoritms: header = "Algoritms"; break;
                                 case ContolStateType.DefClock: header = "DefClock"; break;
                                 case ContolStateType.IdleWachdog: header = "IdleWachdog"; break;
@@ -241,48 +291,46 @@ namespace OMineGuard.Backend
                             stream.Write(Message, 0, Message.Length);
                         }
                     }
+                    catch { }
                 }
-            });
+            }
         }
         private static void OMWsendInform(TcpClient client, NetworkStream stream, (object body, InformStateType type) o)
         {
-            Task.Run(() =>
+            if (client != null)
             {
-                if (client != null)
+                if (client.Connected)
                 {
-                    if (client.Connected)
+                    lock (key3)
                     {
-                        lock (key3)
+                        string header = "";
+                        switch (o.type)
                         {
-                            string header = "";
-                            switch (o.type)
-                            {
-                                case InformStateType.Indication: header = "Indication"; break;
-                                case InformStateType.InfHashrates: header = "InfHashrates"; break;
-                                case InformStateType.InfTemperatures: header = "InfTemperatures"; break;
-                                case InformStateType.ShAccepted: header = "ShAccepted"; break;
-                                case InformStateType.ShInvalid: header = "ShInvalid"; break;
-                                case InformStateType.ShRejected: header = "ShRejected"; break;
-                                case InformStateType.ShTotalAccepted: header = "ShTotalAccepted"; break;
-                                case InformStateType.ShTotalInvalid: header = "ShTotalInvalid"; break;
-                                case InformStateType.ShTotalRejected: header = "ShTotalRejected"; break;
-                            }
-
-                            string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.body)}}}";
-
-                            byte[] Message = Encoding.Default.GetBytes(msg);
-                            byte[] Header = BitConverter.GetBytes(Message.Length);
-
-                            stream.Write(Header, 0, Header.Length);
-
-                            byte[] b = new byte[1];
-                            stream.Read(b, 0, b.Length);
-
-                            stream.Write(Message, 0, Message.Length);
+                            case InformStateType.Indication: header = "Indication"; break;
+                            case InformStateType.InfHashrates: header = "InfHashrates"; break;
+                            case InformStateType.InfTemperatures: header = "InfTemperatures"; break;
+                            case InformStateType.ShAccepted: header = "ShAccepted"; break;
+                            case InformStateType.ShInvalid: header = "ShInvalid"; break;
+                            case InformStateType.ShRejected: header = "ShRejected"; break;
+                            case InformStateType.ShTotalAccepted: header = "ShTotalAccepted"; break;
+                            case InformStateType.ShTotalInvalid: header = "ShTotalInvalid"; break;
+                            case InformStateType.ShTotalRejected: header = "ShTotalRejected"; break;
                         }
+
+                        string msg = $"{{\"{header}\":{JsonConvert.SerializeObject(o.body)}}}";
+
+                        byte[] Message = Encoding.Default.GetBytes(msg);
+                        byte[] Header = BitConverter.GetBytes(Message.Length);
+
+                        stream.Write(Header, 0, Header.Length);
+
+                        byte[] b = new byte[1];
+                        stream.Read(b, 0, b.Length);
+
+                        stream.Write(Message, 0, Message.Length);
                     }
                 }
-            });
+            }
         }
 
         private static bool StateServerActive = false;
@@ -335,8 +383,7 @@ namespace OMineGuard.Backend
                         }
                         break;
                     }
-                case "Loggong": { SendContolState(_model.Loggong, ContolStateType.Logging); } break;
-                case "GPUs": { SendContolState(_model.GPUs, ContolStateType.GPUs); break; }
+                case "Loggong": { SendContolState(_model.Loggong, ContolStateType.Logging); break; }
                 case "InfPowerLimits": { SendContolState(_model.InfPowerLimits, ContolStateType.InfPowerLimits); break; }
                 case "InfCoreClocks": { SendContolState(_model.InfCoreClocks, ContolStateType.InfCoreClocks); break; }
                 case "InfMemoryClocks": { SendContolState(_model.InfMemoryClocks, ContolStateType.InfMemoryClocks); break; }
@@ -382,8 +429,33 @@ namespace OMineGuard.Backend
         public bool? SwitchProcess { get; set; }
         public bool? ShowMinerLog { get; set; }
     }
+    public struct ControlStruct
+    {
+        public IProfile Profile { get; set; }
+        public IDefClock DefClock { get; set; }
+        public string Logging { get; set; }
+        public bool? Indication { get; set; }
+        public List<string> Miners { get; set; }
+        public Dictionary<string, int[]> Algoritms { get; set; }
+        public string WachdogInfo { get; set; }
+        public string LowHWachdog { get; set; }
+        public string IdleWachdog { get; set; }
+
+        public int? GPUs { get; set; }
+        public int?[] InfPowerLimits { get; set; }
+        public int?[] InfCoreClocks { get; set; }
+        public int?[] InfMemoryClocks { get; set; }
+        public int?[] InfOHMCoreClocks { get; set; }
+        public int?[] InfOHMMemoryClocks { get; set; }
+        public int?[] InfFanSpeeds { get; set; }
+        public int?[] InfTemperatures { get; set; }
+        public double?[] InfHashrates { get; set; }
+        public double? TotalHashrate { get; set; }
+    }
     public enum ContolStateType
     {
+        ControlStruct,
+
         Profile,
         Logging,
         InfPowerLimits,

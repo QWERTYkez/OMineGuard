@@ -6,6 +6,7 @@
     <local:BoolInverceConverter x:Key="BoolInverceConverter" />
     <local:SelectedIndexToVisibilityConverter x:Key="SelectedIndexToVisibilityConverter" />
     <local:ObjectExistToVisibilityConverter x:Key="ObjectExistToVisibilityConverter" />
+    <local:BoolsCountToVisibilityConverter x:Key="BoolsCountToVisibilityConverter" />
     <local:ObjectExistToVisibilityConverterReverce x:Key="ObjectExistToVisibilityConverterReverce" />
     <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <local:BoolToVisibilityConverterReverce x:Key="BoolToVisibilityConverterReverce" />

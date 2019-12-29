@@ -9,6 +9,7 @@ namespace OMineGuard.Backend
 {
     public static class Settings
     {
+        private static string CurrentJSON = "";
         private static IProfile Prof;
         public static IProfile Profile 
         {
@@ -18,27 +19,22 @@ namespace OMineGuard.Backend
                 return Prof;
             }
         }
-        public static void SetProfile(IProfile prof)
-        {
-            if (Prof != prof)
-            {
-                Prof = prof;
-                SaveProfile();
-            }
-        }
 
         private static readonly object ProfileKey = new object();
-        private static void SaveProfile()
+        public static void SetProfile(IProfile prof)
         {
-            lock (ProfileKey)
+            string newJSON = JsonConvert.SerializeObject(prof);
+            if (newJSON != CurrentJSON)
             {
-                string JSON = JsonConvert.SerializeObject(Profile);
-
-                using (FileStream fstream = new FileStream("Settings.json", FileMode.Create))
+                lock (ProfileKey)
                 {
-                    byte[] array = System.Text.Encoding.Default.GetBytes(JSON);
-                    fstream.Write(array, 0, array.Length);
+                    using (FileStream fstream = new FileStream("Settings.json", FileMode.Create))
+                    {
+                        byte[] array = System.Text.Encoding.Default.GetBytes(newJSON);
+                        fstream.Write(array, 0, array.Length);
+                    }
                 }
+                CurrentJSON = newJSON;
             }
         }
         public class ConfigConverter : CustomCreationConverter<IConfig>
@@ -61,8 +57,9 @@ namespace OMineGuard.Backend
             {
                 try
                 {
+                    CurrentJSON = File.ReadAllText("Settings.json");
                     Prof = JsonConvert.DeserializeObject<Profile>
-                    (File.ReadAllText("Settings.json"), new JsonConverter[] 
+                    (CurrentJSON, new JsonConverter[] 
                     { 
                         new ConfigConverter(), 
                         new OverclockConverter() 
@@ -149,17 +146,6 @@ namespace OMineGuard.Backend
         public int[] CoreClock { get; set; }
         public int[] MemoryClock { get; set; }
         public int[] FanSpeed { get; set; }
-        public long ID { get; }
-    }
-    public class InformManager
-    {
-        public InformManager()
-        {
-            VkInform = false;
-            VKuserID = "";
-        }
-
-        public bool VkInform;
-        public string VKuserID;
+        public long ID { get; set; }
     }
 }
