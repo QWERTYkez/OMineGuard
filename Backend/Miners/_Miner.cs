@@ -105,6 +105,7 @@ namespace OMineGuard.Miners
                                 {
                                     Task.Run(() => ZeroHash?.Invoke(this));
                                     WachdogInactivity();
+                                    return;
                                 }
                             }
                             else
@@ -134,6 +135,7 @@ namespace OMineGuard.Miners
                                             if (hashes[i] == 0) gpus.Add(i);
                                         }
                                         Task.Run(() => GPUsfalled?.Invoke(this, gpus.ToArray()));
+                                        return;
                                     }
                                 }
                             }
@@ -147,6 +149,7 @@ namespace OMineGuard.Miners
                             {
                                 Task.Run(() => ZeroHash?.Invoke(this));
                                 WachdogInactivity();
+                                return;
                             }
                         }
                         WachdogInactivity();
