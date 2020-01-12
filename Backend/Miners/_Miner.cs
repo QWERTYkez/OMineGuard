@@ -199,34 +199,41 @@ namespace OMineGuard.Miners
             set { lock (LowHashrateKey) lowHashrate = value; }
         }
         private static byte ErrorsCounter = 0;
+        private static Thread MinerLaunchThread;
         //methods
         public static Task StartMiner(IConfig config, bool InternetRestored = false)
         {
             return Task.Run(() =>
             {
-                KillMiner();
-
-                Miner miner;
-                switch (config.Miner.Value)
+                if (MinerLaunchThread != null) try { MinerLaunchThread.Abort(); } catch { }
+                MinerLaunchThread = new Thread(() => 
                 {
-                    case 0: miner = new Bminer(); goto StartThisMiner;
-                    case 1: miner = new Claymore(); goto StartThisMiner;
-                    case 2: miner = new Gminer(); goto StartThisMiner;
-                }
-                return;
-            StartThisMiner:
-                miner.RunThisMiner(config);
-                GPUs = Settings.Profile.GPUsSwitch;
-                Task.Run(() => MinerStarted?.Invoke(miner, config, InternetRestored));
-                ConfigToRecovery = config;
+                    Thread.Sleep(5000);
 
-                ErrorsCounter = 0;
-                WachdogInactivity();
-                miner.StartWaching(config.MinHashrate);
+                    KillMiner();
 
-                process.WaitForExit();
-                process = null;
-                Task.Run(() => MinerStoped?.Invoke());
+                    Miner miner;
+                    switch (config.Miner.Value)
+                    {
+                        case 0: miner = new Bminer(); break;
+                        case 1: miner = new Claymore(); break;
+                        case 2: miner = new Gminer(); break;
+                        default: return;
+                    }
+                    miner.RunThisMiner(config);
+                    GPUs = Settings.Profile.GPUsSwitch;
+                    Task.Run(() => MinerStarted?.Invoke(miner, config, InternetRestored));
+                    ConfigToRecovery = config;
+
+                    ErrorsCounter = 0;
+                    WachdogInactivity();
+                    miner.StartWaching(config.MinHashrate);
+
+                    process.WaitForExit();
+                    process = null;
+                    Task.Run(() => MinerStoped?.Invoke());
+                });
+                MinerLaunchThread.Start();
             });
         }
         private static void KillMiner()
