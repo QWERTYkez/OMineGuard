@@ -301,7 +301,6 @@ namespace OMineGuard.Backend
         }
         public void CMD_RunProfile(IProfile prof, int index)
         {
-            Profile = null;
             Profile = prof;
             Settings.SetProfile(Profile);
             StartMiner(Profile.ConfigsList[index]);
@@ -309,8 +308,6 @@ namespace OMineGuard.Backend
         public void CMD_ApplyClock(IProfile prof, int index)
         {
             Profile = prof;
-            Profile = null;
-            Profile = Profile;
             Settings.SetProfile(Profile);
             Overclocker.ApplyOverclock(Profile.ClocksList[index]);
         }
