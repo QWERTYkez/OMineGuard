@@ -123,8 +123,45 @@ namespace OMineGuard.Backend
                 {
                     try
                     {
-                        CM = nConf;
-                        CM.CommitChanges();
+                        bool f = false;
+                        do
+                        {
+                            CM = nConf;
+                            CM.CommitChanges();
+
+                            Thread.Sleep(500);
+
+                            CM.ReloadAll();
+                            f = false;
+                            for (int i = 0; i < CM.GpuEntries.Length; i++)
+                            {
+                                if (OC.PowLim != null)
+                                    if (CM.GpuEntries[i].PowerLimitCur != OC.PowLim[i]) f = true;
+
+                                if (OC.CoreClock != null)
+                                {
+                                    int core = 0;
+                                    if (CM.GpuEntries[i].CoreClockBoostMax - CM.GpuEntries[i].CoreClockBoostMin != 0)
+                                    { core = CM.GpuEntries[i].CoreClockBoostDef / 1000; }
+                                    else if (CM.GpuEntries[i].CoreClockMax - CM.GpuEntries[i].CoreClockMin != 0)
+                                    { core = Convert.ToInt32(CM.GpuEntries[i].CoreClockDef) / 1000; }
+                                    
+                                    if (core != OC.CoreClock[i]) f = true;
+                                }
+                                
+                                if (OC.MemoryClock != null)
+                                {
+                                    int memory = 0;
+                                    if (CM.GpuEntries[i].MemoryClockBoostMax - CM.GpuEntries[i].MemoryClockBoostMin != 0)
+                                    { memory = CM.GpuEntries[i].MemoryClockBoostDef / 1000; }
+                                    else if (CM.GpuEntries[i].MemoryClockMax - CM.GpuEntries[i].MemoryClockMin != 0)
+                                    { memory = Convert.ToInt32(CM.GpuEntries[i].MemoryClockDef) / 1000; }
+
+                                    if (memory != OC.MemoryClock[i]) f = true;
+                                } 
+                            }  
+                        }
+                        while (f);
                         Task.Run(() => OverclockApplied?.Invoke());
                         return;
                     }
