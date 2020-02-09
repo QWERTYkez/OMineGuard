@@ -24,18 +24,18 @@ namespace OMineGuard.Backend
             {
                 while (!MSIconnected) Thread.Sleep(100);
 
+                tryApplyClock:
+
                 ControlMemory nConf = CM;
 
                 if (nConf.GpuEntries.Length > 0)
                 {
-                    Thread.Sleep(50);
-                    CM.ReloadAll();
-                    nConf = CM;
-
-                    //while (nConf.GpuEntries[0].PowerLimitMax == 0)
-                    //{
-                        
-                    //}
+                    while (nConf.GpuEntries[0].PowerLimitMax == 0)
+                    {
+                        Thread.Sleep(50);
+                        CM.ReloadAll();
+                        nConf = CM;
+                    }
                 }
 
                 for (int i = 0; i < nConf.GpuEntries.Length; i++)
@@ -124,7 +124,6 @@ namespace OMineGuard.Backend
 
                 while (true)
                 {
-                tryApplyClock:
                     try
                     {
                         CM = nConf;
