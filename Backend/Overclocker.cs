@@ -17,6 +17,7 @@ namespace OMineGuard.Backend
 
         public static bool MSIconnected { get; private set; } = false;
         public static bool OHMenable { get; private set; } = false;
+        private static MSIinfo? MSICurrent;
         public static void ApplyOverclock(IOverclock OC)
         {
             Task.Run(() => 
@@ -27,12 +28,14 @@ namespace OMineGuard.Backend
 
                 if (nConf.GpuEntries.Length > 0)
                 {
-                    while (nConf.GpuEntries[0].PowerLimitMax == 0)
-                    {
-                        Thread.Sleep(50);
-                        CM.ReloadAll();
-                        nConf = CM;
-                    }
+                    Thread.Sleep(50);
+                    CM.ReloadAll();
+                    nConf = CM;
+
+                    //while (nConf.GpuEntries[0].PowerLimitMax == 0)
+                    //{
+                        
+                    //}
                 }
 
                 for (int i = 0; i < nConf.GpuEntries.Length; i++)
@@ -121,47 +124,33 @@ namespace OMineGuard.Backend
 
                 while (true)
                 {
+                tryApplyClock:
                     try
                     {
-                        bool f = false;
-                        do
+                        CM = nConf;
+                        CM.CommitChanges();
+
+                        Thread.Sleep(3000);
+
+                        if (MSICurrent != null)
                         {
-                            CM = nConf;
-                            CM.CommitChanges();
+                            var msi = MSICurrent.Value;
 
-                            Thread.Sleep(500);
-
-                            CM.ReloadAll();
-                            f = false;
-                            for (int i = 0; i < CM.GpuEntries.Length; i++)
+                            for (int i = 0; i < OC.PowLim.Length; i++)
                             {
                                 if (OC.PowLim != null)
-                                    if (CM.GpuEntries[i].PowerLimitCur != OC.PowLim[i]) f = true;
+                                    if (msi.PowerLimits[i] != OC.PowLim[i]) goto tryApplyClock;
 
                                 if (OC.CoreClock != null)
-                                {
-                                    int core = 0;
-                                    if (CM.GpuEntries[i].CoreClockBoostMax - CM.GpuEntries[i].CoreClockBoostMin != 0)
-                                    { core = CM.GpuEntries[i].CoreClockBoostDef / 1000; }
-                                    else if (CM.GpuEntries[i].CoreClockMax - CM.GpuEntries[i].CoreClockMin != 0)
-                                    { core = Convert.ToInt32(CM.GpuEntries[i].CoreClockDef) / 1000; }
-                                    
-                                    if (core != OC.CoreClock[i]) f = true;
-                                }
-                                
-                                if (OC.MemoryClock != null)
-                                {
-                                    int memory = 0;
-                                    if (CM.GpuEntries[i].MemoryClockBoostMax - CM.GpuEntries[i].MemoryClockBoostMin != 0)
-                                    { memory = CM.GpuEntries[i].MemoryClockBoostDef / 1000; }
-                                    else if (CM.GpuEntries[i].MemoryClockMax - CM.GpuEntries[i].MemoryClockMin != 0)
-                                    { memory = Convert.ToInt32(CM.GpuEntries[i].MemoryClockDef) / 1000; }
+                                    if (msi.CoreClocks[i] != OC.CoreClock[i]) goto tryApplyClock;
 
-                                    if (memory != OC.MemoryClock[i]) f = true;
-                                } 
-                            }  
+                                if (OC.MemoryClock != null)
+                                    if (msi.MemoryClocks[i] != OC.MemoryClock[i]) goto tryApplyClock;
+
+                            }
                         }
-                        while (f);
+                        else goto tryApplyClock;
+
                         Task.Run(() => OverclockApplied?.Invoke());
                         return;
                     }
@@ -170,6 +159,7 @@ namespace OMineGuard.Backend
                 }
             });
         }
+
         private static int SetParam(int i, int multiply, int[] param, int max, int min, int def)
         {
             if (param != null)
@@ -230,6 +220,7 @@ namespace OMineGuard.Backend
         private static readonly List<OHMgpu> OHMgpus = new List<OHMgpu>();
         private static ControlMemory CM;
         private static int GPUsCount;
+
         private static void MSIconnecting()
         {
             Task.Run(() =>
@@ -376,6 +367,7 @@ namespace OMineGuard.Backend
                         } else { OHM = null; }
                         //event
                         Task.Run(() => OverclockReceived?.Invoke(MSI, OHM));
+                        MSICurrent = MSI;
                     });
                     Thread.Sleep(1000);
                 }
