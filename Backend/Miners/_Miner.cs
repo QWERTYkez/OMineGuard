@@ -18,18 +18,35 @@ namespace OMineGuard.Miners
         private protected abstract void RunThisMiner(IConfig Config);
         private protected abstract MinerInfo CurrentMinerGetInfo();
         //common
+        private readonly object InternetConnectionKey = new object();
+        private bool? InternetMinerSwitch = null;
         public Miner()
         {
             InternetConnectionWacher.InternetConnectionLost += () =>
-            { Task.Run(() => Ending()); };
+            {
+                if (InternetMinerSwitch == null) InternetMinerSwitch = false;
+                lock (InternetConnectionKey)
+                {
+                    if (InternetMinerSwitch.Value)
+                    {
+                        Task.Run(() => Ending());
+                        InternetMinerSwitch = false;
+                    }
+                }
+            };
             InternetConnectionWacher.InternetConnectionRestored += () =>
             {
-                if (ConfigToRecovery != null)
+                lock (InternetConnectionKey)
                 {
-                    StartMiner(ConfigToRecovery, true);
+                    if (!InternetMinerSwitch.Value)
+                    {
+                        StartMiner(ConfigToRecovery, true);
+                        InternetMinerSwitch = true;
+                    }  
                 }
             };
         }
+
         public Task RestartMiner()
         {
             return Task.Run(() =>
