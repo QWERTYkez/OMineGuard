@@ -207,7 +207,9 @@ namespace OMineGuard.Backend
                         using (InformQueue qu = new InformQueue())
                         {
                             //Стартовые сообщения
-                            OMWsendInform(client, stream, (Indication, InformStateType.Indication));
+                            lock (BaseInformKey)
+                                foreach (var (body, T) in BaseInformQueue)
+                                    OMWsendInform(client, stream, (body, T));
                             (object, InformStateType)? q;
                             while (client.Connected && ServerAlive)
                             {
@@ -346,8 +348,6 @@ namespace OMineGuard.Backend
                         stream.Read(b, 0, b.Length);
 
                         stream.Write(Message, 0, Message.Length);
-
-                        Debug.WriteLine(msg);
                     }
                 }
             }
@@ -413,8 +413,26 @@ namespace OMineGuard.Backend
                 }
             }
         }
+        private static List<(object body, InformStateType T)> BaseInformQueue =
+            new List<(object, InformStateType)>();
+        private static readonly object BaseInformKey = new object();
         public static void SendInformState(object body, InformStateType type)
         {
+            Task.Run(() => 
+            {
+                lock (BaseInformKey)
+                {
+                    for (int i = 0; i < BaseInformQueue.Count; i++)
+                    {
+                        if (BaseInformQueue[i].T == type)
+                        {
+                            BaseInformQueue[i] = (body, type);
+                            return;
+                        }
+                    }
+                    BaseInformQueue.Add((body, type));
+                }
+            });
             InformQueue.SendInformState(body, type);
         }
 
