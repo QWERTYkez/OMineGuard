@@ -4,6 +4,7 @@ using OMineGuardControlLibrary;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -147,7 +148,10 @@ namespace OMineGuard.Backend
                                                         lock (ContolStateKey)
                                                         {
                                                             if (StateQueue.Count > 0)
-                                                                q = StateQueue.Dequeue();
+                                                            {
+                                                                q = StateQueue[0];
+                                                                StateQueue.RemoveAt(0);
+                                                            }
                                                         } 
                                                         if(q != null) 
                                                             OMWsendState(statclient, statstream, q.Value);
@@ -213,7 +217,10 @@ namespace OMineGuard.Backend
                                     lock (InformStateKey)
                                     {
                                         if (qu.CurrentQueue.Count > 0)
-                                            q = qu.CurrentQueue.Dequeue();
+                                        {
+                                            q = qu.CurrentQueue[0];
+                                            qu.CurrentQueue.RemoveAt(0);
+                                        }
                                     }
                                     if (q != null)
                                         OMWsendInform(client, stream, q.Value);
@@ -339,13 +346,16 @@ namespace OMineGuard.Backend
                         stream.Read(b, 0, b.Length);
 
                         stream.Write(Message, 0, Message.Length);
+
+                        Debug.WriteLine(msg);
                     }
                 }
             }
         }
 
         private static bool StateServerActive = false;
-        private static Queue<(object body, ContolStateType T)> StateQueue = new Queue<(object, ContolStateType)>();
+        private static List<(object body, ContolStateType T)> StateQueue = 
+            new List<(object, ContolStateType)>();
         private static readonly object ContolStateKey = new object();
         private static readonly object InformStateKey = new object();
         private class InformQueue : IDisposable
@@ -355,17 +365,26 @@ namespace OMineGuard.Backend
                 Queues.Add(CurrentQueue);
             }
 
-            public readonly Queue<(object body, InformStateType T)> CurrentQueue = new Queue<(object, InformStateType)>();
+            public readonly List<(object body, InformStateType T)> CurrentQueue = 
+                new List<(object, InformStateType)>();
 
-            private static List<Queue<(object body, InformStateType T)>> Queues = new List<Queue<(object, InformStateType)>>();
+            private static List<List<(object body, InformStateType T)>> Queues = new List<List<(object, InformStateType)>>();
             public static void SendInformState(object body, InformStateType type)
             {
                 lock (InformStateKey)
                 {
                     for (int i = 0; i < Queues.Count; i++)
                     {
-                        Queues[i] = new Queue<(object, InformStateType)>(Queues[i].Where(q => q.T != type));
-                        Queues[i].Enqueue((body, type));
+                        for (int j = 0; j < Queues[i].Count; j++)
+                        {
+                            if (Queues[i][j].T == type)
+                            {
+                                Queues[i][j] = (body, type);
+                                goto ToNextI;
+                            }
+                        }
+                        Queues[i].Add((body, type));
+                        ToNextI: { }
                     }
                 }
             }
@@ -382,8 +401,15 @@ namespace OMineGuard.Backend
             {
                 lock (ContolStateKey)
                 {
-                    StateQueue = new Queue<(object, ContolStateType)>(StateQueue.Where(q => q.T != type));
-                    StateQueue.Enqueue((body, type));
+                    for (int j = 0; j < StateQueue.Count; j++)
+                    {
+                        if (StateQueue[j].T == type)
+                        {
+                            StateQueue[j] = (body, type);
+                            return;
+                        }
+                    }
+                    StateQueue.Add((body, type));
                 }
             }
         }
