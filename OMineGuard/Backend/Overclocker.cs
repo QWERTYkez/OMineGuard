@@ -273,7 +273,7 @@ namespace OMineGuard.Backend
         }
         private static void OHMconnecting()
         {
-            Task.Run(() => 
+            Task.Run(() =>
             {
                 Computer c = new Computer { GPUEnabled = true };
                 c.Open();

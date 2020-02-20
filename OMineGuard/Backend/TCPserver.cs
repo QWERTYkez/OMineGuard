@@ -48,7 +48,7 @@ namespace OMineGuard.Backend
         public static void InitializeTCPserver(MainModel model)
         {
             _model = model;
-            _model.PropertyChanged += ModelChanged;
+            _model.PropertyChanged += (sender, e) => Task.Run(() => ModelChanged(sender, e));
             Task.Run(() => 
             {
                 Task.Run(() =>
