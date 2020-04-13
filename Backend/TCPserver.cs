@@ -205,7 +205,7 @@ namespace OMineGuard.Backend
                     }
                     try
                     {
-                        if (ServerAlive)
+                        while (ServerAlive)
                         {
                             using (TcpClient client = Server4.AcceptTcpClient())
                             {
