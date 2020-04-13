@@ -4,8 +4,6 @@ using OMineGuardControlLibrary;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -43,47 +41,48 @@ namespace OMineGuard.Backend
         private static TcpListener Server1;
         private static TcpListener Server2;
         private static TcpListener Server3;
+        private static TcpListener Server4;
 
         private static MainModel _model;
         public static void InitializeTCPserver(MainModel model)
         {
             _model = model;
             _model.PropertyChanged += ModelChanged;
-            Task.Run(() => 
+            Task.Run(() =>
             {
                 Task.Run(() =>
                 {
-                    while (ServerAlive) 
+                    while (ServerAlive)
                     {
-                        try 
+                        try
                         {
                             Server1 = new TcpListener(IPAddress.Any, 2111);
                             Server1.Stop();
                             Server1.Start();
                             break;
-                        } 
-                        catch { } 
-                        Thread.Sleep(100); 
+                        }
+                        catch { }
+                        Thread.Sleep(100);
                     }
-                    try 
-                    { 
-                        Server1.BeginAcceptTcpClient(new AsyncCallback(OMWinforming), Server1); 
-                    } 
+                    try
+                    {
+                        Server1.BeginAcceptTcpClient(new AsyncCallback(OMWinforming), Server1);
+                    }
                     catch { }
                 });
                 Task.Run(() =>
                 {
-                    while (ServerAlive) 
-                    { 
-                        try 
+                    while (ServerAlive)
+                    {
+                        try
                         {
                             Server2 = new TcpListener(IPAddress.Any, 2112);
                             Server2.Stop();
                             Server2.Start();
-                            break; 
-                        } 
-                        catch { } 
-                        Thread.Sleep(100); 
+                            break;
+                        }
+                        catch { }
+                        Thread.Sleep(100);
                     }
                     try
                     {
@@ -152,8 +151,8 @@ namespace OMineGuard.Backend
                                                                 q = StateQueue[0];
                                                                 StateQueue.RemoveAt(0);
                                                             }
-                                                        } 
-                                                        if(q != null) 
+                                                        }
+                                                        if (q != null)
                                                             OMWsendState(statclient, statstream, q.Value);
                                                         Thread.Sleep(100);
                                                     }
@@ -184,6 +183,35 @@ namespace OMineGuard.Backend
                                         catch { }
                                         Thread.Sleep(100);
                                     }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                });
+                Task.Run(() =>
+                {
+                    while (ServerAlive)
+                    {
+                        try
+                        {
+                            Server4 = new TcpListener(IPAddress.Any, 2114);
+                            Server4.Stop();
+                            Server4.Start();
+                            break;
+                        }
+                        catch { }
+                        Thread.Sleep(100);
+                    }
+                    try
+                    {
+                        if (ServerAlive)
+                        {
+                            using (TcpClient client = Server4.AcceptTcpClient())
+                            {
+                                using (NetworkStream stream = client.GetStream())
+                                {
+                                    stream.Write(new byte[] { 1 }, 0, 1);
                                 }
                             }
                         }
@@ -241,6 +269,7 @@ namespace OMineGuard.Backend
             ServerAlive = false;
             Server1.Stop();
             Server2.Stop();
+            Server4.Stop();
             if (Server3 != null)
             {
                 Server3.Stop();
@@ -354,7 +383,7 @@ namespace OMineGuard.Backend
         }
 
         private static bool StateServerActive = false;
-        private static List<(object body, ContolStateType T)> StateQueue = 
+        private static List<(object body, ContolStateType T)> StateQueue =
             new List<(object, ContolStateType)>();
         private static readonly object ContolStateKey = new object();
         private static readonly object InformStateKey = new object();
@@ -365,7 +394,7 @@ namespace OMineGuard.Backend
                 Queues.Add(CurrentQueue);
             }
 
-            public readonly List<(object body, InformStateType T)> CurrentQueue = 
+            public readonly List<(object body, InformStateType T)> CurrentQueue =
                 new List<(object, InformStateType)>();
 
             private static List<List<(object body, InformStateType T)>> Queues = new List<List<(object, InformStateType)>>();
@@ -384,7 +413,7 @@ namespace OMineGuard.Backend
                             }
                         }
                         Queues[i].Add((body, type));
-                        ToNextI: { }
+                    ToNextI: { }
                     }
                 }
             }
@@ -418,7 +447,7 @@ namespace OMineGuard.Backend
         private static readonly object BaseInformKey = new object();
         public static void SendInformState(object body, InformStateType type)
         {
-            Task.Run(() => 
+            Task.Run(() =>
             {
                 lock (BaseInformKey)
                 {
