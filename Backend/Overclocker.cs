@@ -208,9 +208,9 @@ namespace OMineGuard.Backend
 
         public static void _Overclocker()
         {
-            Task.Run(() => 
+            Task.Run(async () => 
             {
-                MSIconnecting();
+                await MSIconnecting();
                 OHMconnecting();
                 StartMonitoring();
             });
@@ -220,9 +220,9 @@ namespace OMineGuard.Backend
         private static ControlMemory CM;
         private static int GPUsCount;
 
-        private static void MSIconnecting()
+        private static Task MSIconnecting()
         {
-            Task.Run(() =>
+            return Task.Run(() =>
             {
                 while (Process.GetProcessesByName("MSIAfterburner").Length == 0) Thread.Sleep(100);
                 while (!MSIconnected)
