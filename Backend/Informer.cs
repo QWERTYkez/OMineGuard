@@ -26,7 +26,28 @@ namespace OMineGuard.Backend
                     $"&access_token={access_token}" +
                     $"&v={ver}";
 
-                WebRequest.Create(BaseReq).GetResponse();
+                try
+                {
+                    WebRequest.Create(BaseReq).GetResponse();
+                }
+                catch 
+                {
+                    try
+                    {
+                        WebRequest.Create(BaseReq).GetResponse();
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            WebRequest.Create(BaseReq).GetResponse();
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                }
             }
         }
         private static void SendTelegramMessage(string message)
