@@ -160,7 +160,7 @@ namespace OMineGuard.Backend
         private static IConfig ConfigToRecovery { get; set; }
         private void StartMiner(IConfig config, bool InternetRestored = false)
         {
-            miner?.StopMiner();
+            StopMiner();
             miner = Miner.GetMiner(config);
 
             miner.LogDataReceived += s => { if (showlog) Logging(s); };
@@ -263,27 +263,19 @@ namespace OMineGuard.Backend
             };
 
             if (config.ClockID != null)
-            {
-                IOverclock oc = Profile.ClocksList.
-                    Where(c => c.ID == config.ClockID).First();
-                Overclocker.ApplyOverclock(oc);
-            }
+            { Overclocker.ApplyOverclock(Profile.ClocksList.Where(c => c.ID == config.ClockID).First()); }
+
             miner.StartMiner(config, InternetRestored);
             ConfigToRecovery = config;
         }
         private void RestartMiner() 
         {
-            if(ConfigToRecovery != null)
-            {
-                miner?.StopMiner();
+            if (ConfigToRecovery != null)
                 miner.StartMiner(ConfigToRecovery);
-            }
+            else
+                StopMiner();
         }
-        public static void StopMiner()
-        {
-            if (miner != null) 
-                miner.StopMiner();
-        }
+        public static void StopMiner() { miner?.StopMiner(); miner = null; }
 
         public IProfile Profile { get; set; }
         public List<string> Miners { get; set; }
