@@ -80,13 +80,13 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Backend\Informer.cs" />
+    <Compile Include="Backend\Miners\_Miner.cs" />
     <Compile Include="Backend\TCPserver.cs" />
     <Compile Include="Backend\InternetConnectionWacher.cs" />
     <Compile Include="Backend\Overclocker.cs" />
     <Compile Include="Backend\Miners\Bminer.cs" />
     <Compile Include="Backend\Miners\Claymore.cs" />
     <Compile Include="Backend\Miners\Gminer.cs" />
-    <Compile Include="Backend\Miners\_Miner.cs" />
     <Compile Include="Backend\MainModel.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>

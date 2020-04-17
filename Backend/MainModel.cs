@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace OMineGuard.Backend
 {
@@ -106,12 +107,64 @@ namespace OMineGuard.Backend
             Overclocker.OverclockApplied += () => Logging("Профиль разгона MSI Afterburner применен");
             Overclocker._Overclocker();
 
+            InternetConnectionWacher.InternetConnectionLost += () => Task.Run(() =>
+            {
+                if (InternetMinerSwitch == null) InternetMinerSwitch = false;
+                lock (InternetConnectionKey)
+                {
+                    if (InternetMinerSwitch.Value)
+                    {
+                        miner?.StopMiner();
+                        InternetMinerSwitch = false;
+                    }
+                }
+            });
+            InternetConnectionWacher.InternetConnectionRestored += () => Task.Run(() =>
+            {
+                lock (InternetConnectionKey)
+                {
+                    if (!InternetMinerSwitch.Value)
+                    {
+                        if (ConfigToRecovery != null)
+                        {
+                            StartMiner(ConfigToRecovery, true);
+                            InternetMinerSwitch = true;
+                        }
+                    }
+                }
+            });
+
             Profile = Settings.Profile;
             Miners = Miner.Miners;
             Algoritms = Miner.Algoritms;
 
-            Miner.LogDataReceived += s => { if (showlog) Logging(s); };
-            Miner.MinerInfoUpdated += mi => 
+            if (Profile.Autostart)
+            {
+                if (Profile.StartedID != null)
+                {
+                    try
+                    {
+                        StartMiner(Profile.ConfigsList.
+                            Where(c => c.ID == Profile.StartedID.Value).First());
+                        Task.Run(() => Autostarted?.Invoke());
+                    }
+                    catch { Profile.StartedID = null; }
+                }
+            }
+        }
+
+        private static Miner miner;
+        private static bool showlog = false;
+        private readonly object InternetConnectionKey = new object();
+        private bool? InternetMinerSwitch = null;
+        private static IConfig ConfigToRecovery { get; set; }
+        private void StartMiner(IConfig config, bool InternetRestored = false)
+        {
+            miner?.StopMiner();
+            miner = Miner.GetMiner(config);
+
+            miner.LogDataReceived += s => { if (showlog) Logging(s); };
+            miner.MinerInfoUpdated += mi =>
             {
                 var xx = mi;
                 if (!MIenable) MIenable = true;
@@ -120,16 +173,16 @@ namespace OMineGuard.Backend
                 {
                     if (CheckArrays(InfHashrates, xx.Hashrates))
                         InfHashrates = xx.Hashrates;
-                        TotalHashrate = InfHashrates.Sum();
+                    TotalHashrate = InfHashrates.Sum();
                 }
                 else
                 {
                     InfHashrates = null;
                     TotalHashrate = 0;
                 }
-                if (!OHMenable && CheckArrays(InfTemperatures, xx.Temperatures)) 
-                    InfTemperatures = xx.Temperatures; 
-                if (!MSIenable && CheckArrays(InfFanSpeeds, xx.Fanspeeds)) 
+                if (!OHMenable && CheckArrays(InfTemperatures, xx.Temperatures))
+                    InfTemperatures = xx.Temperatures;
+                if (!MSIenable && CheckArrays(InfFanSpeeds, xx.Fanspeeds))
                     InfFanSpeeds = xx.Fanspeeds;
 
                 //if (mi.ShAccepted != null) ShAccepted = mi.ShAccepted;
@@ -139,7 +192,7 @@ namespace OMineGuard.Backend
                 //if (mi.ShTotalInvalid != null) ShTotalInvalid = mi.ShTotalInvalid;
                 //if (mi.ShTotalRejected != null) ShTotalRejected = mi.ShTotalRejected;
             };
-            Miner.MinerStarted += (miner, conf, ethernet) =>
+            miner.MinerStarted += (miner, conf, ethernet) =>
             {
                 MainModel.miner = miner;
                 Profile.StartedID = conf.ID;
@@ -151,7 +204,7 @@ namespace OMineGuard.Backend
                 else msg = $"Интернет восстановлен, {conf.Name} запущен";
                 Logging(msg, true);
             };
-            Miner.MinerStoped += () =>
+            miner.MinerStoped += () =>
             {
                 Indicator = false;
                 TCPserver.Indication = false;
@@ -170,76 +223,61 @@ namespace OMineGuard.Backend
                 ShTotalInvalid = null;
                 ShTotalRejected = null;
             };
-            Miner.InactivityTimer += n =>
+            miner.InactivityTimer += n =>
             {
                 if (n < 1) IdleWachdog = "";
                 else IdleWachdog = $"Бездаействие {n}";
             };
-            Miner.LowHashrateTimer += n =>
+            miner.LowHashrateTimer += n =>
             {
                 if (n < 1) LowHWachdog = "";
                 else LowHWachdog = $"Низкий хешрейт {n}";
             };
-            Miner.WachdogDelayTimer += n =>
+            miner.WachdogDelayTimer += n =>
             {
                 if (n < 1) WachdogInfo = "";
                 else WachdogInfo = $"Активация вачдога {n}";
             };
-            Miner.ZeroHash += miner =>
+            miner.ZeroHash += miner =>
             {
                 Logging("Нулевой [Zero] хешрейт, перезапуск майнера", true);
-                miner.RestartMiner();
+                RestartMiner();
             };
-            Miner.GPUsfalled += (miner, gs) =>
+            miner.GPUsfalled += (miner, gs) =>
             {
                 string str = "";
                 foreach (int g in gs) str += $"{g},";
                 Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);
-                miner.RestartMiner();
+                RestartMiner();
             };
-            Miner.InactivityError += () =>
+            miner.InactivityError += () =>
             {
                 Logging("Бездействие, перезагрузка", true);
                 Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
                 System.Windows.Application.Current.Shutdown();
             };
-            Miner.LowHashrateError += miner =>
+            miner.LowHashrateError += miner =>
             {
                 Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
-                miner.RestartMiner();
+                RestartMiner();
             };
 
-            if (Profile.Autostart)
-            {
-                if (Profile.StartedID != null)
-                {
-                    try
-                    {
-                        StartMiner(Profile.ConfigsList.
-                            Where(c => c.ID == Profile.StartedID.Value).First());
-                        System.Threading.Tasks.Task.Run(() => Autostarted?.Invoke());
-                    }
-                    catch { Profile.StartedID = null; }
-                }
-            }
-        }
-
-        private static Miner miner;
-        private static bool showlog = false;
-        private void StartMiner(IConfig config)
-        {
-            if (miner != null)
-            {
-                miner.StopMiner();
-                miner = null;
-            }
-            if(config.ClockID != null)
+            if (config.ClockID != null)
             {
                 IOverclock oc = Profile.ClocksList.
                     Where(c => c.ID == config.ClockID).First();
                 Overclocker.ApplyOverclock(oc);
             }
-            Miner.StartMiner(config);
+            miner.StartMiner(config, InternetRestored);
+            ConfigToRecovery = config;
+        }
+        private void RestartMiner() 
+        {
+            if(ConfigToRecovery != null)
+            {
+                miner?.StopMiner();
+                miner.StartMiner(ConfigToRecovery);
+            }
         }
         public static void StopMiner()
         {

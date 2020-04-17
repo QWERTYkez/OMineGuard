@@ -2,7 +2,7 @@
 {
     public partial class MainWindow : System.Windows.Window
     {
-        public const string Ver = "2.0";
+        public const string Ver = "2.1";
 
         public MainWindow()
         {
