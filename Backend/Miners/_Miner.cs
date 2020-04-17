@@ -103,8 +103,6 @@ namespace OMineGuard.Miners
             {
                 inactivity = false;
                 InactivityTimer?.Invoke(-1);
-
-                process?.Kill();
                 Waching = false;
                 WachdogDelayTimer?.Invoke(-1);
                 LowHashrate = false;
@@ -122,6 +120,16 @@ namespace OMineGuard.Miners
                 GPUsfalled = null;
                 InactivityError = null;
                 LowHashrateError = null;
+
+                try { process?.Kill(); }
+                catch
+                {
+                    try { process?.Kill(); }
+                    catch
+                    {
+                        try { process?.Kill(); } catch { }
+                    }
+                }
             });
         }
         private Task WachdogInactivity()
