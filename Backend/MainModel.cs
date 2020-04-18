@@ -195,11 +195,10 @@ namespace OMineGuard.Backend
             };
 
             {
-                Action<Miner, IConfig, bool> act1 = (Miner miner, IConfig conf, bool ethernet) =>
+                Action<IConfig, bool> act1 = (IConfig conf, bool ethernet) =>
                 {
                     Task.Run(() =>
                     {
-                        MainModel.miner = miner;
                         Profile.StartedID = conf.ID;
                         Settings.SetProfile(Profile);
                         Indicator = true;
@@ -210,11 +209,10 @@ namespace OMineGuard.Backend
                         Logging(msg, true);
                     });
                 };
-                Action<Miner, IConfig, bool> act2 = (Miner minerr, IConfig conf, bool ethernet) =>
+                Action<IConfig, bool> act2 = (IConfig conf, bool ethernet) =>
                 {
                     Task.Run(() => 
                     {
-                        MainModel.miner = minerr;
                         Profile.StartedID = conf.ID;
                         Settings.SetProfile(Profile);
                         Indicator = true;
@@ -222,7 +220,7 @@ namespace OMineGuard.Backend
 
                         var msg1 = $"{conf.Name} запущен";
                         var msg2 = $"OMineGuard запущен, {conf.Name} запущен";
-                        Logging(msg1, false);
+                        Logging(msg1);
                         Informer.EditMessage(MSGids.Value, msg2);
                     });
                 };
@@ -231,7 +229,7 @@ namespace OMineGuard.Backend
                 else
                 {
                     miner.MinerStarted += act2;
-                    miner.MinerStarted += (m, c, e) => 
+                    miner.MinerStarted += (c, e) => 
                     {
                         miner.MinerStarted -= act2;
                         miner.MinerStarted += act1;
@@ -273,12 +271,12 @@ namespace OMineGuard.Backend
                 if (n < 1) WachdogInfo = "";
                 else WachdogInfo = $"Активация вачдога {n}";
             };
-            miner.ZeroHash += miner =>
+            miner.ZeroHash += () =>
             {
                 Logging("Нулевой [Zero] хешрейт, перезапуск майнера", true);
                 RestartMiner();
             };
-            miner.GPUsfalled += (miner, gs) =>
+            miner.GPUsfalled += gs =>
             {
                 string str = "";
                 foreach (int g in gs) str += $"{g},";
@@ -291,7 +289,7 @@ namespace OMineGuard.Backend
                 Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
                 System.Windows.Application.Current.Shutdown();
             };
-            miner.LowHashrateError += miner =>
+            miner.LowHashrateError += () =>
             {
                 Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
                 RestartMiner();
