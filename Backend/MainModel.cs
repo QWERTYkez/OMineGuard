@@ -47,7 +47,7 @@ namespace OMineGuard.Backend
             TCPserver.OMWsent += TCP_OMWsent;
             TCPserver.InitializeTCPserver(this);
 
-            Informer.SendMessage("OMineGuard запущен");
+            var MSGids = Informer.SendMessage("OMineGuard запущен");
 
             Overclocker.OverclockReceived += (msi, ohm) => 
             { 
@@ -145,7 +145,7 @@ namespace OMineGuard.Backend
                     try
                     {
                         StartMiner(Profile.ConfigsList.
-                            Where(c => c.ID == Profile.StartedID.Value).First());
+                            Where(c => c.ID == Profile.StartedID.Value).First(), false, MSGids);
                         Task.Run(() => Autostarted?.Invoke());
                     }
                     catch { Profile.StartedID = null; }
@@ -158,7 +158,8 @@ namespace OMineGuard.Backend
         private readonly object InternetConnectionKey = new object();
         private bool? InternetMinerSwitch = null;
         private static IConfig ConfigToRecovery { get; set; }
-        private void StartMiner(IConfig config, bool InternetRestored = false)
+        private void StartMiner(IConfig config, bool InternetRestored = false, 
+            (Func<int> GetVKmsgID, Func<string> GetTGmsgID)? MSGids = null)
         {
             StopMiner();
             miner = Miner.GetMiner(config);
@@ -192,18 +193,52 @@ namespace OMineGuard.Backend
                 //if (mi.ShTotalInvalid != null) ShTotalInvalid = mi.ShTotalInvalid;
                 //if (mi.ShTotalRejected != null) ShTotalRejected = mi.ShTotalRejected;
             };
-            miner.MinerStarted += (miner, conf, ethernet) =>
+
             {
-                MainModel.miner = miner;
-                Profile.StartedID = conf.ID;
-                Settings.SetProfile(Profile);
-                Indicator = true;
-                TCPserver.Indication = true;
-                string msg;
-                if (!ethernet) msg = $"{conf.Name} запущен";
-                else msg = $"Интернет восстановлен, {conf.Name} запущен";
-                Logging(msg, true);
-            };
+                Action<Miner, IConfig, bool> act1 = (Miner miner, IConfig conf, bool ethernet) =>
+                {
+                    Task.Run(() =>
+                    {
+                        MainModel.miner = miner;
+                        Profile.StartedID = conf.ID;
+                        Settings.SetProfile(Profile);
+                        Indicator = true;
+                        TCPserver.Indication = true;
+                        string msg;
+                        if (!ethernet) msg = $"{conf.Name} запущен";
+                        else msg = $"Интернет восстановлен, {conf.Name} запущен";
+                        Logging(msg, true);
+                    });
+                };
+                Action<Miner, IConfig, bool> act2 = (Miner minerr, IConfig conf, bool ethernet) =>
+                {
+                    Task.Run(() => 
+                    {
+                        MainModel.miner = minerr;
+                        Profile.StartedID = conf.ID;
+                        Settings.SetProfile(Profile);
+                        Indicator = true;
+                        TCPserver.Indication = true;
+
+                        var msg1 = $"{conf.Name} запущен";
+                        var msg2 = $"OMineGuard запущен, {conf.Name} запущен";
+                        Logging(msg1, false);
+                        Informer.EditMessage(MSGids.Value, msg2);
+                    });
+                };
+                if (MSGids == null)
+                    miner.MinerStarted += act1;
+                else
+                {
+                    miner.MinerStarted += act2;
+                    miner.MinerStarted += (m, c, e) => 
+                    {
+                        miner.MinerStarted -= act2;
+                        miner.MinerStarted += act1;
+                    };
+                }
+            }
+
             miner.MinerStoped += () =>
             {
                 Indicator = false;
