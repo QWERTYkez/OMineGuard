@@ -28,7 +28,6 @@ namespace OMineGuard.Miners
         public event Action<int[]> GPUsfalled;
         public event Action<string> LogDataReceived;
 
-        public bool Processing => process != null ? true : false;
         private protected Process process { get; set; }
         public List<bool> GPUs { get; private set; }
         private byte ErrorsCounter;
@@ -165,9 +164,7 @@ namespace OMineGuard.Miners
         }
         private MinerInfo GetMinerInfo()
         {
-            MinerInfo MI;
-            if (!Processing) MI = new MinerInfo();
-            MI = CurrentMinerGetInfo();
+            var MI = CurrentMinerGetInfo();
             Task.Run(() => MinerInfoUpdated?.Invoke(MI));
             return MI;
         }
@@ -195,66 +192,18 @@ namespace OMineGuard.Miners
                         }
                         catch { }
                     });
-                    Task.Run(() => { if (Processing) WachdogDelayTimer?.Invoke(i); });
+                    Task.Run(() => { WachdogDelayTimer?.Invoke(i); });
                     Thread.Sleep(1000);
                 }
-                while (Waching)
+                Action WachdogLoop = (() =>
                 {
-                    Task.Run(() =>
+                    hashes = GetMinerInfo().Hashrates;
+                    if (hashes != null)
                     {
-                        hashes = GetMinerInfo().Hashrates;
-                        if (hashes != null)
+                        activehashes = hashes.Where(h => h != null);
+                        //Zero
+                        if (activehashes.Sum() == 0)
                         {
-                            activehashes = hashes.Where(h => h != null);
-                            //Zero
-                            if (activehashes.Sum() == 0)
-                            {
-                                ErrorsCounter++;
-                                if (ErrorsCounter > 4)
-                                {
-                                    Task.Run(() => ZeroHash?.Invoke());
-                                    WachdogInactivity(this);
-                                    Waching = false;
-                                    return;
-                                }
-                            }
-                            else
-                            {
-                                // низкий хешрейт
-                                if (activehashes.Sum() < minhash)
-                                {
-                                    WachdogLowHashrate();
-                                }
-                                else
-                                {
-                                    // блок хорошего поведения
-                                    LowHashrate = false;
-                                    Inactivity = false;
-                                    ErrorsCounter = 0;
-                                }
-
-                                //отвал карт
-                                if (hashes.Contains(0))
-                                {
-                                    ErrorsCounter++;
-                                    if (ErrorsCounter > 4)
-                                    {
-                                        List<int> gpus = new List<int>();
-                                        for (int i = 0; i < hashes.Length; i++)
-                                        {
-                                            if (hashes[i] == 0) gpus.Add(i);
-                                        }
-                                        Task.Run(() => GPUsfalled?.Invoke(gpus.ToArray()));
-                                        Waching = false;
-                                        return;
-                                    }
-                                }
-                            }
-                            return;
-                        }
-                        else
-                        {
-                            //бездаействие
                             ErrorsCounter++;
                             if (ErrorsCounter > 4)
                             {
@@ -264,9 +213,59 @@ namespace OMineGuard.Miners
                                 return;
                             }
                         }
-                        WachdogInactivity(this);
-                    });
+                        else
+                        {
+                            // низкий хешрейт
+                            if (activehashes.Sum() < minhash)
+                            {
+                                WachdogLowHashrate();
+                            }
+                            else
+                            {
+                                // блок хорошего поведения
+                                LowHashrate = false;
+                                Inactivity = false;
+                                ErrorsCounter = 0;
+                            }
+
+                            //отвал карт
+                            if (hashes.Contains(0))
+                            {
+                                ErrorsCounter++;
+                                if (ErrorsCounter > 4)
+                                {
+                                    List<int> gpus = new List<int>();
+                                    for (int i = 0; i < hashes.Length; i++)
+                                    {
+                                        if (hashes[i] == 0) gpus.Add(i);
+                                    }
+                                    Task.Run(() => GPUsfalled?.Invoke(gpus.ToArray()));
+                                    Waching = false;
+                                    return;
+                                }
+                            }
+                        }
+                        return;
+                    }
+                    else
+                    {
+                        //бездаействие
+                        ErrorsCounter++;
+                        if (ErrorsCounter > 4)
+                        {
+                            Task.Run(() => ZeroHash?.Invoke());
+                            WachdogInactivity(this);
+                            Waching = false;
+                            return;
+                        }
+                    }
+                    WachdogInactivity(this);
+                });
+                while (Waching)
+                {
+                    var WachResult = WachdogLoop.BeginInvoke(null, null);
                     Thread.Sleep(1000);
+                    WachdogLoop.EndInvoke(WachResult);
                 }
             });
         }
@@ -281,16 +280,16 @@ namespace OMineGuard.Miners
                     for (int i = Settings.Profile.TimeoutLH; i > 0; i--)
                     {
                         if (!LowHashrate) goto Normal;
-                        Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(i); });
+                        Task.Run(() => { LowHashrateTimer?.Invoke(i); });
                         Thread.Sleep(1000);
                     }
                     if (!LowHashrate) goto Normal;
-                    Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(0); });
+                    Task.Run(() => { LowHashrateTimer?.Invoke(0); });
                     Task.Run(() => LowHashrateError?.Invoke());
                     Waching = false;
                     return;
                 Normal:
-                    Task.Run(() => { if (Processing) LowHashrateTimer?.Invoke(-1); });
+                    Task.Run(() => { LowHashrateTimer?.Invoke(-1); });
                     return;
                 });
             }
