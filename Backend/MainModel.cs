@@ -107,6 +107,18 @@ namespace OMineGuard.Backend
             Overclocker.OverclockApplied += () => Logging("Профиль разгона MSI Afterburner применен");
             Overclocker._Overclocker();
 
+            Miner.InactivityTimer += n =>
+            {
+                if (n < 1) IdleWachdog = "";
+                else IdleWachdog = $"Бездаействие {n}";
+            };
+            Miner.InactivityError += () =>
+            {
+                Logging("Бездействие, перезагрузка", true);
+                Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
+                System.Windows.Application.Current.Shutdown();
+            };
+
             InternetConnectionWacher.InternetConnectionLost += () => Task.Run(() =>
             {
                 if (InternetMinerSwitch == null) InternetMinerSwitch = false;
@@ -194,6 +206,7 @@ namespace OMineGuard.Backend
                 //if (mi.ShTotalRejected != null) ShTotalRejected = mi.ShTotalRejected;
             };
 
+            //MinerStarted
             {
                 Action<IConfig, bool> act1 = (IConfig conf, bool ethernet) =>
                 {
@@ -256,11 +269,6 @@ namespace OMineGuard.Backend
                 ShTotalInvalid = null;
                 ShTotalRejected = null;
             };
-            miner.InactivityTimer += n =>
-            {
-                if (n < 1) IdleWachdog = "";
-                else IdleWachdog = $"Бездаействие {n}";
-            };
             miner.LowHashrateTimer += n =>
             {
                 if (n < 1) LowHWachdog = "";
@@ -283,12 +291,6 @@ namespace OMineGuard.Backend
                 Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);
                 RestartMiner();
             };
-            miner.InactivityError += () =>
-            {
-                Logging("Бездействие, перезагрузка", true);
-                Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
-                System.Windows.Application.Current.Shutdown();
-            };
             miner.LowHashrateError += () =>
             {
                 Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
@@ -308,7 +310,7 @@ namespace OMineGuard.Backend
             else
                 StopMiner();
         }
-        public static void StopMiner() { miner?.StopMiner(); miner = null; }
+        public static void StopMiner(bool manually = false) { miner?.StopMiner(manually); miner = null; }
 
         public IProfile Profile { get; set; }
         public List<string> Miners { get; set; }
@@ -384,7 +386,7 @@ namespace OMineGuard.Backend
         }
         public void CMD_SwitchProcess()
         {
-            StopMiner();
+            StopMiner(true);
             if (!Indicator)
                 StartMiner(Profile.ConfigsList.
                      Where(c => c.ID == Profile.StartedID.Value).First());
