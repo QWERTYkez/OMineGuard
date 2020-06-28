@@ -44,6 +44,8 @@ namespace OMineGuard.Backend
         }
         public void IniModel()
         {
+            SetLog = s => { Loggong = s; Log += s; };
+
             TCPserver.OMWsent += TCP_OMWsent;
             TCPserver.InitializeTCPserver(this);
 
@@ -319,7 +321,8 @@ namespace OMineGuard.Backend
 
         public string Loggong { get; set; }
         public string Log = ""; //статика для отправки по TCP
-        private void Logging(string msg, bool informer = false)
+        public static Action<string> SetLog;
+        public static void Logging(string msg, bool informer = false)
         {
             msg = msg.
                 Replace("\r\n\r\n", "\r\n").
@@ -327,8 +330,7 @@ namespace OMineGuard.Backend
                 Replace("\n\r\n", "\r\n").
                 TrimEnd("\r\n".ToArray()).
                 TrimStart("\r\n".ToArray());
-            Loggong = msg + Environment.NewLine;
-            Log += msg + Environment.NewLine;
+            SetLog.Invoke(msg + Environment.NewLine);
             if (informer) Informer.SendMessage(msg);
         }
 

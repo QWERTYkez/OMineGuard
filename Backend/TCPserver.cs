@@ -267,13 +267,10 @@ namespace OMineGuard.Backend
         public static void StopServers()
         {
             ServerAlive = false;
-            Server1.Stop();
-            Server2.Stop();
-            Server4.Stop();
-            if (Server3 != null)
-            {
-                Server3.Stop();
-            }
+            Server1?.Stop();
+            Server2?.Stop();
+            Server3?.Stop();
+            Server4?.Stop();
         }
 
         private static string ReadMessage(NetworkStream stream)

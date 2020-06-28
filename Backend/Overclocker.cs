@@ -229,7 +229,11 @@ namespace OMineGuard.Backend
             return Task.Run(() =>
             {
                 while (Process.GetProcessesByName("MSIAfterburner").Length == 0) Thread.Sleep(100);
-                MSIpath = Process.GetProcessesByName("MSIAfterburner").First().MainModule.FileName;
+                try
+                {
+                    MSIpath = Process.GetProcessesByName("MSIAfterburner").First().MainModule.FileName;
+                }
+                catch { MainModel.Logging("Добавьте права администратора"); }
                 while (!MSIconnected)
                 {
                     try
