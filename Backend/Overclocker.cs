@@ -4,6 +4,7 @@ using OpenHardwareMonitor.Hardware;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,6 +17,7 @@ namespace OMineGuard.Backend
         public static event Action OverclockApplied;
 
         public static bool MSIconnected { get; private set; } = false;
+        public static string MSIpath { get; private set; } = "";
         public static bool OHMenable { get; private set; } = false;
         private static MSIinfo? MSICurrent;
         public static void ApplyOverclock(IOverclock OC)
@@ -23,6 +25,8 @@ namespace OMineGuard.Backend
             Task.Run(() => 
             {
                 while (!MSIconnected) Thread.Sleep(100);
+
+                Process.Start(MSIpath);
 
                 tryApplyClock:
 
@@ -225,6 +229,7 @@ namespace OMineGuard.Backend
             return Task.Run(() =>
             {
                 while (Process.GetProcessesByName("MSIAfterburner").Length == 0) Thread.Sleep(100);
+                MSIpath = Process.GetProcessesByName("MSIAfterburner").First().MainModule.FileName;
                 while (!MSIconnected)
                 {
                     try
