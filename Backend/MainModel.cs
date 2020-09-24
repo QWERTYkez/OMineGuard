@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OMineGuard.Backend
@@ -158,8 +159,18 @@ namespace OMineGuard.Backend
                 {
                     try
                     {
-                        StartMiner(Profile.ConfigsList.
-                            Where(c => c.ID == Profile.StartedID.Value).First(), false, MSGids);
+                        var config = Profile.ConfigsList.
+                            Where(c => c.ID == Profile.StartedID.Value).First();
+
+                        if (config.ClockID != null)
+                        {
+                            while (!Overclocker.MSIconnected)
+                                Thread.Sleep(100);
+                        }
+
+                        Thread.Sleep(2000);
+
+                        StartMiner(config, false, MSGids);
                         Task.Run(() => Autostarted?.Invoke());
                     }
                     catch { Profile.StartedID = null; }
@@ -199,14 +210,10 @@ namespace OMineGuard.Backend
                     InfTemperatures = xx.Temperatures;
                 if (!MSIenable && CheckArrays(InfFanSpeeds, xx.Fanspeeds))
                     InfFanSpeeds = xx.Fanspeeds;
-
-                //if (mi.ShAccepted != null) ShAccepted = mi.ShAccepted;
-                //if (mi.ShInvalid != null) ShInvalid = mi.ShInvalid;
-                //if (mi.ShRejected != null) ShRejected = mi.ShRejected;
-                //if (mi.ShTotalAccepted != null) ShTotalAccepted = mi.ShTotalAccepted;
-                //if (mi.ShTotalInvalid != null) ShTotalInvalid = mi.ShTotalInvalid;
-                //if (mi.ShTotalRejected != null) ShTotalRejected = mi.ShTotalRejected;
             };
+
+            if (config.ClockID != null)
+            { Overclocker.ApplyOverclock(Profile.ClocksList.Where(c => c.ID == config.ClockID).First()); }
 
             //MinerStarted
             {
@@ -298,9 +305,6 @@ namespace OMineGuard.Backend
                 Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
                 RestartMiner();
             };
-
-            if (config.ClockID != null)
-            { Overclocker.ApplyOverclock(Profile.ClocksList.Where(c => c.ID == config.ClockID).First()); }
 
             miner.StartMiner(config, InternetRestored);
             ConfigToRecovery = config;
