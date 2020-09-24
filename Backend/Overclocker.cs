@@ -30,6 +30,8 @@ namespace OMineGuard.Backend
 
                 tryApplyClock:
 
+                CM = new ControlMemory();
+
                 ControlMemory nConf = CM;
 
                 if (nConf.GpuEntries.Length > 0)
