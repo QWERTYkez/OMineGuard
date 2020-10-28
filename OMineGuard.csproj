@@ -80,6 +80,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Backend\Informer.cs" />
+    <Compile Include="Backend\Miners\PhoenixMiner.cs" />
     <Compile Include="Backend\Miners\_Miner.cs" />
     <Compile Include="Backend\TCPserver.cs" />
     <Compile Include="Backend\InternetConnectionWacher.cs" />

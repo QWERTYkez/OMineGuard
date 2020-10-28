@@ -266,7 +266,7 @@ namespace OMineGuardControlLibrary
                     {
                         foreach (IOverclock c in Profile.ClocksList)
                         {
-                            if (c.ID == Profile.ClocksList[SelectedConfigIndex].ID)
+                            if (c.ID == Profile.ConfigsList[SelectedConfigIndex].ClockID)
                             {
                                 ConfigSelectedOcerclockItem = c.Name;
                             }
@@ -474,6 +474,13 @@ namespace OMineGuardControlLibrary
             {
                 if (SelectedOverclockIndex > -1)
                 {
+                    foreach (var c in Profile.ConfigsList)
+                    {
+                        if (c.ClockID == Profile.ClocksList[SelectedOverclockIndex].ID)
+                        {
+                            c.ClockID = null;
+                        }
+                    }
                     Profile.ClocksList.RemoveAt(SelectedOverclockIndex);
                     OverclocksNames = from i in Profile.ClocksList select i.Name;
                     _model.CMD_SaveProfile(Profile);

@@ -60,6 +60,7 @@ namespace OMineGuard.Miners
                 case 0: return new Bminer();
                 case 1: return new Claymore();
                 case 2: return new Gminer();
+                case 3: return new PhoenixMiner();
                 default: return null;
             }
         }
@@ -307,7 +308,8 @@ namespace OMineGuard.Miners
         {
             "Bminer",
             "Claymore",
-            "Gminer"
+            "Gminer",
+            "PhoenixMiner"
         };
         public static readonly Dictionary<string, int[]> Algoritms =
             new Dictionary<string, int[]>
@@ -315,7 +317,7 @@ namespace OMineGuard.Miners
                 { "BeamHash II",
                      new int[] { Miners.IndexOf("Gminer") } },
                  { "Ethash",
-                     new int[] { Miners.IndexOf("Bminer"), Miners.IndexOf("Claymore") } },
+                     new int[] { Miners.IndexOf("Bminer"), Miners.IndexOf("Claymore"), Miners.IndexOf("PhoenixMiner") } },
                 { "Equihash 96.5",
                      new int[] { Miners.IndexOf("Gminer") } },
                  { "Equihash 144.5",
