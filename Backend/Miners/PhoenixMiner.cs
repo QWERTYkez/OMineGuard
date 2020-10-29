@@ -27,7 +27,7 @@ namespace OMineGuard.Miners
             string param = $" -pool {Config.Pool}:{Config.Port} " +
                     $"-wal {Config.Wallet} " +
                     $"-worker {Settings.Profile.RigName} " +
-                    $"-logfile \"{logfile}\" -retrydelay 2 -wd 0 {Config.Params} -mport -{port}";
+                    $"-logfile \"{logfile}\" -retrydelay 2 -Wdog 0 {Config.Params} -mport -{port}";
             if (Settings.Profile.GPUsSwitch != null)
             {
                 string di = "";
