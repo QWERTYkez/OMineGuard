@@ -79,7 +79,12 @@ namespace OMineGuard.Miners
 
                 process.WaitForExit();
                 process = null;
-                Task.Run(() => MinerStoped?.Invoke());
+                Task.Run(() =>
+                {
+                    MinerStoped?.Invoke();
+                    MinerStoped = null;
+                });
+                
             });
         }
         private static void KillMiner()
@@ -116,7 +121,6 @@ namespace OMineGuard.Miners
                 LogDataReceived = null;
                 MinerInfoUpdated = null;
                 MinerStarted = null;
-                MinerStoped = null;
                 //InactivityTimer = null;
                 LowHashrateTimer = null;
                 WachdogDelayTimer = null;

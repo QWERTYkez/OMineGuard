@@ -17,6 +17,8 @@ namespace OMineGuardControlLibrary
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
 
+        public ViewModel() { }
+
         public IModel _model;
         public ViewModel(IModel model)
         {

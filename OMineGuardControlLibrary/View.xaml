@@ -13,6 +13,9 @@
     <UserControl.Resources>
         <ResourceDictionary Source="StylesDictionry.xaml" />
     </UserControl.Resources>
+    <UserControl.DataContext>
+        <local:ViewModel/>
+    </UserControl.DataContext>
     <TabControl x:Name="TABCON" Background="Transparent">
         <TabItem Header="Конфигурации майнинга">
             <Grid>
