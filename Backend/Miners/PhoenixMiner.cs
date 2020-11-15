@@ -72,7 +72,7 @@ namespace OMineGuard.Miners
         }
 
         private static byte[] req;
-        private protected override MinerInfo CurrentMinerGetInfo()
+        private protected override MinerInfo GetInformation()
         {
             using (TcpClient client = new TcpClient("127.0.0.1", port))
             {
@@ -121,12 +121,6 @@ namespace OMineGuard.Miners
                     return new MinerInfo(Hashrates, Temperatures, Fanspeeds, ShAccepted, ShRejected, ShInvalid);
                 }
             }
-
-            try
-            {
-                
-            }
-            catch { return new MinerInfo(); }
         }
 
         private class ClaymoreInfo

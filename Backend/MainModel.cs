@@ -121,6 +121,77 @@ namespace OMineGuard.Backend
                 Process.Start("shutdown", "/r /f /t 0 /c \"OMineGuard перезапуск\"");
                 System.Windows.Application.Current.Shutdown();
             };
+            Miner.MinerInfoUpdated += mi =>
+            {
+                var xx = mi;
+                if (!MIenable) MIenable = true;
+
+                if (xx.Hashrates != null)
+                {
+                    if (CheckArrays(InfHashrates, xx.Hashrates))
+                        InfHashrates = xx.Hashrates;
+                    TotalHashrate = InfHashrates.Sum();
+                }
+                else
+                {
+                    InfHashrates = null;
+                    TotalHashrate = 0;
+                }
+                if (!OHMenable && CheckArrays(InfTemperatures, xx.Temperatures))
+                    InfTemperatures = xx.Temperatures;
+                if (!MSIenable && CheckArrays(InfFanSpeeds, xx.Fanspeeds))
+                    InfFanSpeeds = xx.Fanspeeds;
+            };
+            Miner.LowHashrateTimer += n =>
+            {
+                if (n < 1) LowHWachdog = "";
+                else LowHWachdog = $"Низкий хешрейт {n}";
+            };
+            Miner.WachdogDelayTimer += n =>
+            {
+                if (n < 1) WachdogInfo = "";
+                else WachdogInfo = $"Активация вачдога {n}";
+            };
+            Miner.ZeroHash += () =>
+            {
+                Logging("Нулевой [Zero] хешрейт, перезапуск майнера", true);
+                RestartMiner();
+            };
+            Miner.GPUsfalled += gs =>
+            {
+                string str = "";
+                foreach (int g in gs) str += $"{g},";
+                Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);
+                RestartMiner();
+            };
+            Miner.LowHashrateError += () =>
+            {
+                Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
+                RestartMiner();
+            };
+            Miner.MinerStoped += () =>
+            {
+                Indicator = false;
+                TCPserver.Indication = false;
+
+                if (MIenable) MIenable = false;
+
+                InfHashrates = null;
+                TotalHashrate = null;
+                if (!OHMenable) InfTemperatures = null;
+                if (!OHMenable && !MSIenable) InfFanSpeeds = null;
+
+                ShAccepted = null;
+                ShInvalid = null;
+                ShRejected = null;
+                ShTotalAccepted = null;
+                ShTotalInvalid = null;
+                ShTotalRejected = null;
+
+                if (Miner.Waching == false) return;
+                Thread.Sleep(5000);
+                if (Miner.Waching == true) RestartMiner();
+            };
 
             InternetConnectionWacher.InternetConnectionLost += () => Task.Run(() =>
             {
@@ -190,27 +261,7 @@ namespace OMineGuard.Backend
             miner = Miner.GetMiner(config);
 
             miner.LogDataReceived += s => { if (showlog) Logging(s); };
-            miner.MinerInfoUpdated += mi =>
-            {
-                var xx = mi;
-                if (!MIenable) MIenable = true;
-
-                if (xx.Hashrates != null)
-                {
-                    if (CheckArrays(InfHashrates, xx.Hashrates))
-                        InfHashrates = xx.Hashrates;
-                    TotalHashrate = InfHashrates.Sum();
-                }
-                else
-                {
-                    InfHashrates = null;
-                    TotalHashrate = 0;
-                }
-                if (!OHMenable && CheckArrays(InfTemperatures, xx.Temperatures))
-                    InfTemperatures = xx.Temperatures;
-                if (!MSIenable && CheckArrays(InfFanSpeeds, xx.Fanspeeds))
-                    InfFanSpeeds = xx.Fanspeeds;
-            };
+            
 
             if (config.ClockID != null)
             { Overclocker.ApplyOverclock(Profile.ClocksList.Where(c => c.ID == config.ClockID).First()); }
@@ -259,58 +310,12 @@ namespace OMineGuard.Backend
                 }
             }
 
-            miner.MinerStoped += () =>
-            {
-                Indicator = false;
-                TCPserver.Indication = false;
-
-                if (MIenable) MIenable = false;
-
-                InfHashrates = null;
-                TotalHashrate = null;
-                if (!OHMenable) InfTemperatures = null;
-                if (!OHMenable && !MSIenable) InfFanSpeeds = null;
-
-                ShAccepted = null;
-                ShInvalid = null;
-                ShRejected = null;
-                ShTotalAccepted = null;
-                ShTotalInvalid = null;
-                ShTotalRejected = null;
-            };
-            miner.LowHashrateTimer += n =>
-            {
-                if (n < 1) LowHWachdog = "";
-                else LowHWachdog = $"Низкий хешрейт {n}";
-            };
-            miner.WachdogDelayTimer += n =>
-            {
-                if (n < 1) WachdogInfo = "";
-                else WachdogInfo = $"Активация вачдога {n}";
-            };
-            miner.ZeroHash += () =>
-            {
-                Logging("Нулевой [Zero] хешрейт, перезапуск майнера", true);
-                RestartMiner();
-            };
-            miner.GPUsfalled += gs =>
-            {
-                string str = "";
-                foreach (int g in gs) str += $"{g},";
-                Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);
-                RestartMiner();
-            };
-            miner.LowHashrateError += () =>
-            {
-                Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
-                RestartMiner();
-            };
-
             miner.StartMiner(config, InternetRestored);
             ConfigToRecovery = config;
         }
         private void RestartMiner() 
         {
+            Debug.WriteLine("Restarting");
             if (ConfigToRecovery != null)
                 miner.StartMiner(ConfigToRecovery);
             else

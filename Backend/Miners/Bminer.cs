@@ -97,7 +97,7 @@ namespace OMineGuard.Miners
             process.BeginOutputReadLine();
         }
 
-        private protected override MinerInfo CurrentMinerGetInfo()
+        private protected override MinerInfo GetInformation()
         {
             try
             {

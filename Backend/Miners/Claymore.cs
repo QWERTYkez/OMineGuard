@@ -113,7 +113,7 @@ namespace OMineGuard.Miners
         }
 
         private static readonly byte[] req = Encoding.UTF8.GetBytes("{ \"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"miner_getstat2\"}");
-        private protected override MinerInfo CurrentMinerGetInfo()
+        private protected override MinerInfo GetInformation()
         {
             try
             {

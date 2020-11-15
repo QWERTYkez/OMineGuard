@@ -105,138 +105,143 @@ namespace OMineGuardControlLibrary
 
         private void MainWindow_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            Dispatcher.Invoke(() =>
+            try
             {
-                switch (e.PropertyName)
+                Dispatcher.Invoke(() =>
                 {
-                    case "GPUs":
-                        {
-                            int n = _ViewModel.GPUs;
-                            /*SetGPUs*/
+                    switch (e.PropertyName)
+                    {
+                        case "GPUs":
                             {
-                                GPUs.Children.Clear();
-                                for (int i = 0; i < n; i++)
+                                int n = _ViewModel.GPUs;
+                                /*SetGPUs*/
                                 {
-                                    Label Lb = new Label
+                                    GPUs.Children.Clear();
+                                    for (int i = 0; i < n; i++)
                                     {
-                                        Height = 26,
-                                        HorizontalContentAlignment = HorizontalAlignment.Center,
-                                        VerticalContentAlignment = VerticalAlignment.Center,
-                                        FontFamily = new FontFamily("Consolas"),
-                                        FontSize = 14,
-                                        Content = $"GPU{i}"
-                                    };
-                                    GPUs.Children.Add(Lb);
+                                        Label Lb = new Label
+                                        {
+                                            Height = 26,
+                                            HorizontalContentAlignment = HorizontalAlignment.Center,
+                                            VerticalContentAlignment = VerticalAlignment.Center,
+                                            FontFamily = new FontFamily("Consolas"),
+                                            FontSize = 14,
+                                            Content = $"GPU{i}"
+                                        };
+                                        GPUs.Children.Add(Lb);
+                                    }
+                                }
+                                SetTextBoxes(PowerLimits, "PowerLimits", n);
+                                SetLabels(InfPowerLimits, "InfPowerLimits", PLsLengthA, PLsLengthB, n);
+                                SetLengths(ArrPowerLimits, PLsLengthA, PLsLengthB);
+
+                                SetTextBoxes(CoreClocks, "CoreClocks", n);
+                                SetLabels(InfCoreClocks, "InfCoreClocks", CoresLengthA, CoresLengthB, n);
+                                SetLengths(ArrCoreClocks, CoresLengthA, CoresLengthB);
+
+                                SetLabels(InfOHMCoreClocks, "InfOHMCoreClocks", null, null, n);
+
+                                SetTextBoxes(MemoryClocks, "MemoryClocks", n);
+                                SetLabels(InfMemoryClocks, "InfMemoryClocks", MemorysLengthA, MemorysLengthB, n);
+                                SetLengths(ArrMemoryClocks, MemorysLengthA, MemorysLengthB);
+
+                                SetLabels(InfOHMMemoryClocks, "InfOHMMemoryClocks", null, null, n);
+
+                                SetTextBoxes(FanSpeeds, "FanSpeeds", n);
+                                SetLabels(InfoFanSpeeds, "InfFanSpeeds", FansLengthA, FansLengthB, n);
+                                SetLengths(ArrFanSpeeds, FansLengthA, FansLengthB);
+
+                                SetLabels(InfTemps, "InfTemperatures", TempsLengthA, TempsLengthB, n);
+                                SetLengths(ArrTemperatures, TempsLengthA, TempsLengthB);
+
+                                SetLabels(InfHashrates, "InfHashrates", HashesLengthA, HashesLengthB, n, "0.00");
+                                SetLengths(ArrHashrates, HashesLengthA, HashesLengthB);
+
+                                SetLabels(LogTemperatures, "InfTemperatures", n, "0°C");
+                                SetLabels(LogHashrates, "InfHashrates", n, "0.00");
+                            }
+                            break;
+                        case "Indication":
+                            OMGworking = _ViewModel.Indication;
+                            break;
+                        case "Log":
+                            if (_ViewModel.LogAutoscroll) LogScroller.ScrollToEnd();
+                            break;
+                        case "InfPowerLimits":
+                            {
+                                if (ArrPowerLimits != _ViewModel.InfPowerLimits)
+                                {
+                                    ArrPowerLimits = _ViewModel.InfPowerLimits;
+                                    SetLengths(ArrPowerLimits, PLsLengthA, PLsLengthB);
                                 }
                             }
-                            SetTextBoxes(PowerLimits, "PowerLimits", n);
-                            SetLabels(InfPowerLimits, "InfPowerLimits", PLsLengthA, PLsLengthB, n);
-                            SetLengths(ArrPowerLimits, PLsLengthA, PLsLengthB);
-
-                            SetTextBoxes(CoreClocks, "CoreClocks", n);
-                            SetLabels(InfCoreClocks, "InfCoreClocks", CoresLengthA, CoresLengthB, n);
-                            SetLengths(ArrCoreClocks, CoresLengthA, CoresLengthB);
-
-                            SetLabels(InfOHMCoreClocks, "InfOHMCoreClocks", null, null, n);
-
-                            SetTextBoxes(MemoryClocks, "MemoryClocks", n);
-                            SetLabels(InfMemoryClocks, "InfMemoryClocks", MemorysLengthA, MemorysLengthB, n);
-                            SetLengths(ArrMemoryClocks, MemorysLengthA, MemorysLengthB);
-
-                            SetLabels(InfOHMMemoryClocks, "InfOHMMemoryClocks", null, null, n);
-
-                            SetTextBoxes(FanSpeeds, "FanSpeeds", n);
-                            SetLabels(InfoFanSpeeds, "InfFanSpeeds", FansLengthA, FansLengthB, n);
-                            SetLengths(ArrFanSpeeds, FansLengthA, FansLengthB);
-
-                            SetLabels(InfTemps, "InfTemperatures", TempsLengthA, TempsLengthB, n);
-                            SetLengths(ArrTemperatures, TempsLengthA, TempsLengthB);
-
-                            SetLabels(InfHashrates, "InfHashrates", HashesLengthA, HashesLengthB, n, "0.00");
-                            SetLengths(ArrHashrates, HashesLengthA, HashesLengthB);
-
-                            SetLabels(LogTemperatures, "InfTemperatures", n, "0°C");
-                            SetLabels(LogHashrates, "InfHashrates", n, "0.00");
-                        }
-                        break;
-                    case "Indication":
-                        OMGworking = _ViewModel.Indication;
-                        break;
-                    case "Log":
-                        if (_ViewModel.LogAutoscroll) LogScroller.ScrollToEnd();
-                        break;
-                    case "InfPowerLimits":
-                        {
-                            if (ArrPowerLimits != _ViewModel.InfPowerLimits)
+                            break;
+                        case "InfCoreClocks":
                             {
-                                ArrPowerLimits = _ViewModel.InfPowerLimits;
-                                SetLengths(ArrPowerLimits, PLsLengthA, PLsLengthB);
+                                if (ArrCoreClocks != _ViewModel.InfCoreClocks)
+                                {
+                                    ArrCoreClocks = _ViewModel.InfCoreClocks;
+                                    SetLengths(ArrCoreClocks, CoresLengthA, CoresLengthB);
+                                }
                             }
-                        }
-                        break;
-                    case "InfCoreClocks":
-                        {
-                            if (ArrCoreClocks != _ViewModel.InfCoreClocks)
+                            break;
+                        case "InfOHMCoreClocks":
                             {
-                                ArrCoreClocks = _ViewModel.InfCoreClocks;
-                                SetLengths(ArrCoreClocks, CoresLengthA, CoresLengthB);
+                                if (ArrOHMCoreClocks != _ViewModel.InfOHMCoreClocks)
+                                {
+                                    ArrOHMCoreClocks = _ViewModel.InfOHMCoreClocks;
+                                }
                             }
-                        }
-                        break;
-                    case "InfOHMCoreClocks":
-                        {
-                            if (ArrOHMCoreClocks != _ViewModel.InfOHMCoreClocks)
+                            break;
+                        case "InfOHMMemoryClocks":
                             {
-                                ArrOHMCoreClocks = _ViewModel.InfOHMCoreClocks;
+                                if (ArrOHMMemoryClocks != _ViewModel.InfOHMMemoryClocks)
+                                {
+                                    ArrOHMMemoryClocks = _ViewModel.InfOHMMemoryClocks;
+                                }
                             }
-                        }
-                        break;
-                    case "InfOHMMemoryClocks":
-                        {
-                            if (ArrOHMMemoryClocks != _ViewModel.InfOHMMemoryClocks)
+                            break;
+                        case "InfMemoryClocks":
                             {
-                                ArrOHMMemoryClocks = _ViewModel.InfOHMMemoryClocks;
+                                if (ArrMemoryClocks != _ViewModel.InfMemoryClocks)
+                                {
+                                    ArrMemoryClocks = _ViewModel.InfMemoryClocks;
+                                    SetLengths(ArrMemoryClocks, MemorysLengthA, MemorysLengthB);
+                                }
                             }
-                        }
-                        break;
-                    case "InfMemoryClocks":
-                        {
-                            if (ArrMemoryClocks != _ViewModel.InfMemoryClocks)
+                            break;
+                        case "InfFanSpeeds":
                             {
-                                ArrMemoryClocks = _ViewModel.InfMemoryClocks;
-                                SetLengths(ArrMemoryClocks, MemorysLengthA, MemorysLengthB);
+                                if (ArrFanSpeeds != _ViewModel.InfFanSpeeds)
+                                {
+                                    ArrFanSpeeds = _ViewModel.InfFanSpeeds;
+                                    SetLengths(ArrFanSpeeds, FansLengthA, FansLengthB);
+                                }
                             }
-                        }
-                        break;
-                    case "InfFanSpeeds":
-                        {
-                            if (ArrFanSpeeds != _ViewModel.InfFanSpeeds)
+                            break;
+                        case "InfTemperatures":
                             {
-                                ArrFanSpeeds = _ViewModel.InfFanSpeeds;
-                                SetLengths(ArrFanSpeeds, FansLengthA, FansLengthB);
+                                if (ArrTemperatures != _ViewModel.InfTemperatures)
+                                {
+                                    ArrTemperatures = _ViewModel.InfTemperatures;
+                                    SetLengths(ArrTemperatures, TempsLengthA, TempsLengthB);
+                                }
                             }
-                        }
-                        break;
-                    case "InfTemperatures":
-                        {
-                            if (ArrTemperatures != _ViewModel.InfTemperatures)
+                            break;
+                        case "InfHashrates":
                             {
-                                ArrTemperatures = _ViewModel.InfTemperatures;
-                                SetLengths(ArrTemperatures, TempsLengthA, TempsLengthB);
+                                if (ArrHashrates != _ViewModel.InfHashrates)
+                                {
+                                    ArrHashrates = _ViewModel.InfHashrates;
+                                    SetLengths(ArrHashrates, HashesLengthA, HashesLengthB);
+                                }
                             }
-                        }
-                        break;
-                    case "InfHashrates":
-                        {
-                            if (ArrHashrates != _ViewModel.InfHashrates)
-                            {
-                                ArrHashrates = _ViewModel.InfHashrates;
-                                SetLengths(ArrHashrates, HashesLengthA, HashesLengthB);
-                            }
-                        }
-                        break;
-                }
-            });
+                            break;
+                    }
+                });
+            }
+            catch { }
+            
         }
         private static void SetLengths(double?[] vals, List<ColumnDefinition> cdA, List<ColumnDefinition> cdB)
         {
