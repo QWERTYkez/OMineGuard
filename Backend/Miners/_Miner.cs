@@ -85,20 +85,17 @@ namespace OMineGuard.Miners
                 if (miner == this) miner = null;
             });
         }
-        private static void KillMiner()
+        private  void KillMiner()
         {
-            var ProcessNames = new string[]
+            var processes = Process.GetProcesses().Where(p => p.ProcessName == ProcessName);
+            var res = Parallel.ForEach(processes, p =>
             {
-                Bminer.CurrentProcessName,
-                Gminer.CurrentProcessName,
-                Claymore.CurrentProcessName
-            };
-            var processes = Process.GetProcesses().
-                Where(p => ProcessNames.Contains(p.ProcessName));
-            foreach (var proc in processes)
-            {
-                try { proc.Kill(); } catch { }
-            }
+                while (!p.HasExited)
+                {
+                    try { p.Kill(); } catch { }
+                }
+            });
+            while (!res.IsCompleted) Thread.Sleep(50);
         }
         public void StopMiner(bool manually = false)
         {

@@ -15,8 +15,7 @@ namespace OMineGuard.Miners
     public class PhoenixMiner : Miner
     {
         private protected override string Directory { get; } = "PhoenixMiner";
-        private protected override string ProcessName { get => CurrentProcessName; }
-        public static string CurrentProcessName { get; } = "PhoenixMiner";
+        private protected override string ProcessName { get => "PhoenixMiner"; }
 
         private protected override void RunThisMiner(IConfig Config)
         {

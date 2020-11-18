@@ -14,8 +14,7 @@ namespace OMineGuard.Miners
     class Gminer : Miner
     {
         private protected override string Directory { get; } = "Gminer";
-        private protected override string ProcessName { get => CurrentProcessName; }
-        public static string CurrentProcessName { get; } = "miner";
+        private protected override string ProcessName { get => "miner"; }
 
         private protected override void RunThisMiner(IConfig Config)
         {

@@ -315,7 +315,6 @@ namespace OMineGuard.Backend
         }
         private void RestartMiner() 
         {
-            Debug.WriteLine("Restarting");
             if (ConfigToRecovery != null)
                 miner.StartMiner(ConfigToRecovery);
             else
