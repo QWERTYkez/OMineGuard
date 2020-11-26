@@ -7,12 +7,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
 {
     class Gminer : Miner
     {
+        static Gminer()
+        {
+            ProcessNames.Add("miner");
+        }
+
         private protected override string Directory { get; } = "Gminer";
         private protected override string ProcessName { get => "miner"; }
 

@@ -16,8 +16,8 @@ namespace OMineGuard.Miners
         private protected abstract void RunThisMiner(IConfig Config);
         private protected abstract MinerInfo GetInformation();
 
-        public event Action<IConfig, bool> MinerStarted;
-        public event Action<string> LogDataReceived;
+        public static event Action<IConfig, bool> MinerStarted;
+        public static event Action<string> LogDataReceived;
         public static event Action MinerStoped;
         public static event Action<MinerInfo> MinerInfoUpdated;
         public static event Action<int> WachdogDelayTimer;
@@ -28,7 +28,8 @@ namespace OMineGuard.Miners
         public static event Action LowHashrateError;
         public static event Action<int[]> GPUsfalled;
 
-        private protected Process process { get; set; }
+        private protected static List<string> ProcessNames { get; set; } = new List<string>();
+        private static protected Process process { get; set; }
         private static Miner miner { get; set; }
         public List<bool> GPUs { get; private set; }
         private static byte ErrorsCounter;
@@ -65,29 +66,30 @@ namespace OMineGuard.Miners
                 default: return null;
             }
         }
-        public Task StartMiner(IConfig config, bool InternetRestored = false)
+        public static void StartMiner(IConfig config, bool InternetRestored = false)
         {
-            return Task.Run(() =>
+            Task.Run(() =>
             {
                 KillMiner();
 
-                RunThisMiner(config);
-                GPUs = Settings.Profile.GPUsSwitch;
+                var min = miner = GetMiner(config);
+                miner.RunThisMiner(config);
+                miner.GPUs = Settings.Profile.GPUsSwitch;
                 Task.Run(() => MinerStarted?.Invoke(config, InternetRestored));
 
                 ErrorsCounter = 0;
                 StartWaching(config.MinHashrate);
 
-                miner = this;
                 process.WaitForExit();
                 process = null;
                 Task.Run(() => MinerStoped?.Invoke());
-                if (miner == this) miner = null;
+                if (miner == min) miner = null;
             });
         }
-        private  void KillMiner()
+        private static void KillMiner()
         {
-            var processes = Process.GetProcesses().Where(p => p.ProcessName == ProcessName);
+            var processes = Process.GetProcesses().
+                Where(p => ProcessNames.Contains(p.ProcessName));
             var res = Parallel.ForEach(processes, p =>
             {
                 while (!p.HasExited)
@@ -97,7 +99,7 @@ namespace OMineGuard.Miners
             });
             while (!res.IsCompleted) Thread.Sleep(50);
         }
-        public void StopMiner(bool manually = false)
+        public static void StopMiner(bool manually = false)
         {
             if (manually)
             {
@@ -110,20 +112,7 @@ namespace OMineGuard.Miners
             LowHashrate = false;
             LowHashrateTimer?.Invoke(-1);
 
-            //clear events
-            LogDataReceived = null;
-            MinerStarted = null;
-
-            try { process?.Kill(); }
-            catch
-            {
-                try { process?.Kill(); }
-                catch
-                {
-                    try { process?.Kill(); }
-                    catch { }
-                }
-            }
+            KillMiner();
         }
         private static Task WachdogInactivity()
         {

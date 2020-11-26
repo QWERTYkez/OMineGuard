@@ -4,16 +4,18 @@ using OMineGuardControlLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OMineGuard.Miners
 {
     public class PhoenixMiner : Miner
     {
+        static PhoenixMiner()
+        {
+            ProcessNames.Add("PhoenixMiner");
+        }
+
         private protected override string Directory { get; } = "PhoenixMiner";
         private protected override string ProcessName { get => "PhoenixMiner"; }
 

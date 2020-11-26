@@ -12,6 +12,11 @@ namespace OMineGuard.Miners
 {
     class Bminer : Miner
     {
+        static Bminer() 
+        {
+            ProcessNames.Add("bminer");
+        }
+
         private protected override string Directory { get; } = "Bminer";
         private protected override string ProcessName { get => "bminer"; }
 

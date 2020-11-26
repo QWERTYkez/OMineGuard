@@ -14,6 +14,11 @@ namespace OMineGuard.Miners
 {
     public class Claymore : Miner
     {
+        static Claymore()
+        {
+            ProcessNames.Add("EthDcrMiner64");
+        }
+
         private protected override string Directory { get; } = "Claymore's Dual Miner";
         private protected override string ProcessName { get => "EthDcrMiner64"; }
 

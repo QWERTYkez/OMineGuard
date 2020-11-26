@@ -43,6 +43,7 @@ namespace OMineGuard.Backend
             }
             return false;
         }
+        private (Func<int> GetVKmsgID, Func<string> GetTGmsgID)? MSGids;
         public void IniModel()
         {
             SetLog = s => { Loggong = s; Log += s; };
@@ -50,7 +51,7 @@ namespace OMineGuard.Backend
             TCPserver.OMWsent += TCP_OMWsent;
             TCPserver.InitializeTCPserver(this);
 
-            var MSGids = Informer.SendMessage("OMineGuard запущен");
+            MSGids = Informer.SendMessage("OMineGuard запущен");
 
             Overclocker.OverclockReceived += (msi, ohm) => 
             { 
@@ -169,6 +170,26 @@ namespace OMineGuard.Backend
                 Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
                 RestartMiner();
             };
+            Miner.MinerStarted += (conf, ethernet) => 
+            {
+                Profile.StartedID = conf.ID;
+                Settings.SetProfile(Profile);
+                Indicator = true;
+                TCPserver.Indication = true;
+
+                var msg = $"{conf.Name} запущен";
+                if (MSGids != null)
+                {
+                    var xx = MSGids.Value; MSGids = null;
+
+                    Logging(msg);
+                    Informer.EditMessage(xx, "OMineGuard запущен, " + msg);
+                    return;
+                }
+                if (ethernet) msg = $"Интернет восстановлен, {conf.Name} запущен";
+                Logging(msg, true);
+            };
+            Miner.LogDataReceived += s => { if (showlog) Logging(s); };
             Miner.MinerStoped += () =>
             {
                 Indicator = false;
@@ -200,7 +221,7 @@ namespace OMineGuard.Backend
                 {
                     if (InternetMinerSwitch.Value)
                     {
-                        miner?.StopMiner();
+                        Miner.StopMiner();
                         InternetMinerSwitch = false;
                     }
                 }
@@ -241,7 +262,7 @@ namespace OMineGuard.Backend
 
                         Thread.Sleep(2000);
 
-                        StartMiner(config, false, MSGids);
+                        StartMiner(config, false);
                         Task.Run(() => Autostarted?.Invoke());
                     }
                     catch { Profile.StartedID = null; }
@@ -249,78 +270,21 @@ namespace OMineGuard.Backend
             }
         }
 
-        private static Miner miner;
         private static bool showlog = false;
         private readonly object InternetConnectionKey = new object();
         private bool? InternetMinerSwitch = null;
         private static IConfig ConfigToRecovery { get; set; }
-        private void StartMiner(IConfig config, bool InternetRestored = false, 
-            (Func<int> GetVKmsgID, Func<string> GetTGmsgID)? MSGids = null)
+        private void StartMiner(IConfig config, bool InternetRestored = false)
         {
-            StopMiner();
-            miner = Miner.GetMiner(config);
-
-            miner.LogDataReceived += s => { if (showlog) Logging(s); };
-            
+            Miner.StopMiner();
 
             if (config.ClockID != null)
             { Overclocker.ApplyOverclock(Profile.ClocksList.Where(c => c.ID == config.ClockID).First()); }
 
-            //MinerStarted
-            {
-                Action<IConfig, bool> act1 = (IConfig conf, bool ethernet) =>
-                {
-                    Task.Run(() =>
-                    {
-                        Profile.StartedID = conf.ID;
-                        Settings.SetProfile(Profile);
-                        Indicator = true;
-                        TCPserver.Indication = true;
-                        string msg;
-                        if (!ethernet) msg = $"{conf.Name} запущен";
-                        else msg = $"Интернет восстановлен, {conf.Name} запущен";
-                        Logging(msg, true);
-                    });
-                };
-                Action<IConfig, bool> act2 = (IConfig conf, bool ethernet) =>
-                {
-                    Task.Run(() => 
-                    {
-                        Profile.StartedID = conf.ID;
-                        Settings.SetProfile(Profile);
-                        Indicator = true;
-                        TCPserver.Indication = true;
-
-                        var msg1 = $"{conf.Name} запущен";
-                        var msg2 = $"OMineGuard запущен, {conf.Name} запущен";
-                        Logging(msg1);
-                        Informer.EditMessage(MSGids.Value, msg2);
-                    });
-                };
-                if (MSGids == null)
-                    miner.MinerStarted += act1;
-                else
-                {
-                    miner.MinerStarted += act2;
-                    miner.MinerStarted += (c, e) => 
-                    {
-                        miner.MinerStarted -= act2;
-                        miner.MinerStarted += act1;
-                    };
-                }
-            }
-
-            miner.StartMiner(config, InternetRestored);
+            Miner.StartMiner(config, InternetRestored);
             ConfigToRecovery = config;
         }
-        private void RestartMiner() 
-        {
-            if (ConfigToRecovery != null)
-                miner.StartMiner(ConfigToRecovery);
-            else
-                StopMiner();
-        }
-        public static void StopMiner(bool manually = false) { miner?.StopMiner(manually); miner = null; }
+        private void RestartMiner() => StartMiner(ConfigToRecovery);
 
         public IProfile Profile { get; set; }
         public List<string> Miners { get; set; }
@@ -396,7 +360,7 @@ namespace OMineGuard.Backend
         }
         public void CMD_SwitchProcess()
         {
-            StopMiner(true);
+            Miner.StopMiner(true);
             if (!Indicator)
                 StartMiner(Profile.ConfigsList.
                      Where(c => c.ID == Profile.StartedID.Value).First());
