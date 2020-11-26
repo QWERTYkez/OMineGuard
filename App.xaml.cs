@@ -1,4 +1,5 @@
 ﻿using OMineGuard.Backend;
+using OMineGuard.Miners;
 using System.Windows;
 
 namespace OMineGuard
@@ -7,7 +8,7 @@ namespace OMineGuard
     {
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-            MainModel.StopMiner();
+            Miner.StopMiner();
             TCPserver.StopServers();
             Overclocker.ApplicationLive = false;
         }

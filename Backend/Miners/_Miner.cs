@@ -106,6 +106,7 @@ namespace OMineGuard.Miners
                 inactivity = false;
                 InactivityTimer?.Invoke(-1);
             }
+            else WachdogInactivity();
 
             Waching = false;
             WachdogDelayTimer?.Invoke(-1);
