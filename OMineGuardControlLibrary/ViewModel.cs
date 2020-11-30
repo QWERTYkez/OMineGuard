@@ -470,7 +470,9 @@ namespace OMineGuardControlLibrary
                 OverclocksNames = from i in Profile.ClocksList select i.Name;
                 _model.CMD_SaveProfile(Profile);
                 SelectedOverclockIndex = OverclocksNames.Count() - 1;
-                
+                ConfigOverclocks = new List<string> { "---" };
+                ConfigOverclocks = ConfigOverclocks.Concat(
+                    from i in Profile.ClocksList select i.Name);
             });
             MinusOverclock = new RelayCommand(obj =>
             {
@@ -487,6 +489,9 @@ namespace OMineGuardControlLibrary
                     OverclocksNames = from i in Profile.ClocksList select i.Name;
                     _model.CMD_SaveProfile(Profile);
                     SelectedOverclockIndex = -1;
+                    ConfigOverclocks = new List<string> { "---" };
+                    ConfigOverclocks = ConfigOverclocks.Concat(
+                        from i in Profile.ClocksList select i.Name);
                 }
             });
             SaveOverclock = new RelayCommand(obj =>
@@ -495,6 +500,9 @@ namespace OMineGuardControlLibrary
                 {
                     SaveCLock();
                     _model.CMD_SaveProfile(Profile);
+                    ConfigOverclocks = new List<string> { "---" };
+                    ConfigOverclocks = ConfigOverclocks.Concat(
+                        from i in Profile.ClocksList select i.Name);
                 }
             });
             ApplyOverclock = new RelayCommand(obj =>
@@ -503,6 +511,9 @@ namespace OMineGuardControlLibrary
                 {
                     SaveCLock();
                     _model.CMD_ApplyClock(Profile, SelectedOverclockIndex);
+                    ConfigOverclocks = new List<string> { "---" };
+                    ConfigOverclocks = ConfigOverclocks.Concat(
+                        from i in Profile.ClocksList select i.Name);
                 }
             });
         }
