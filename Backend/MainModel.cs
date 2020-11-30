@@ -46,8 +46,6 @@ namespace OMineGuard.Backend
         private (Func<int> GetVKmsgID, Func<string> GetTGmsgID)? MSGids;
         public void IniModel()
         {
-            SetLog = s => { Loggong = s; Log += s; };
-
             TCPserver.OMWsent += TCP_OMWsent;
             TCPserver.InitializeTCPserver(this);
 
@@ -109,7 +107,7 @@ namespace OMineGuard.Backend
                 Logging("соединение с MSI установлено");
             };
             Overclocker.OverclockApplied += () => Logging("Профиль разгона MSI Afterburner применен");
-            Overclocker._Overclocker();
+            Overclocker._Overclocker(this);
 
             Miner.InactivityTimer += n =>
             {
@@ -156,19 +154,19 @@ namespace OMineGuard.Backend
             Miner.ZeroHash += () =>
             {
                 Logging("Нулевой [Zero] хешрейт, перезапуск майнера", true);
-                RestartMiner();
+                RestartMiner(false);
             };
             Miner.GPUsfalled += gs =>
             {
                 string str = "";
                 foreach (int g in gs) str += $"{g},";
                 Logging($"Отвал GPUs:[{str.TrimEnd(',')}] перезапуск майнера", true);
-                RestartMiner();
+                RestartMiner(false);
             };
             Miner.LowHashrateError += () =>
             {
                 Logging("Низкий [Low] хешрейт, перезапуск майнера", true);
-                RestartMiner();
+                RestartMiner(false);
             };
             Miner.MinerStarted += (conf, ethernet) => 
             {
@@ -190,7 +188,7 @@ namespace OMineGuard.Backend
                 Logging(msg, true);
             };
             Miner.LogDataReceived += s => { if (showlog) Logging(s); };
-            Miner.MinerStoped += () =>
+            Miner.MinerStoped += (conf) =>
             {
                 Indicator = false;
                 TCPserver.Indication = false;
@@ -209,9 +207,14 @@ namespace OMineGuard.Backend
                 ShTotalInvalid = null;
                 ShTotalRejected = null;
 
-                if (Miner.Waching == false) return;
+                Logging($"{conf.Name} остановлен");
+                if (Miner.ManuallyStoped == true)
+                {
+                    Miner.ManuallyStoped = false;
+                    return;
+                }
                 Thread.Sleep(5000);
-                if (Miner.Waching == true) RestartMiner();
+                if (Miner.Waching == true) RestartMiner(false);
             };
 
             InternetConnectionWacher.InternetConnectionLost += () => Task.Run(() =>
@@ -274,9 +277,10 @@ namespace OMineGuard.Backend
         private readonly object InternetConnectionKey = new object();
         private bool? InternetMinerSwitch = null;
         private static IConfig ConfigToRecovery { get; set; }
-        private void StartMiner(IConfig config, bool InternetRestored = false)
+        private async void StartMiner(IConfig config, bool manually, bool InternetRestored = false)
         {
-            Miner.StopMiner();
+            Miner.StopMiner(manually);
+            await Task.Delay(1000);
 
             if (config.ClockID != null)
             { Overclocker.ApplyOverclock(Profile.ClocksList.Where(c => c.ID == config.ClockID).First()); }
@@ -284,7 +288,7 @@ namespace OMineGuard.Backend
             Miner.StartMiner(config, InternetRestored);
             ConfigToRecovery = config;
         }
-        private void RestartMiner() => StartMiner(ConfigToRecovery);
+        private void RestartMiner(bool manually) => StartMiner(ConfigToRecovery, manually);
 
         public IProfile Profile { get; set; }
         public List<string> Miners { get; set; }
@@ -292,9 +296,7 @@ namespace OMineGuard.Backend
         public Dictionary<string, int[]> Algoritms { get; set; }
 
         public string Loggong { get; set; }
-        public string Log = ""; //статика для отправки по TCP
-        public static Action<string> SetLog;
-        public static void Logging(string msg, bool informer = false)
+        public void Logging(string msg, bool informer = false)
         {
             msg = msg.
                 Replace("\r\n\r\n", "\r\n").
@@ -302,7 +304,8 @@ namespace OMineGuard.Backend
                 Replace("\n\r\n", "\r\n").
                 TrimEnd("\r\n".ToArray()).
                 TrimStart("\r\n".ToArray());
-            SetLog.Invoke(msg + Environment.NewLine);
+            Loggong = msg;
+            Loggong = Environment.NewLine;
             if (informer) Informer.SendMessage(msg);
         }
 
@@ -342,7 +345,7 @@ namespace OMineGuard.Backend
         {
             Profile = prof;
             Settings.SetProfile(Profile);
-            StartMiner(Profile.ConfigsList[index]);
+            StartMiner(Profile.ConfigsList[index], true);
         }
         public void CMD_ApplyClock(IProfile prof, int index)
         {
@@ -363,7 +366,7 @@ namespace OMineGuard.Backend
             Miner.StopMiner(true);
             if (!Indicator)
                 StartMiner(Profile.ConfigsList.
-                     Where(c => c.ID == Profile.StartedID.Value).First());
+                     Where(c => c.ID == Profile.StartedID.Value).First(), true);
         }
 
         private void TCP_OMWsent(RootObject RO)

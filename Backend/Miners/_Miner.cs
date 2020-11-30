@@ -18,7 +18,7 @@ namespace OMineGuard.Miners
 
         public static event Action<IConfig, bool> MinerStarted;
         public static event Action<string> LogDataReceived;
-        public static event Action MinerStoped;
+        public static event Action<IConfig> MinerStoped;
         public static event Action<MinerInfo> MinerInfoUpdated;
         public static event Action<int> WachdogDelayTimer;
         public static event Action<int> InactivityTimer;
@@ -39,6 +39,7 @@ namespace OMineGuard.Miners
         private static bool inactivity = false;
         private static bool lowHashrate = false;
         private static bool waching = false;
+        public static bool ManuallyStoped = false;
         public static bool Waching
         {
             get { lock (WachingKey) return waching; }
@@ -70,8 +71,6 @@ namespace OMineGuard.Miners
         {
             Task.Run(() =>
             {
-                KillMiner();
-
                 var min = miner = GetMiner(config);
                 miner.RunThisMiner(config);
                 miner.GPUs = Settings.Profile.GPUsSwitch;
@@ -82,27 +81,16 @@ namespace OMineGuard.Miners
 
                 process.WaitForExit();
                 process = null;
-                Task.Run(() => MinerStoped?.Invoke());
+                Task.Run(() => MinerStoped?.Invoke(config));
                 if (miner == min) miner = null;
             });
         }
-        private static void KillMiner()
-        {
-            var processes = Process.GetProcesses().
-                Where(p => ProcessNames.Contains(p.ProcessName));
-            var res = Parallel.ForEach(processes, p =>
-            {
-                while (!p.HasExited)
-                {
-                    try { p.Kill(); } catch { }
-                }
-            });
-            while (!res.IsCompleted) Thread.Sleep(50);
-        }
+
         public static void StopMiner(bool manually = false)
         {
             if (manually)
             {
+                if(!process?.HasExited == true) ManuallyStoped = true;
                 inactivity = false;
                 InactivityTimer?.Invoke(-1);
             }
@@ -113,7 +101,17 @@ namespace OMineGuard.Miners
             LowHashrate = false;
             LowHashrateTimer?.Invoke(-1);
 
-            KillMiner();
+            //Kill miner
+            var processes = Process.GetProcesses().
+                Where(p => ProcessNames.Contains(p.ProcessName));
+            var res = Parallel.ForEach(processes, p =>
+            {
+                while (!p.HasExited)
+                {
+                    try { p.Kill(); } catch { }
+                }
+            });
+            while (!res.IsCompleted) Thread.Sleep(50);
         }
         private static Task WachdogInactivity()
         {

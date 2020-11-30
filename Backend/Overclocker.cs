@@ -212,11 +212,11 @@ namespace OMineGuard.Backend
             else { return def; }
         }
 
-        public static void _Overclocker()
+        public static void _Overclocker(MainModel mm)
         {
             Task.Run(async () => 
             {
-                await MSIconnecting();
+                await MSIconnecting(mm);
                 OHMconnecting();
                 StartMonitoring();
             });
@@ -226,7 +226,7 @@ namespace OMineGuard.Backend
         private static ControlMemory CM;
         private static int GPUsCount;
 
-        private static Task MSIconnecting()
+        private static Task MSIconnecting(MainModel mm)
         {
             return Task.Run(() =>
             {
@@ -235,7 +235,7 @@ namespace OMineGuard.Backend
                 {
                     MSIpath = Process.GetProcessesByName("MSIAfterburner").First().MainModule.FileName;
                 }
-                catch { MainModel.Logging("Добавьте права администратора", true); }
+                catch { mm.Logging("Добавьте права администратора", true); }
                 while (!MSIconnected)
                 {
                     try
