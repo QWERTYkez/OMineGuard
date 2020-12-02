@@ -188,7 +188,7 @@ namespace OMineGuard.Backend
                 Logging(msg, true);
             };
             Miner.LogDataReceived += s => { if (showlog) Logging(s); };
-            Miner.MinerStoped += (conf) =>
+            Miner.MinerStoped += (conf, b) =>
             {
                 Indicator = false;
                 TCPserver.Indication = false;
@@ -208,13 +208,9 @@ namespace OMineGuard.Backend
                 ShTotalRejected = null;
 
                 Logging($"{conf.Name} остановлен");
-                if (Miner.ManuallyStoped == true)
-                {
-                    Miner.ManuallyStoped = false;
-                    return;
-                }
+                if (b) return;
                 Thread.Sleep(5000);
-                if (Miner.Waching == true) RestartMiner(false);
+                RestartMiner(false);
             };
 
             InternetConnectionWacher.InternetConnectionLost += () => Task.Run(() =>

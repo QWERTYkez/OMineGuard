@@ -18,7 +18,7 @@ namespace OMineGuard.Miners
 
         public static event Action<IConfig, bool> MinerStarted;
         public static event Action<string> LogDataReceived;
-        public static event Action<IConfig> MinerStoped;
+        public static event Action<IConfig, bool> MinerStoped;
         public static event Action<MinerInfo> MinerInfoUpdated;
         public static event Action<int> WachdogDelayTimer;
         public static event Action<int> InactivityTimer;
@@ -39,7 +39,7 @@ namespace OMineGuard.Miners
         private static bool inactivity = false;
         private static bool lowHashrate = false;
         private static bool waching = false;
-        public static bool ManuallyStoped = false;
+        private static bool ManuallyStoped = false;
         public static bool Waching
         {
             get { lock (WachingKey) return waching; }
@@ -81,16 +81,19 @@ namespace OMineGuard.Miners
 
                 process.WaitForExit();
                 process = null;
-                Task.Run(() => MinerStoped?.Invoke(config));
+                var b = ManuallyStoped;
+                ManuallyStoped = false;
+                Task.Run(() => MinerStoped?.Invoke(config, b));
                 if (miner == min) miner = null;
             });
         }
 
         public static void StopMiner(bool manually = false)
         {
+            if (!process?.HasExited == true) ManuallyStoped = true;
+
             if (manually)
             {
-                if(!process?.HasExited == true) ManuallyStoped = true;
                 inactivity = false;
                 InactivityTimer?.Invoke(-1);
             }
