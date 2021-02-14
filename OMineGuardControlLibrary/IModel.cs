@@ -17,9 +17,9 @@ namespace OMineGuardControlLibrary
 
         string Loggong { get; set; }
 
-        int?[] InfPowerLimits { get; set; }
-        int?[] InfCoreClocks { get; set; }
-        int?[] InfMemoryClocks { get; set; }
+        int[] InfPowerLimits { get; set; }
+        int[] InfCoreClocks { get; set; }
+        int[] InfMemoryClocks { get; set; }
         int?[] InfOHMCoreClocks { get; set; }
         int?[] InfOHMMemoryClocks { get; set; }
         int?[] InfFanSpeeds { get; set; }
@@ -27,11 +27,11 @@ namespace OMineGuardControlLibrary
         double?[] InfHashrates { get; set; }
         double? TotalHashrate { get; set; }
 
-        int?[] ShAccepted { get; set; }
+        int[] ShAccepted { get; set; }
         int? ShTotalAccepted { get; set; }
-        int?[] ShRejected { get; set; }
+        int[] ShRejected { get; set; }
         int? ShTotalRejected { get; set; }
-        int?[] ShInvalid { get; set; }
+        int[] ShInvalid { get; set; }
         int? ShTotalInvalid { get; set; }
 
         string WachdogInfo { get; set; }

@@ -224,7 +224,12 @@ namespace OMineGuard.Backend
         public static bool ApplicationLive = true;
         private static readonly List<OHMgpu> OHMgpus = new List<OHMgpu>();
         private static ControlMemory CM;
-        private static int GPUsCount;
+
+        private static IEnumerable<ControlMemoryGpuEntry> GEs;
+        private static IEnumerable<int> MSIpl;
+        private static IEnumerable<int> MSIcc;
+        private static IEnumerable<int> MSImc;
+        private static IEnumerable<int?> MSIfs;
 
         private static Task MSIconnecting(MainModel mm)
         {
@@ -246,39 +251,22 @@ namespace OMineGuard.Backend
                     catch { }
                 }
 
-                GPUsCount = CM.GpuEntries.Length;
-                while (CM.GpuEntries[GPUsCount - 1].PowerLimitMax - 
-                       CM.GpuEntries[GPUsCount - 1].PowerLimitMin == 0)
-                { GPUsCount = CM.GpuEntries.Length - 1; }
+                GEs = CM.GpuEntries.Where(e => e.PowerLimitMax - e.PowerLimitMin != 0);
+                MSIpl = GEs.Select(e => e.PowerLimitCur);
+                MSIcc = GEs.Select(e => (e.CoreClockBoostMin != 0 ? e.CoreClockBoostCur :
+                        (e.CoreClockMin != 0 ? Convert.ToInt32(e.CoreClockCur) : 0)) / 1000);
+                MSImc = GEs.Select(e => (e.MemoryClockBoostMin != 0 ? e.MemoryClockBoostCur :
+                        (e.MemoryClockMin != 0 ? Convert.ToInt32(e.MemoryClockCur) : 0)) / 1000);
+                MSIfs = GEs.Select(e => new int?(Convert.ToInt32(e.FanSpeedCur)));
 
-                List<int> pl = new List<int>();
-                List<int> cc = new List<int>();
-                List<int> mc = new List<int>();
-                List<int> fs = new List<int>();
-                for (int i = 0; i < GPUsCount; i++)
-                {
-                    int core = 0;
-                    if (CM.GpuEntries[i].CoreClockBoostMax - CM.GpuEntries[i].CoreClockBoostMin != 0)
-                    { core = CM.GpuEntries[i].CoreClockBoostDef / 1000; }
-                    else if (CM.GpuEntries[i].CoreClockMax - CM.GpuEntries[i].CoreClockMin != 0)
-                    { core = Convert.ToInt32(CM.GpuEntries[i].CoreClockDef) / 1000; }
-                    int memory = 0;
-                    if (CM.GpuEntries[i].MemoryClockBoostMax - CM.GpuEntries[i].MemoryClockBoostMin != 0)
-                    { memory = CM.GpuEntries[i].MemoryClockBoostDef / 1000; }
-                    else if (CM.GpuEntries[i].MemoryClockMax - CM.GpuEntries[i].MemoryClockMin != 0)
-                    { memory = Convert.ToInt32(CM.GpuEntries[i].MemoryClockDef) / 1000; }
-
-                    pl.Add(CM.GpuEntries[i].PowerLimitDef);
-                    cc.Add(core);
-                    mc.Add(memory);
-                    fs.Add(Convert.ToInt32(CM.GpuEntries[i].FanSpeedDef));
-                }
                 Task.Run(() => ConnectedToMSI?.Invoke(new DefClock
                 {
-                    PowerLimits = pl.ToArray(),
-                    CoreClocks = cc.ToArray(),
-                    MemoryClocks = mc.ToArray(),
-                    FanSpeeds = fs.ToArray()
+                    PowerLimits = GEs.Select(e => e.PowerLimitDef).ToArray(),
+                    CoreClocks = GEs.Select(e => (e.CoreClockBoostMin != 0 ? e.CoreClockBoostDef :
+                        (e.CoreClockMin != 0 ? Convert.ToInt32(e.CoreClockDef) : 0)) / 1000).ToArray(),
+                    MemoryClocks = GEs.Select(e => (e.MemoryClockBoostMin != 0 ? e.MemoryClockBoostDef :
+                        (e.MemoryClockMin != 0 ? Convert.ToInt32(e.MemoryClockDef) : 0)) / 1000).ToArray(),
+                    FanSpeeds = GEs.Select(e => Convert.ToInt32(e.FanSpeedDef)).ToArray()
                 }));
             });
         }
@@ -288,7 +276,7 @@ namespace OMineGuard.Backend
             {
                 Computer c = new Computer { GPUEnabled = true };
                 c.Open();
-                foreach (IHardware h in c.Hardware)
+                foreach  (IHardware h in c.Hardware)
                 {
                     OHMgpus.Add(new OHMgpu(h));
                 }
@@ -296,20 +284,17 @@ namespace OMineGuard.Backend
                     OHMenable = true;
             });
         }
+
+        private static IEnumerable<int?> OHMtemp = OHMgpus.Select(e => e.Temperature);
+        private static IEnumerable<int?> OHMfs = OHMgpus.Select(e => e.FanSpeed);
+        private static IEnumerable<int?> OHMcc = OHMgpus.Select(e => e.CoreClock);
+        private static IEnumerable<int?> OHMmc = OHMgpus.Select(e => e.MemoryClock);
+
         private static void StartMonitoring()
         {
             Task.Run(() =>
             {
-                MSIinfo? MSI;
-                List<int?> mpl;
-                List<int?> mcc;
-                List<int?> mmc;
-                List<int?> mfs;
-                OHMinfo? OHM;
-                List<int?> ots;
-                List<int?> ofs;
-                List<int?> occ;
-                List<int?> omc;
+                MSIinfo? MSI; OHMinfo? OHM;
                 while (ApplicationLive)
                 {
                     Task.Run(() => 
@@ -319,35 +304,13 @@ namespace OMineGuard.Backend
                         {
                             try
                             {
-                                mpl = new List<int?>();
-                                mcc = new List<int?>();
-                                mmc = new List<int?>();
-                                mfs = new List<int?>();
                                 CM.ReloadAll();
-                                for (int i = 0; i < GPUsCount; i++)
-                                {
-                                    int core = 0;
-                                    if (CM.GpuEntries[i].CoreClockBoostMax - CM.GpuEntries[i].CoreClockBoostMin != 0)
-                                    { core = CM.GpuEntries[i].CoreClockBoostCur / 1000; }
-                                    else if (CM.GpuEntries[i].CoreClockMax - CM.GpuEntries[i].CoreClockMin != 0)
-                                    { core = Convert.ToInt32(CM.GpuEntries[i].CoreClockCur) / 1000; }
-                                    int memory = 0;
-                                    if (CM.GpuEntries[i].MemoryClockBoostMax - CM.GpuEntries[i].MemoryClockBoostMin != 0)
-                                    { memory = CM.GpuEntries[i].MemoryClockBoostCur / 1000; }
-                                    else if (CM.GpuEntries[i].MemoryClockMax - CM.GpuEntries[i].MemoryClockMin != 0)
-                                    { memory = Convert.ToInt32(CM.GpuEntries[i].MemoryClockCur) / 1000; }
-
-                                    mpl.Add(CM.GpuEntries[i].PowerLimitCur);
-                                    mcc.Add(core);
-                                    mmc.Add(memory);
-                                    mfs.Add(Convert.ToInt32(CM.GpuEntries[i].FanSpeedCur));
-                                }
                                 MSI = new MSIinfo
                                 {
-                                    PowerLimits = mpl.ToArray(),
-                                    CoreClocks = mcc.ToArray(),
-                                    MemoryClocks = mmc.ToArray(),
-                                    FanSpeeds = mfs.ToArray()
+                                    PowerLimits = MSIpl.ToArray(),
+                                    CoreClocks = MSIcc.ToArray(),
+                                    MemoryClocks = MSImc.ToArray(),
+                                    FanSpeeds = MSIfs.ToArray()
                                 };
                             } catch { MSI = new MSIinfo(); }
                         }
@@ -355,24 +318,13 @@ namespace OMineGuard.Backend
                         //OHMinfo
                         if (OHMenable)
                         {
-                            ots = new List<int?>();
-                            ofs = new List<int?>();
-                            occ = new List<int?>();
-                            omc = new List<int?>();
-                            foreach (OHMgpu ohm in OHMgpus)
-                            {
-                                ohm.Update();
-                                ots.Add(ohm.Temperature);
-                                ofs.Add(ohm.FanSpeed);
-                                occ.Add(ohm.CoreClock);
-                                omc.Add(ohm.MemoryClock);
-                            }
+                            foreach (OHMgpu ohm in OHMgpus) ohm.Update();
                             OHM = new OHMinfo 
                             {
-                                Temperatures = ots.ToArray(),
-                                FanSpeeds = ofs.ToArray(),
-                                CoreClocks = occ.ToArray(),
-                                MemoryClocks = omc.ToArray()
+                                Temperatures = OHMtemp.ToArray(),
+                                FanSpeeds = OHMfs.ToArray(),
+                                CoreClocks = OHMcc.ToArray(),
+                                MemoryClocks = OHMmc.ToArray()
                             };
                         } else { OHM = null; }
                         //event
@@ -407,10 +359,7 @@ namespace OMineGuard.Backend
             private readonly ISensor CoreClockSensor;
             private readonly ISensor MemoryClockSensor;
             private readonly ISensor FanSpeedSensor;
-            public void Update()
-            {
-                gpu.Update();
-            }
+            public void Update() => gpu.Update();
 
             public int? Temperature
             {
@@ -461,9 +410,9 @@ namespace OMineGuard.Backend
 
     public struct MSIinfo
     {
-        public int?[] PowerLimits;
-        public int?[] CoreClocks;
-        public int?[] MemoryClocks;
+        public int[] PowerLimits;
+        public int[] CoreClocks;
+        public int[] MemoryClocks;
         public int?[] FanSpeeds;
     }
     public struct OHMinfo

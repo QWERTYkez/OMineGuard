@@ -533,9 +533,9 @@ namespace OMineGuard.Backend
         public string IdleWachdog { get; set; }
 
         public int? GPUs { get; set; }
-        public int?[] InfPowerLimits { get; set; }
-        public int?[] InfCoreClocks { get; set; }
-        public int?[] InfMemoryClocks { get; set; }
+        public int[] InfPowerLimits { get; set; }
+        public int[] InfCoreClocks { get; set; }
+        public int[] InfMemoryClocks { get; set; }
         public int?[] InfOHMCoreClocks { get; set; }
         public int?[] InfOHMMemoryClocks { get; set; }
         public int?[] InfFanSpeeds { get; set; }

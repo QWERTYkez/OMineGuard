@@ -363,15 +363,75 @@ namespace OMineGuardControlLibrary
                 }
             }
         }
+        private static void SetLengths(int[] vals, List<ColumnDefinition> cdA, List<ColumnDefinition> cdB)
+        {
+            if (vals != null)
+            {
+                if (vals.Length > 0)
+                {
+                    double? mx = vals.Max();
+                    if (mx != null)
+                    {
+                        double? cr;
+                        for (int i = 0; i < cdA.Count; i++)
+                        {
+                            try
+                            {
+                                cr = vals[i];
+                                if (cr != null)
+                                {
+                                    try
+                                    {
+                                        cdA[i].Width = new GridLength(cr.Value / mx.Value, GridUnitType.Star);
+                                        cdB[i].Width = new GridLength((mx.Value - cr.Value) / mx.Value, GridUnitType.Star);
+                                    }
+                                    catch { }
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                        cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                                    }
+                                    catch { }
+                                }
+                            }
+                            catch
+                            {
+                                try
+                                {
+                                    cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                    cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < cdA.Count; i++)
+                        {
+                            try
+                            {
+                                cdA[i].Width = new GridLength(0, GridUnitType.Star);
+                                cdB[i].Width = new GridLength(1, GridUnitType.Star);
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+        }
 
-        private int?[] ArrPowerLimits;
+        private int[] ArrPowerLimits;
         private readonly List<ColumnDefinition> PLsLengthA = new List<ColumnDefinition>();
         private readonly List<ColumnDefinition> PLsLengthB = new List<ColumnDefinition>();
-        private int?[] ArrCoreClocks;
+        private int[] ArrCoreClocks;
         private readonly List<ColumnDefinition> CoresLengthA = new List<ColumnDefinition>();
         private readonly List<ColumnDefinition> CoresLengthB = new List<ColumnDefinition>();
         private int?[] ArrOHMCoreClocks;
-        private int?[] ArrMemoryClocks;
+        private int[] ArrMemoryClocks;
         private readonly List<ColumnDefinition> MemorysLengthA = new List<ColumnDefinition>();
         private readonly List<ColumnDefinition> MemorysLengthB = new List<ColumnDefinition>();
         private int?[] ArrOHMMemoryClocks;

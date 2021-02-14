@@ -32,6 +32,17 @@ namespace OMineGuard.Backend
             }
             return false;
         }
+        private static bool CheckArrays(int[] a, int[] b)
+        {
+            if (a == null && b == null) return false;
+            if (a == null ^ b == null) return true;
+            if (a.Length != b.Length) return true;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return true;
+            }
+            return false;
+        }
         private static bool CheckArrays(double?[] a, double?[] b)
         {
             if (a == null && b == null) return false;
@@ -309,9 +320,9 @@ namespace OMineGuard.Backend
         private bool OHMenable = false;
         private bool MIenable = false;
 
-        public int?[] InfPowerLimits { get; set; }
-        public int?[] InfCoreClocks { get; set; }
-        public int?[] InfMemoryClocks { get; set; }
+        public int[] InfPowerLimits { get; set; }
+        public int[] InfCoreClocks { get; set; }
+        public int[] InfMemoryClocks { get; set; }
         public int?[] InfOHMCoreClocks { get; set; }
         public int?[] InfOHMMemoryClocks { get; set; }
         public int?[] InfFanSpeeds { get; set; }
@@ -319,11 +330,11 @@ namespace OMineGuard.Backend
         public double?[] InfHashrates { get; set; }
         public double? TotalHashrate { get; set; }
 
-        public int?[] ShAccepted { get; set; }
+        public int[] ShAccepted { get; set; }
         public int? ShTotalAccepted { get; set; }
-        public int?[] ShRejected { get; set; }
+        public int[] ShRejected { get; set; }
         public int? ShTotalRejected { get; set; }
-        public int?[] ShInvalid { get; set; }
+        public int[] ShInvalid { get; set; }
         public int? ShTotalInvalid { get; set; }
 
         public string WachdogInfo { get; set; }

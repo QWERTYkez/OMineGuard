@@ -384,9 +384,9 @@ namespace OMineGuardControlLibrary
         public RelayCommand MemoryClocksOff { get; set; }
         public RelayCommand FanSpeedsOff { get; set; }
 
-        public int?[] InfPowerLimits { get; set; }
-        public int?[] InfCoreClocks { get; set; }
-        public int?[] InfMemoryClocks { get; set; }
+        public int[] InfPowerLimits { get; set; }
+        public int[] InfCoreClocks { get; set; }
+        public int[] InfMemoryClocks { get; set; }
         public int?[] InfOHMCoreClocks { get; set; }
         public int?[] InfOHMMemoryClocks { get; set; }
         public int?[] InfFanSpeeds { get; set; }
