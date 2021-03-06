@@ -151,10 +151,10 @@ namespace OMineGuard.Backend
 
                                 if (OC.MemoryClock != null)
                                     if (msi.MemoryClocks[i] != OC.MemoryClock[i]) goto tryApplyClock;
-
                             }
                         }
                         else goto tryApplyClock;
+
 
                         Task.Run(() => OverclockApplied?.Invoke());
                         return;
@@ -225,12 +225,6 @@ namespace OMineGuard.Backend
         private static readonly List<OHMgpu> OHMgpus = new List<OHMgpu>();
         private static ControlMemory CM;
 
-        private static IEnumerable<ControlMemoryGpuEntry> GEs;
-        private static IEnumerable<int> MSIpl;
-        private static IEnumerable<int> MSIcc;
-        private static IEnumerable<int> MSImc;
-        private static IEnumerable<int?> MSIfs;
-
         private static Task MSIconnecting(MainModel mm)
         {
             return Task.Run(() =>
@@ -241,23 +235,21 @@ namespace OMineGuard.Backend
                     MSIpath = Process.GetProcessesByName("MSIAfterburner").First().MainModule.FileName;
                 }
                 catch { mm.Logging("Добавьте права администратора", true); }
-                while (!MSIconnected)
+
+                IEnumerable<ControlMemoryGpuEntry> GEs = new List<ControlMemoryGpuEntry>();
+                while (GEs.Count() == 0)
                 {
                     try
                     {
                         CM = new ControlMemory();
-                        MSIconnected = true;
+                        CM.ReloadAll();
+                        GEs = CM.GpuEntries.Where(e => e.PowerLimitMax - e.PowerLimitMin != 0);
+                        Thread.Sleep(1000);
                     }
-                    catch { }
+                    catch { Thread.Sleep(1000); }
                 }
 
-                GEs = CM.GpuEntries.Where(e => e.PowerLimitMax - e.PowerLimitMin != 0);
-                MSIpl = GEs.Select(e => e.PowerLimitCur);
-                MSIcc = GEs.Select(e => (e.CoreClockBoostMin != 0 ? e.CoreClockBoostCur :
-                        (e.CoreClockMin != 0 ? Convert.ToInt32(e.CoreClockCur) : 0)) / 1000);
-                MSImc = GEs.Select(e => (e.MemoryClockBoostMin != 0 ? e.MemoryClockBoostCur :
-                        (e.MemoryClockMin != 0 ? Convert.ToInt32(e.MemoryClockCur) : 0)) / 1000);
-                MSIfs = GEs.Select(e => new int?(Convert.ToInt32(e.FanSpeedCur)));
+                MSIconnected = true;
 
                 Task.Run(() => ConnectedToMSI?.Invoke(new DefClock
                 {
@@ -295,6 +287,7 @@ namespace OMineGuard.Backend
             Task.Run(() =>
             {
                 MSIinfo? MSI; OHMinfo? OHM;
+                IEnumerable<ControlMemoryGpuEntry> GEs;
                 while (ApplicationLive)
                 {
                     Task.Run(() => 
@@ -305,16 +298,20 @@ namespace OMineGuard.Backend
                             try
                             {
                                 CM.ReloadAll();
+                                GEs = CM.GpuEntries.Where(e => e.PowerLimitMax - e.PowerLimitMin != 0);
                                 MSI = new MSIinfo
                                 {
-                                    PowerLimits = MSIpl.ToArray(),
-                                    CoreClocks = MSIcc.ToArray(),
-                                    MemoryClocks = MSImc.ToArray(),
-                                    FanSpeeds = MSIfs.ToArray()
+                                    PowerLimits = GEs.Select(e => e.PowerLimitCur).ToArray(),
+                                    CoreClocks = GEs.Select(e => (e.CoreClockBoostMin != 0 ? e.CoreClockBoostCur :
+                                        (e.CoreClockMin != 0 ? Convert.ToInt32(e.CoreClockCur) : 0)) / 1000).ToArray(),
+                                    MemoryClocks = GEs.Select(e => (e.MemoryClockBoostMin != 0 ? e.MemoryClockBoostCur :
+                                        (e.MemoryClockMin != 0 ? Convert.ToInt32(e.MemoryClockCur) : 0)) / 1000).ToArray(),
+                                    FanSpeeds = GEs.Select(e => new int?(Convert.ToInt32(e.FanSpeedCur))).ToArray()
                                 };
                             } catch { MSI = new MSIinfo(); }
                         }
                         else { MSI = null; }
+                        MSICurrent = MSI;
                         //OHMinfo
                         if (OHMenable)
                         {
@@ -329,7 +326,6 @@ namespace OMineGuard.Backend
                         } else { OHM = null; }
                         //event
                         Task.Run(() => OverclockReceived?.Invoke(MSI, OHM));
-                        MSICurrent = MSI;
                     });
                     Thread.Sleep(1000);
                 }
