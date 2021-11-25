@@ -30,7 +30,7 @@ namespace OMineGuard.Backend
                 {
                     using (FileStream fstream = new FileStream("Settings.json", FileMode.Create))
                     {
-                        byte[] array = System.Text.Encoding.Default.GetBytes(newJSON);
+                        byte[] array = System.Text.Encoding.UTF8.GetBytes(newJSON);
                         fstream.Write(array, 0, array.Length);
                     }
                 }
@@ -126,6 +126,7 @@ namespace OMineGuard.Backend
         public string Algoritm { get; set; }
         public int? Miner { get; set; }
         public string Pool { get; set; }
+        public string PoolLogin { get; set; }
         public string Port { get; set; }
         public string Wallet { get; set; }
         public string Params { get; set; }

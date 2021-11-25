@@ -214,7 +214,9 @@ namespace OMineGuardControlLibrary
             else { Profile.ConfigsList[SelectedConfigIndex].Algoritm = ""; }
             if (SelectedMinerIndex > -1)
             {
-                Profile.ConfigsList[SelectedConfigIndex].Miner = MinersList.IndexOf((string)SelectedMinerItem);
+                if (SelectedMinerItem == null)
+                    Profile.ConfigsList[SelectedConfigIndex].Miner = -1;
+                else Profile.ConfigsList[SelectedConfigIndex].Miner = MinersList.IndexOf(SelectedMinerItem.ToString());
             }
             else
             {
@@ -288,7 +290,9 @@ namespace OMineGuardControlLibrary
                     else { SelectedAlgoritmIndex = -1; }
                     if (Profile.ConfigsList[SelectedConfigIndex].Miner != null)
                     {
-                        SelectedMinerItem = MinersList[(int)Profile.ConfigsList[SelectedConfigIndex].Miner];
+                        if ((int)Profile.ConfigsList[SelectedConfigIndex].Miner < 0)
+                            SelectedMinerItem = 0;
+                        else SelectedMinerItem = MinersList[(int)Profile.ConfigsList[SelectedConfigIndex].Miner];
                     }
                     else
                     {

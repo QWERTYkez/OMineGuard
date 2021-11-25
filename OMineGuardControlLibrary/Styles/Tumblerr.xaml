@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Styles="clr-namespace:OMineGuardControlLibrary.Styles">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="Brushes.xaml"/>
+        <ResourceDictionary Source="Brushes.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <SolidColorBrush x:Key="Tumbler.Fill.On" Color="#FF00B000" />
@@ -11,7 +11,7 @@
     <SolidColorBrush x:Key="Tumbler.Fill.Disable" Color="Black" />
     <SolidColorBrush x:Key="Tumbler.Fill" Color="White" />
 
-    <ControlTemplate x:Key="TumblerTemplate" TargetType="{x:Type Styles:Tumbler }">
+    <ControlTemplate x:Key="TumblerTemplate" TargetType="{x:Type Styles:Tumbler}">
         <Grid
             x:Name="templateRoot"
             Width="40"

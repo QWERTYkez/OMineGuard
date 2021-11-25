@@ -2,18 +2,19 @@
 using System;
 using System.Net;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace OMineGuard.Backend
 {
     public static class Informer
     {
+        public static Random Rand = new Random();
+
         public static (Func<int> GetVKmsgID, Func<string> GetTGmsgID) SendMessage(string Message)
         {
             string message = $"{Settings.Profile.RigName} >> {Message}";
 
-            Func<int> vkfint = (() => SendVKMessage(message));
-            Func<string> tgfint = (() => SendTelegramMessage(message));
+            Func<int> vkfint = () => SendVKMessage(message);
+            Func<string> tgfint = () => SendTelegramMessage(message);
 
             var VKTres = vkfint.BeginInvoke(null, null);
             var TGTres = tgfint.BeginInvoke(null, null);
@@ -32,15 +33,12 @@ namespace OMineGuard.Backend
         {
             if (Settings.Profile.VkInform)
             {
-                string user_id = Settings.Profile.VKuserID;
-                string access_token = "6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929";
-                string ver = "5.73";
-
                 string BaseReq = $"https://api.vk.com/method/messages.send" +
-                    $"?user_id={user_id}" +
+                    $"?user_id={Settings.Profile.VKuserID}" +
                     $"&message={message}" +
-                    $"&access_token={access_token}" +
-                    $"&v={ver}";
+                    $"&random_id={Rand.Next(0, int.MaxValue)}" +
+                    $"&access_token=6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929" +
+                    $"&v=5.131";
 
                 string resp;
                 try { resp = Get(BaseReq); }
@@ -73,18 +71,13 @@ namespace OMineGuard.Backend
         {
             if (Settings.Profile.VkInform)
             {
-                string user_id = Settings.Profile.VKuserID;
-                string access_token = "6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929";
-                string group_id = "163159897";
-                string ver = "5.103";
-
                 string BaseReq = $"https://api.vk.com/method/messages.edit" +
-                    $"?peer_id={user_id}" +
+                    $"?peer_id={Settings.Profile.VKuserID}" +
                     $"&message_id={message_id}" +
                     $"&message={message}" + 
-                    $"&group_id={group_id}" +
-                    $"&access_token={access_token}" +
-                    $"&v={ver}";
+                    $"&group_id=163159897" +
+                    $"&access_token=6e8b089ad4fa647f95cdf89f4b14d183dc65954485efbfe97fe2ca6aa2f65b1934c80fccf4424d9788929" +
+                    $"&v=5.131";
 
                 string resp;
                 try { resp = Get(BaseReq); }
