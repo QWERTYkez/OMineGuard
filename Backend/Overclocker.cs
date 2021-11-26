@@ -22,81 +22,88 @@ namespace OMineGuard.Backend
         private static MSIinfo? MSICurrent;
         public static void ApplyOverclock(IOverclock OC)
         {
-            Task.Run(() => 
+            Task.Run(() =>
             {
                 while (!MSIconnected) Thread.Sleep(100);
 
                 Process.Start(MSIpath);
 
-                tryApplyClock:
+            tryApplyClock:
 
                 CM = new ControlMemory();
+                ControlMemory nConf;
+                List<ControlMemoryGpuEntry> gpuEnries = new List<ControlMemoryGpuEntry>();
 
-                ControlMemory nConf = CM;
-
-                if (nConf.GpuEntries.Length > 0)
+                do
                 {
-                    while (nConf.GpuEntries[0].PowerLimitMax == 0)
+                    Thread.Sleep(50);
+                    CM.ReloadAll();
+                    nConf = CM;
+                    if (nConf.GpuEntries.Length > 0)
                     {
-                        Thread.Sleep(50);
-                        CM.ReloadAll();
-                        nConf = CM;
+                        var vals = ValidGPUS.ToArray();
+                        for (int i = 0; i < vals.Length; i++)
+                        {
+                            if (vals[i])
+                                gpuEnries.Add(nConf.GpuEntries[i]);
+                        }
                     }
                 }
+                while (gpuEnries[0].PowerLimitMax == 0);
 
-                for (int i = 0; i < nConf.GpuEntries.Length; i++)
+                for (int i = 0; i < gpuEnries.Count; i++)
                 {
                     try
                     {
-                        nConf.GpuEntries[i].PowerLimitCur = SetParam(i, 1, OC.PowLim,
-                        nConf.GpuEntries[i].PowerLimitMax,
-                        nConf.GpuEntries[i].PowerLimitMin,
-                        nConf.GpuEntries[i].PowerLimitDef);
+                        gpuEnries[i].PowerLimitCur = SetParam(i, 1, OC.PowLim,
+                        gpuEnries[i].PowerLimitMax,
+                        gpuEnries[i].PowerLimitMin,
+                        gpuEnries[i].PowerLimitDef);
                     }
                     catch { }
 
-                    if (nConf.GpuEntries[i].CoreClockBoostMax - nConf.GpuEntries[i].CoreClockBoostMin != 0)
+                    if (gpuEnries[i].CoreClockBoostMax - gpuEnries[i].CoreClockBoostMin != 0)
                     {
                         try
                         {
-                            nConf.GpuEntries[i].CoreClockBoostCur = SetParam(i, 1000, OC.CoreClock,
-                            nConf.GpuEntries[i].CoreClockBoostMax,
-                            nConf.GpuEntries[i].CoreClockBoostMin,
-                            nConf.GpuEntries[i].CoreClockBoostDef);
+                            gpuEnries[i].CoreClockBoostCur = SetParam(i, 1000, OC.CoreClock,
+                            gpuEnries[i].CoreClockBoostMax,
+                            gpuEnries[i].CoreClockBoostMin,
+                            gpuEnries[i].CoreClockBoostDef);
                         }
                         catch { }
                     }
-                    else if (nConf.GpuEntries[i].CoreClockMax - nConf.GpuEntries[i].CoreClockMin != 0)
+                    else if (gpuEnries[i].CoreClockMax - gpuEnries[i].CoreClockMin != 0)
                     {
                         try
                         {
-                            nConf.GpuEntries[i].CoreClockCur = SetParam(i, 1000, OC.CoreClock,
-                            nConf.GpuEntries[i].CoreClockMax,
-                            nConf.GpuEntries[i].CoreClockMin,
-                            nConf.GpuEntries[i].CoreClockDef);
+                            gpuEnries[i].CoreClockCur = SetParam(i, 1000, OC.CoreClock,
+                            gpuEnries[i].CoreClockMax,
+                            gpuEnries[i].CoreClockMin,
+                            gpuEnries[i].CoreClockDef);
                         }
                         catch { }
                     }
 
-                    if (nConf.GpuEntries[i].MemoryClockBoostMax - nConf.GpuEntries[i].MemoryClockBoostMin != 0)
+                    if (gpuEnries[i].MemoryClockBoostMax - gpuEnries[i].MemoryClockBoostMin != 0)
                     {
                         try
                         {
-                            nConf.GpuEntries[i].MemoryClockBoostCur = SetParam(i, 1000, OC.MemoryClock,
-                            nConf.GpuEntries[i].MemoryClockBoostMax,
-                            nConf.GpuEntries[i].MemoryClockBoostMin,
-                            nConf.GpuEntries[i].MemoryClockBoostDef);
+                            gpuEnries[i].MemoryClockBoostCur = SetParam(i, 1000, OC.MemoryClock,
+                            gpuEnries[i].MemoryClockBoostMax,
+                            gpuEnries[i].MemoryClockBoostMin,
+                            gpuEnries[i].MemoryClockBoostDef);
                         }
                         catch { }
                     }
-                    else if (nConf.GpuEntries[i].MemoryClockMax - nConf.GpuEntries[i].MemoryClockMin != 0)
+                    else if (gpuEnries[i].MemoryClockMax - gpuEnries[i].MemoryClockMin != 0)
                     {
                         try
                         {
-                            nConf.GpuEntries[i].MemoryClockCur = SetParam(i, 1000, OC.MemoryClock,
-                            nConf.GpuEntries[i].MemoryClockMax,
-                            nConf.GpuEntries[i].MemoryClockMin,
-                            nConf.GpuEntries[i].MemoryClockDef);
+                            gpuEnries[i].MemoryClockCur = SetParam(i, 1000, OC.MemoryClock,
+                            gpuEnries[i].MemoryClockMax,
+                            gpuEnries[i].MemoryClockMin,
+                            gpuEnries[i].MemoryClockDef);
                         }
                         catch { }
                     }
@@ -107,23 +114,23 @@ namespace OMineGuard.Backend
                         {
                             if (OC.FanSpeed.Length > i)
                             {
-                                nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.None;
-                                if (OC.FanSpeed[i] > nConf.GpuEntries[i].FanSpeedMax)
+                                gpuEnries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.None;
+                                if (OC.FanSpeed[i] > gpuEnries[i].FanSpeedMax)
                                 {
-                                    nConf.GpuEntries[i].FanSpeedCur = nConf.GpuEntries[i].FanSpeedMax;
+                                    gpuEnries[i].FanSpeedCur = gpuEnries[i].FanSpeedMax;
                                 }
-                                else if (OC.FanSpeed[i] < nConf.GpuEntries[i].FanSpeedMin)
+                                else if (OC.FanSpeed[i] < gpuEnries[i].FanSpeedMin)
                                 {
-                                    nConf.GpuEntries[i].FanSpeedCur = nConf.GpuEntries[i].FanSpeedMin;
+                                    gpuEnries[i].FanSpeedCur = gpuEnries[i].FanSpeedMin;
                                 }
                                 else
                                 {
-                                    nConf.GpuEntries[i].FanSpeedCur = Convert.ToUInt32(OC.FanSpeed[i]);
+                                    gpuEnries[i].FanSpeedCur = Convert.ToUInt32(OC.FanSpeed[i]);
                                 }
                             }
-                            else { nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
+                            else { gpuEnries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
                         }
-                        else { nConf.GpuEntries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
+                        else { gpuEnries[i].FanFlagsCur = MACM_SHARED_MEMORY_GPU_ENTRY_FAN_FLAG.AUTO; }
                     }
                     catch { }
                 }
@@ -214,7 +221,7 @@ namespace OMineGuard.Backend
 
         public static void _Overclocker(MainModel mm)
         {
-            Task.Run(async () => 
+            Task.Run(async () =>
             {
                 await MSIconnecting(mm);
                 OHMconnecting();
@@ -224,6 +231,7 @@ namespace OMineGuard.Backend
         public static bool ApplicationLive = true;
         private static readonly List<OHMgpu> OHMgpus = new List<OHMgpu>();
         private static ControlMemory CM;
+        private static IEnumerable<bool> ValidGPUS;
 
         private static Task MSIconnecting(MainModel mm)
         {
@@ -244,6 +252,7 @@ namespace OMineGuard.Backend
                         CM = new ControlMemory();
                         CM.ReloadAll();
                         GEs = CM.GpuEntries.Where(e => e.PowerLimitMax - e.PowerLimitMin != 0);
+                        ValidGPUS = CM.GpuEntries.Select(e => e.PowerLimitMax - e.PowerLimitMin != 0);
                         Thread.Sleep(1000);
                     }
                     catch { Thread.Sleep(1000); }
@@ -264,15 +273,16 @@ namespace OMineGuard.Backend
         }
         private static void OHMconnecting()
         {
-            Task.Run(() => 
+            Task.Run(() =>
             {
                 Computer c = new Computer { GPUEnabled = true };
                 c.Open();
-                foreach  (IHardware h in c.Hardware)
+                foreach (IHardware h in c.Hardware)
                 {
-                    OHMgpus.Add(new OHMgpu(h));
+                    if (h.Sensors.Length > 1)
+                        OHMgpus.Add(new OHMgpu(h));
                 }
-                if (c.Hardware.Length > 0)
+                if (OHMgpus.Count > 0)
                     OHMenable = true;
             });
         }
@@ -290,7 +300,7 @@ namespace OMineGuard.Backend
                 IEnumerable<ControlMemoryGpuEntry> GEs;
                 while (ApplicationLive)
                 {
-                    Task.Run(() => 
+                    Task.Run(() =>
                     {
                         // MSIinfo
                         if (MSIconnected)
@@ -308,7 +318,8 @@ namespace OMineGuard.Backend
                                         (e.MemoryClockMin != 0 ? Convert.ToInt32(e.MemoryClockCur) : 0)) / 1000).ToArray(),
                                     FanSpeeds = GEs.Select(e => new int?(Convert.ToInt32(e.FanSpeedCur))).ToArray()
                                 };
-                            } catch { MSI = new MSIinfo(); }
+                            }
+                            catch { MSI = new MSIinfo(); }
                         }
                         else { MSI = null; }
                         MSICurrent = MSI;
@@ -316,14 +327,15 @@ namespace OMineGuard.Backend
                         if (OHMenable)
                         {
                             foreach (OHMgpu ohm in OHMgpus) ohm.Update();
-                            OHM = new OHMinfo 
+                            OHM = new OHMinfo
                             {
                                 Temperatures = OHMtemp.ToArray(),
                                 FanSpeeds = OHMfs.ToArray(),
                                 CoreClocks = OHMcc.ToArray(),
                                 MemoryClocks = OHMmc.ToArray()
                             };
-                        } else { OHM = null; }
+                        }
+                        else { OHM = null; }
                         //event
                         Task.Run(() => OverclockReceived?.Invoke(MSI, OHM));
                     });
@@ -331,7 +343,7 @@ namespace OMineGuard.Backend
                 }
             });
         }
-        
+
         private class OHMgpu
         {
             public OHMgpu(IHardware gpu)
